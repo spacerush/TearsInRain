@@ -11,8 +11,8 @@ using TearsInRain.Commands;
 namespace TearsInRain {
     class GameLoop {
 
-        public const int GameWidth = 80;
-        public const int GameHeight = 25;
+        public const int GameWidth = 120;
+        public const int GameHeight = 80;
 
         public static UIManager UIManager;
         public static World World;
@@ -20,6 +20,8 @@ namespace TearsInRain {
 
         static int oldWindowPixelWidth;
         static int oldWindowPixelHeight;
+
+        public static Discord.Discord discord;
 
 
         static void Main(string[] args) {
@@ -35,11 +37,12 @@ namespace TearsInRain {
         }
 
         private static void Update(GameTime time) {
+            discord.RunCallbacks();
         }
 
         private static void Init() {
             Global.FontDefault = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
-            Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 70, 30, 0, 0);
+            Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 100, 75, 0, 0);
             Global.ResetRendering();
 
             SadConsole.Themes.Library.Default.WindowTheme = new GlobalTheme();
@@ -52,6 +55,8 @@ namespace TearsInRain {
             World = new World();
             UIManager.Init();
             SadConsole.Game.Instance.Window.ClientSizeChanged += Window_ClientSizeChanged;
+
+            discord = new Discord.Discord(579827348665532425, (UInt64)Discord.CreateFlags.Default);
         }
 
         private static void Window_ClientSizeChanged(object sender, EventArgs e) {

@@ -1,4 +1,5 @@
 ﻿using System;
+using Discord;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using SadConsole;
@@ -23,7 +24,6 @@ namespace TearsInRain.UI {
 
         public void checkResize(int newX, int newY) {
             this.Resize(newX, newY, false);
-            MapWindow.Resize(newX / 2, newY / 2, false);
         }
         
         public void Init() {
@@ -87,12 +87,77 @@ namespace TearsInRain.UI {
             closeButton.Position = new Point(0, 0);
             closeButton.Text = "[X]";
 
+            Button hostButton = new Button(6, 1);
+            hostButton.Position = new Point((multiConsoleW / 2) - 3, 3);
+            hostButton.Text = "HOST";
+            hostButton.MouseButtonClicked += hostButtonClick;
+
+            Button joinButton = new Button(6, 1);
+            joinButton.Position = new Point((multiConsoleW / 2) - 3, 5);
+            joinButton.Text = "JOIN";
+            joinButton.MouseButtonClicked += joinButtonClick;
+            
+
             MultiplayerWindow.Add(closeButton);
+            MultiplayerWindow.Add(hostButton);
+            MultiplayerWindow.Add(joinButton);
+
+
             MultiplayerWindow.Title = title.Align(HorizontalAlignment.Center, multiConsoleW);
 
             Children.Add(MultiplayerWindow);
             MultiplayerWindow.Show();
             MultiplayerWindow.IsVisible = false;
+        }
+
+        private void lobbyTextBoxClicked(object sender, SadConsole.Input.MouseEventArgs e) {
+            
+        }
+
+        private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
+            System.Environment.SetEnvironmentVariable("DISCORD_INSTANCE_ID", "0");
+            GameLoop.discord = new Discord.Discord(579827348665532425, (UInt64) Discord.CreateFlags.Default);
+            GameLoop.discord.RunCallbacks();
+
+
+            var lobbyManager = GameLoop.discord.GetLobbyManager();
+            var txn = lobbyManager.GetLobbyCreateTransaction();
+
+            txn.SetCapacity(6);
+            txn.SetType(Discord.LobbyType.Public);
+            txn.SetMetadata("a", "123");
+
+            lobbyManager.CreateLobby(txn, (Result result, ref Lobby lobby) => {
+                MessageLog.Add("Created lobby! Code has been copied to clipboard, have client copy code and click JOIN.");
+                TextCopy.Clipboard.SetText(lobbyManager.GetLobbyActivitySecret(lobby.Id));
+               // lobbyActivSecret.Text = lobbyManager.GetLobbyActivitySecret(lobby.Id);
+
+                lobbyManager.OnMemberConnect += onPlayerConnected;
+            });
+        }
+
+        private void onPlayerConnected(long lobbyId, long userId) {
+            GameLoop.discord.GetUserManager().GetUser(userId, (Result result, ref User user) => {
+                if (result == Discord.Result.Ok) {
+                    MessageLog.Add("User connected: " + user.Username);
+                }
+            });
+        }
+
+        private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
+            System.Environment.SetEnvironmentVariable("DISCORD_INSTANCE_ID", "1");
+            GameLoop.discord = new Discord.Discord(579827348665532425, (UInt64)Discord.CreateFlags.Default);
+            GameLoop.discord.RunCallbacks();
+
+            var lobbyManager = GameLoop.discord.GetLobbyManager();
+            lobbyManager.ConnectLobbyWithActivitySecret(TextCopy.Clipboard.GetText(), (Result result, ref Lobby lobby) =>
+            {
+                if (result == Discord.Result.Ok) {
+                    MessageLog.Add("Connected to lobby successfully!");
+                } else {
+                    MessageLog.Add("Encountered error: " + result);
+                }
+            });
         }
 
         public void CenterOnActor(Actor actor) {

@@ -131,3 +131,6 @@ C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Priority Queue.xml
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Troschuetz.Random.xml
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\fonts\Cheepicus_12x12.png
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\fonts\Cheepicus12.font
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\discord_game_sdk.dll
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TextCopy.dll
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TextCopy.xml
