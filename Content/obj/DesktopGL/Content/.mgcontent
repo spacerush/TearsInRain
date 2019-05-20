@@ -4,11 +4,13 @@
   <Platform>DesktopGL</Platform>
   <Config />
   <SourceFiles>
+    <File>C:/Users/Annie/Desktop/TearsInRain/Content/actor.png</File>
     <File>C:/Users/Annie/Desktop/TearsInRain/Content/floor.png</File>
     <File>C:/Users/Annie/Desktop/TearsInRain/Content/player.png</File>
     <File>C:/Users/Annie/Desktop/TearsInRain/Content/wall.png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
