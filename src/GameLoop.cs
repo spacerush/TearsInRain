@@ -17,12 +17,10 @@ namespace TearsInRain {
         public static UIManager UIManager;
         public static World World;
         public static CommandManager CommandManager;
+        public static NetworkingManager NetworkingManager;
 
         static int oldWindowPixelWidth;
         static int oldWindowPixelHeight;
-
-        public static Discord.Discord discord;
-
 
         static void Main(string[] args) {
             SadConsole.Game.Create(GameWidth, GameHeight);
@@ -37,7 +35,7 @@ namespace TearsInRain {
         }
 
         private static void Update(GameTime time) {
-            discord.RunCallbacks();
+            NetworkingManager.Update();
         }
 
         private static void Init() {
@@ -52,11 +50,18 @@ namespace TearsInRain {
 
             UIManager = new UIManager();
             CommandManager = new CommandManager();
+            NetworkingManager = new NetworkingManager();
             World = new World();
             UIManager.Init();
             SadConsole.Game.Instance.Window.ClientSizeChanged += Window_ClientSizeChanged;
 
-            discord = new Discord.Discord(579827348665532425, (UInt64)Discord.CreateFlags.Default);
+            SadConsole.Game.OnUpdate += postUpdate;
+        }
+
+        private static void postUpdate(GameTime time) {
+            if (NetworkingManager.discord.GetLobbyManager() != null) {
+                NetworkingManager.discord.GetLobbyManager().FlushNetwork();
+            }
         }
 
         private static void Window_ClientSizeChanged(object sender, EventArgs e) {

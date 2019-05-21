@@ -13,6 +13,7 @@ namespace TearsInRain.UI {
 
         public Window MapWindow;
         public MessageLogWindow MessageLog;
+        public ChatLogWindow ChatLog;
         public Window MultiplayerWindow;
 
         public UIManager() {
@@ -33,9 +34,15 @@ namespace TearsInRain.UI {
             Children.Add(MessageLog);
             MessageLog.Show();
             MessageLog.Position = new Point(0, GameLoop.GameHeight / 2);
-            
 
-           // MessageLog.Add("Testing First");
+            ChatLog = new ChatLogWindow(GameLoop.GameWidth / 2, GameLoop.GameHeight / 3, "Chat Log");
+            Children.Add(MessageLog);
+            ChatLog.Show();
+            ChatLog.IsVisible = false;
+            ChatLog.Position = new Point(0, GameLoop.GameHeight / 2);
+
+
+            // MessageLog.Add("Testing First");
 
             LoadMap(GameLoop.World.CurrentMap);
 
@@ -110,50 +117,55 @@ namespace TearsInRain.UI {
             MultiplayerWindow.IsVisible = false;
         }
 
-        private void lobbyTextBoxClicked(object sender, SadConsole.Input.MouseEventArgs e) {
-            
-        }
-
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-            System.Environment.SetEnvironmentVariable("DISCORD_INSTANCE_ID", "0");
-            GameLoop.discord = new Discord.Discord(579827348665532425, (UInt64) Discord.CreateFlags.Default);
-            GameLoop.discord.RunCallbacks();
+         //   GameLoop.NetworkingManager.changeClientTarget("0");
 
-
-            var lobbyManager = GameLoop.discord.GetLobbyManager();
+            var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             var txn = lobbyManager.GetLobbyCreateTransaction();
 
             txn.SetCapacity(6);
             txn.SetType(Discord.LobbyType.Public);
             txn.SetMetadata("a", "123");
 
+
             lobbyManager.CreateLobby(txn, (Result result, ref Lobby lobby) => {
-                MessageLog.Add("Created lobby! Code has been copied to clipboard, have client copy code and click JOIN.");
-                TextCopy.Clipboard.SetText(lobbyManager.GetLobbyActivitySecret(lobby.Id));
-               // lobbyActivSecret.Text = lobbyManager.GetLobbyActivitySecret(lobby.Id);
+                if (result == Result.Ok) {
+                    MessageLog.Add("Created lobby! Code has been copied to clipboard.");
+                    TextCopy.Clipboard.SetText(lobbyManager.GetLobbyActivitySecret(lobby.Id));
 
-                lobbyManager.OnMemberConnect += onPlayerConnected;
-            });
-        }
-
-        private void onPlayerConnected(long lobbyId, long userId) {
-            GameLoop.discord.GetUserManager().GetUser(userId, (Result result, ref User user) => {
-                if (result == Discord.Result.Ok) {
-                    MessageLog.Add("User connected: " + user.Username);
+                    GameLoop.NetworkingManager.InitNetworking(lobby.Id);
+                    lobbyManager.OnMemberConnect += onPlayerConnected;
+                } else {
+                    MessageLog.Add("Error: " + result);
                 }
             });
         }
 
-        private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-            System.Environment.SetEnvironmentVariable("DISCORD_INSTANCE_ID", "1");
-            GameLoop.discord = new Discord.Discord(579827348665532425, (UInt64)Discord.CreateFlags.Default);
-            GameLoop.discord.RunCallbacks();
+        private void onPlayerConnected(long lobbyId, long userId) {
+            var userManager = GameLoop.NetworkingManager.discord.GetUserManager();
+            userManager.GetUser(userId, (Result result, ref User user) => {
+                if (result == Discord.Result.Ok) {
+                    MessageLog.Add("User connected: " + user.Username);
+                    kickstartNet();
+                }
+            });
+        }
 
-            var lobbyManager = GameLoop.discord.GetLobbyManager();
-            lobbyManager.ConnectLobbyWithActivitySecret(TextCopy.Clipboard.GetText(), (Result result, ref Lobby lobby) =>
-            {
+        private void kickstartNet() {
+            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("a"));
+            GameLoop.NetworkingManager.SendNetMessage(1, System.Text.Encoding.UTF8.GetBytes("a"));
+        }
+
+        private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
+          //  GameLoop.NetworkingManager.changeClientTarget("1");
+            
+
+            var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
+            lobbyManager.ConnectLobbyWithActivitySecret(TextCopy.Clipboard.GetText(), (Result result, ref Lobby lobby) => {
                 if (result == Discord.Result.Ok) {
                     MessageLog.Add("Connected to lobby successfully!");
+                    GameLoop.NetworkingManager.InitNetworking(lobby.Id);
+                    kickstartNet();
                 } else {
                     MessageLog.Add("Encountered error: " + result);
                 }
@@ -166,7 +178,7 @@ namespace TearsInRain.UI {
 
         public override void Update(TimeSpan timeElapsed) {
             CheckKeyboard();
-
+            
             base.Update(timeElapsed);
         }
 
@@ -195,18 +207,38 @@ namespace TearsInRain.UI {
         }
 
         private void CheckKeyboard() {
-            if (Global.KeyboardState.IsKeyReleased(Keys.F5)) { Settings.ToggleFullScreen(); }
+            if (!ChatLog.TextBoxFocused()) {
+                if (Global.KeyboardState.IsKeyReleased(Keys.F5)) { Settings.ToggleFullScreen(); }
 
-            if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(0, -1)); CenterOnActor(GameLoop.World.Player); }
-            if (Global.KeyboardState.IsKeyPressed(Keys.Down) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(0, 1)); CenterOnActor(GameLoop.World.Player); }
-            if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(-1, 0)); CenterOnActor(GameLoop.World.Player); }
-            if (Global.KeyboardState.IsKeyPressed(Keys.Right) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(1, 0)); CenterOnActor(GameLoop.World.Player); }
+                if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(0, -1)); CenterOnActor(GameLoop.World.Player); }
+                if (Global.KeyboardState.IsKeyPressed(Keys.Down) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(0, 1)); CenterOnActor(GameLoop.World.Player); }
+                if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(-1, 0)); CenterOnActor(GameLoop.World.Player); }
+                if (Global.KeyboardState.IsKeyPressed(Keys.Right) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(1, 0)); CenterOnActor(GameLoop.World.Player); }
 
-            if (Global.KeyboardState.IsKeyReleased(Keys.Tab)) {
-                if (GameLoop.UIManager.MultiplayerWindow.IsVisible)
-                    GameLoop.UIManager.MultiplayerWindow.IsVisible = false;
-                else
-                    GameLoop.UIManager.MultiplayerWindow.IsVisible = true;
+                if (Global.KeyboardState.IsKeyReleased(Keys.Tab)) {
+                    if (MultiplayerWindow.IsVisible)
+                        MultiplayerWindow.IsVisible = false;
+                    else
+                        MultiplayerWindow.IsVisible = true;
+                }
+
+
+                if (Global.KeyboardState.IsKeyReleased(Keys.C)) {
+                    if (ChatLog.IsVisible)
+                        ChatLog.IsVisible = false;
+                    else
+                        ChatLog.IsVisible = true;
+                }
+            } else {
+                if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) { ChatLog.Unfocus(); }
+                if (Global.KeyboardState.IsKeyReleased(Keys.Enter)) {
+                    var name = GameLoop.NetworkingManager.userManager.GetCurrentUser().Username;
+                    var assembled = name + ": " + ChatLog.GetText();
+                    GameLoop.NetworkingManager.SendNetMessage(1, System.Text.Encoding.UTF8.GetBytes(assembled));
+
+                    ChatLog.Add(assembled);
+                    ChatLog.ClearText();
+                }
             }
         }
     }
