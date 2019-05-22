@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 
-namespace TearsInRain.Tiles {
+namespace TearsInRain.Tiles { 
     public class TileDoor : TileBase {
         public bool Locked;
         public bool IsOpen;

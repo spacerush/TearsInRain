@@ -2,9 +2,12 @@
 using Discord;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Newtonsoft.Json;
 using SadConsole;
 using SadConsole.Controls;
+using SadConsole.Input;
 using TearsInRain.Entities;
+using TearsInRain.Tiles;
 
 namespace TearsInRain.UI {
     public class UIManager : ContainerConsole {
@@ -15,6 +18,11 @@ namespace TearsInRain.UI {
         public MessageLogWindow MessageLog;
         public ChatLogWindow ChatLog;
         public Window MultiplayerWindow;
+
+        public Button hostButton;
+        public Button joinButton;
+        public Button copyButton;
+        public Button testButton;
 
         public UIManager() {
             IsVisible = true;
@@ -93,21 +101,34 @@ namespace TearsInRain.UI {
             Button closeButton = new Button(3, 1);
             closeButton.Position = new Point(0, 0);
             closeButton.Text = "[X]";
+            closeButton.MouseButtonClicked += exitButtonClick;
 
-            Button hostButton = new Button(6, 1);
+            hostButton = new Button(6, 1);
             hostButton.Position = new Point((multiConsoleW / 2) - 3, 3);
             hostButton.Text = "HOST";
             hostButton.MouseButtonClicked += hostButtonClick;
 
-            Button joinButton = new Button(6, 1);
+            joinButton = new Button(6, 1);
             joinButton.Position = new Point((multiConsoleW / 2) - 3, 5);
             joinButton.Text = "JOIN";
             joinButton.MouseButtonClicked += joinButtonClick;
-            
+
+            copyButton = new Button(10, 1);
+            copyButton.Position = new Point((multiConsoleW / 2) - 5, 3);
+            copyButton.Text = "GET CODE";
+            copyButton.MouseButtonClicked += copyButtonClick;
+            copyButton.IsVisible = false;
+
+            testButton = new Button(6, 1);
+            testButton.Position = new Point((multiConsoleW / 2) - 3, 9);
+            testButton.Text = "TEST";
+            testButton.MouseButtonClicked += testButtonClick;
 
             MultiplayerWindow.Add(closeButton);
             MultiplayerWindow.Add(hostButton);
             MultiplayerWindow.Add(joinButton);
+            MultiplayerWindow.Add(copyButton);
+            MultiplayerWindow.Add(testButton);
 
 
             MultiplayerWindow.Title = title.Align(HorizontalAlignment.Center, multiConsoleW);
@@ -117,8 +138,26 @@ namespace TearsInRain.UI {
             MultiplayerWindow.IsVisible = false;
         }
 
+        private void testButtonClick(object sender, MouseEventArgs e) {
+            var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
+            if (lobbyManager != null) {
+                GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes("fuck"));
+            }
+        }
+
+        private void copyButtonClick(object sender, MouseEventArgs e) {
+            var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
+            if (lobbyManager != null) {
+                TextCopy.Clipboard.SetText(lobbyManager.GetLobbyActivitySecret(lobbyManager.GetLobbyId(0)));
+            }
+        }
+
+        private void exitButtonClick(object sender, MouseEventArgs e) {
+            MultiplayerWindow.IsVisible = false;
+        }
+
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-         //   GameLoop.NetworkingManager.changeClientTarget("0");
+            GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             var txn = lobbyManager.GetLobbyCreateTransaction();
@@ -135,8 +174,22 @@ namespace TearsInRain.UI {
 
                     GameLoop.NetworkingManager.InitNetworking(lobby.Id);
                     lobbyManager.OnMemberConnect += onPlayerConnected;
+                    lobbyManager.OnMemberDisconnect += onPlayerDisconnected;
+
+                    hostButton.IsVisible = false;
+                    joinButton.IsVisible = false;
+                    copyButton.IsVisible = true;
                 } else {
                     MessageLog.Add("Error: " + result);
+                }
+            });
+        }
+
+        private void onPlayerDisconnected(long lobbyId, long userId) {
+            var userManager = GameLoop.NetworkingManager.discord.GetUserManager();
+            userManager.GetUser(userId, (Result result, ref User user) => {
+                if (result == Discord.Result.Ok) {
+                    ChatLog.Add("User disconnected: " + user.Username);
                 }
             });
         }
@@ -145,7 +198,7 @@ namespace TearsInRain.UI {
             var userManager = GameLoop.NetworkingManager.discord.GetUserManager();
             userManager.GetUser(userId, (Result result, ref User user) => {
                 if (result == Discord.Result.Ok) {
-                    MessageLog.Add("User connected: " + user.Username);
+                    ChatLog.Add("User connected: " + user.Username);
                     kickstartNet();
                 }
             });
@@ -154,11 +207,12 @@ namespace TearsInRain.UI {
         private void kickstartNet() {
             GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("a"));
             GameLoop.NetworkingManager.SendNetMessage(1, System.Text.Encoding.UTF8.GetBytes("a"));
+            GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes("a"));
         }
 
         private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-          //  GameLoop.NetworkingManager.changeClientTarget("1");
-            
+            GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             lobbyManager.ConnectLobbyWithActivitySecret(TextCopy.Clipboard.GetText(), (Result result, ref Lobby lobby) => {
@@ -185,7 +239,7 @@ namespace TearsInRain.UI {
         private void SyncMapEntities(Map map) {
             MapConsole.Children.Clear();
 
-            foreach (Entity entity in map.Entities.Items) {
+            foreach (TIREntity entity in map.Entities.Items) {
                 MapConsole.Children.Add(entity);
             }
 
@@ -193,16 +247,18 @@ namespace TearsInRain.UI {
             map.Entities.ItemRemoved += OnMapEntityRemoved;
         }
 
-        public void OnMapEntityAdded (object sender, GoRogue.ItemEventArgs<Entity> args) {
+        public void OnMapEntityAdded (object sender, GoRogue.ItemEventArgs<TIREntity> args) {
             MapConsole.Children.Add(args.Item);
         }
 
-        public void OnMapEntityRemoved(object sender, GoRogue.ItemEventArgs<Entity> args) {
+        public void OnMapEntityRemoved(object sender, GoRogue.ItemEventArgs<TIREntity> args) {
             MapConsole.Children.Remove(args.Item);
         }
 
         public void LoadMap(Map map) {
-            MapConsole = new SadConsole.ScrollingConsole(GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height, Global.FontDefault, new Rectangle(0, 0, GameLoop.GameWidth, GameLoop.GameHeight), map.Tiles);
+            TileBase[] mapArr = new TileBase[map._TileDict.Count];
+            map._TileDict.Values.CopyTo(mapArr, 0);
+            MapConsole = new SadConsole.ScrollingConsole(GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height, Global.FontDefault, new Rectangle(0, 0, GameLoop.GameWidth, GameLoop.GameHeight), mapArr);
             SyncMapEntities(map);
         }
 
@@ -231,13 +287,18 @@ namespace TearsInRain.UI {
                 }
             } else {
                 if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) { ChatLog.Unfocus(); }
-                if (Global.KeyboardState.IsKeyReleased(Keys.Enter)) {
-                    var name = GameLoop.NetworkingManager.userManager.GetCurrentUser().Username;
-                    var assembled = name + ": " + ChatLog.GetText();
-                    GameLoop.NetworkingManager.SendNetMessage(1, System.Text.Encoding.UTF8.GetBytes(assembled));
+                if (Global.KeyboardState.IsKeyReleased(Keys.Enter) && GameLoop.NetworkingManager.discord.GetLobbyManager() != null) {
+                    if (ChatLog.GetText() != "") {
+                        var assembled = GameLoop.NetworkingManager.userManager.GetCurrentUser().Username + ": " + ChatLog.GetText();
 
-                    ChatLog.Add(assembled);
-                    ChatLog.ClearText();
+                        GameLoop.NetworkingManager.SendNetMessage(1, System.Text.Encoding.UTF8.GetBytes(assembled));
+
+                        ChatLog.Add(assembled);
+                        ChatLog.ClearText();
+                        
+                    } else {
+                        ChatLog.Refocus();
+                    }
                 }
             }
         }

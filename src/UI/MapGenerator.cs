@@ -81,16 +81,23 @@ namespace TearsInRain.UI {
 
 
         private void CreateFloor(Point location) {
-            _map.Tiles[location.ToIndex(_map.Width)] = new TileFloor();
+            _map._TileDict[location] = new TileFloor();
         }
 
         private void CreateWall(Point location) {
-            _map.Tiles[location.ToIndex(_map.Width)] = new TileWall();
+            _map._TileDict[location] = new TileWall();
         }
 
         private void FloodWalls() {
-            for (int i = 0; i < _map.Tiles.Length; i++)
-                _map.Tiles[i] = new TileWall();
+            for(int x = 0; x < _map.Width; x++) {
+                for (int y = 0; y < _map.Height; y++) {
+                    Point location = new Point(x, y);
+                    if (!_map._TileDict.ContainsKey(location)) {
+                        _map._TileDict.Add(location, new TileWall());
+                    }
+                }
+            }
+                _map._TileDict[new Point()] = new TileWall();
         }
 
         private List<Point> GetBorderCellLocations(Rectangle room) {
@@ -161,14 +168,17 @@ namespace TearsInRain.UI {
                 int locationIndex = location.ToIndex(_map.Width);
                 if (IsPotentialDoor(location)) {
                     TileDoor newDoor = new TileDoor(false, false);
-                    _map.Tiles[locationIndex] = newDoor;
+                    _map._TileDict[location] = newDoor;
                 }
             }
         }
 
         private bool IsPotentialDoor(Point location) {
             int locationIndex = location.ToIndex(_map.Width);
-            if (_map.Tiles[locationIndex] != null && _map.Tiles[locationIndex] is TileWall)
+            //if (_map.Tiles[locationIndex] != null && _map.Tiles[locationIndex] is TileWall)
+            //    return false;
+
+            if (_map._TileDict[location] != null && _map._TileDict[location] is TileWall)
                 return false;
 
             Point right = new Point(location.X + 1, location.Y);
@@ -176,20 +186,32 @@ namespace TearsInRain.UI {
             Point top = new Point(location.X, location.Y - 1);
             Point bottom = new Point(location.X, location.Y + 1);
 
-            if (_map.GetTileAt<TileDoor>(location.X, location.Y) != null ||
-                _map.GetTileAt<TileDoor>(right.X, right.Y) != null ||
-                _map.GetTileAt<TileDoor>(left.X, left.Y) != null ||
-                _map.GetTileAt<TileDoor>(top.X, top.Y) != null ||
-                _map.GetTileAt<TileDoor>(bottom.X, bottom.Y) != null ) {
+            //if (_map.GetTileAt<TileDoor>(location.X, location.Y) != null ||  _map.GetTileAt<TileDoor>(right.X, right.Y) != null ||  _map.GetTileAt<TileDoor>(left.X, left.Y) != null || _map.GetTileAt<TileDoor>(top.X, top.Y) != null || _map.GetTileAt<TileDoor>(bottom.X, bottom.Y) != null ) {
+            //    return false;
+            //}
+
+            //if ((!_map.Tiles[right.ToIndex(_map.Width)].IsBlockingMove && !_map.Tiles[left.ToIndex(_map.Width)].IsBlockingMove) && _map.Tiles[top.ToIndex(_map.Width)].IsBlockingMove && _map.Tiles[bottom.ToIndex(_map.Width)].IsBlockingMove) {
+            //    return true;
+            //}
+
+            //if (_map.Tiles[right.ToIndex(_map.Width)].IsBlockingMove && _map.Tiles[left.ToIndex(_map.Width)].IsBlockingMove && !_map.Tiles[top.ToIndex(_map.Width)].IsBlockingMove && !_map.Tiles[bottom.ToIndex(_map.Width)].IsBlockingMove) {
+            //    return true;
+            //}
+
+            if (_map.GetTileAt<TileDoor>(location) != null || _map.GetTileAt<TileDoor>(right) != null || _map.GetTileAt<TileDoor>(left) != null || _map.GetTileAt<TileDoor>(top) != null || _map.GetTileAt<TileDoor>(bottom) != null) {
                 return false;
             }
 
-            if ((!_map.Tiles[right.ToIndex(_map.Width)].IsBlockingMove && !_map.Tiles[left.ToIndex(_map.Width)].IsBlockingMove) && _map.Tiles[top.ToIndex(_map.Width)].IsBlockingMove && _map.Tiles[bottom.ToIndex(_map.Width)].IsBlockingMove) {
-                return true;
+            if (_map._TileDict.ContainsKey(left) && _map._TileDict.ContainsKey(right) && _map._TileDict.ContainsKey(top) && _map._TileDict.ContainsKey(bottom)) {
+                if ((!_map._TileDict[right].IsBlockingMove && !_map._TileDict[left].IsBlockingMove) &&  _map._TileDict[top].IsBlockingMove && _map._TileDict[bottom].IsBlockingMove) {
+                    return true;
+                }
             }
 
-            if (_map.Tiles[right.ToIndex(_map.Width)].IsBlockingMove && _map.Tiles[left.ToIndex(_map.Width)].IsBlockingMove && !_map.Tiles[top.ToIndex(_map.Width)].IsBlockingMove && !_map.Tiles[bottom.ToIndex(_map.Width)].IsBlockingMove) {
-                return true;
+            if (_map._TileDict.ContainsKey(left) && _map._TileDict.ContainsKey(right) && _map._TileDict.ContainsKey(top) && _map._TileDict.ContainsKey(bottom)) {
+                if (_map._TileDict[right].IsBlockingMove && _map._TileDict[left].IsBlockingMove && !_map._TileDict[top].IsBlockingMove && !_map._TileDict[bottom].IsBlockingMove) {
+                    return true;
+                }
             }
 
             return false;

@@ -1,14 +1,17 @@
 ﻿using Discord;
+using Newtonsoft.Json;
 using System;
+using TearsInRain.UI;
 
 namespace TearsInRain {
     class NetworkingManager {
         public Discord.Discord discord;
         private static long applicationID = 579827348665532425;
 
-        public long myUID;
-        public long hostUID;
-        public long lobbyID;
+        public long myUID = 0;
+        public long hostUID = 0;
+        public long lobbyID = 0;
+        public string myUsername = "";
 
         public UserManager userManager;
 
@@ -23,6 +26,7 @@ namespace TearsInRain {
             // Reliable on 0, unreliable on 1
             lobbyManager.OpenNetworkChannel(lobbyId, 0, true); // Game Logic
             lobbyManager.OpenNetworkChannel(lobbyId, 1, false); // Chat Logic
+            lobbyManager.OpenNetworkChannel(lobbyId, 2, true); // World Logic
 
             lobbyManager.OnNetworkMessage += processMessage;
             
@@ -42,6 +46,17 @@ namespace TearsInRain {
 
                // if (myUID == hostUID) { SendNetMessage(channelId, data, userId); }
             }
+
+            if (channelId == 2) { // World Data Processing
+                var json = System.Text.Encoding.UTF8.GetString(data);
+
+                System.Console.WriteLine(json);
+
+                if (json != "a") {
+                    GameLoop.UIManager.MessageLog.Add("Map data received");
+                   // GameLoop.World.CurrentMap = JsonConvert.DeserializeObject<Map>(json, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+                }
+            }
         }
 
         public void SendNetMessage(byte channel, byte[] packet, long ignoredID=0) {
@@ -49,6 +64,10 @@ namespace TearsInRain {
 
             foreach (Discord.User user in lobbyManager.GetMemberUsers(lobbyID)) {
                 lobbyManager.SendNetworkMessage(lobbyID, user.Id, channel, packet);
+            }
+
+            if (channel == 2) {
+                GameLoop.UIManager.MessageLog.Add("Sent Map Packet");
             }
 
 
@@ -73,6 +92,7 @@ namespace TearsInRain {
 
         public NetworkingManager() {
             discord = new Discord.Discord(applicationID, (UInt64)Discord.CreateFlags.Default);
+            userManager = discord.GetUserManager();
             discord.RunCallbacks();
         }
 

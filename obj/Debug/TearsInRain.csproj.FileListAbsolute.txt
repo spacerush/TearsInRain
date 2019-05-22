@@ -9,19 +9,14 @@ C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\x86\libopenal.so.1
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\x64\libopenal.so.1
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\libSDL2-2.0.0.dylib
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\libopenal.1.dylib
-C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TearsInRainGame.exe
-C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TearsInRainGame.pdb
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\MonoGame.Framework.dll
 C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRain.csprojAssemblyReference.cache
 C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRain.csproj.CoreCompileInputs.cache
 C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRain.csproj.CopyComplete
-C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRainGame.exe
-C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRainGame.pdb
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Content\floor.xnb
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Content\wall.xnb
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Content\player.xnb
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Content\actor.xnb
-C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TearsInRainGame.exe.config
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Microsoft.Win32.Primitives.dll
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\netstandard.dll
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\System.AppContext.dll
@@ -122,10 +117,8 @@ C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Newtonsoft.Json.dl
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\SadConsole.dll
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Newtonsoft.Json.xml
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\SadConsole.xml
-C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\GoRogue.dll
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Priority Queue.dll
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Troschuetz.Random.dll
-C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\GoRogue.xml
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Priority Queue.pdb
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Priority Queue.xml
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Troschuetz.Random.xml
@@ -134,3 +127,11 @@ C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\fonts\Cheepicus12.
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\discord_game_sdk.dll
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TextCopy.dll
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TextCopy.xml
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\Content\icon.xnb
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TearsInRain.exe.config
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TearsInRain.exe
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\TearsInRain.pdb
+C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRain.exe
+C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRain.pdb
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\GoRogue.dll
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\GoRogue.xml

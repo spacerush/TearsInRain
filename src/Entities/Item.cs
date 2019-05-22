@@ -2,8 +2,8 @@
 using Microsoft.Xna.Framework;
 
 namespace TearsInRain.Entities {
-    public class Item : Entity {
-        private int _condition;
+    public class Item : TIREntity {
+        public int _condition; 
         public int Weight { get; set; }
 
         public int Condition {

@@ -85,6 +85,10 @@ namespace TearsInRain.UI {
             _messageTextBox.IsFocused = false;
         }
 
+        public void Refocus() {
+            _messageTextBox.IsFocused = true;
+        }
+
         public string GetText() {
             return _messageTextBox.Text.ToString();
         }

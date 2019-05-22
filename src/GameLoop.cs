@@ -50,7 +50,9 @@ namespace TearsInRain {
 
             UIManager = new UIManager();
             CommandManager = new CommandManager();
+
             NetworkingManager = new NetworkingManager();
+
             World = new World();
             UIManager.Init();
             SadConsole.Game.Instance.Window.ClientSizeChanged += Window_ClientSizeChanged;

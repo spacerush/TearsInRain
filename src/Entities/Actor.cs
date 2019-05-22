@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 
 namespace TearsInRain.Entities {
-    public abstract class Actor : Entity {
-        private int _health; // current health
-        private int _maxHealth; // max possible health
+    
+    public abstract class Actor : TIREntity {
+        public int _health; // current health
+        public int _maxHealth; // max possible health
 
         public int Health { get; set; }
         public int MaxHealth { get; set; }

@@ -2,12 +2,12 @@
 using Microsoft.Xna.Framework;
 using SadConsole;
 
-namespace TearsInRain.Tiles {
-    public abstract class TileBase : Cell {
+namespace TearsInRain.Tiles { 
+    public class TileBase : Cell {
         public bool IsBlockingMove;
         public bool IsBlockingLOS;
-
-        protected string Name;
+        public string Name;
+        
 
 
 

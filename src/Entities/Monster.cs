@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 
-namespace TearsInRain.Entities {
+namespace TearsInRain.Entities { 
     public class Monster : Actor {
         Random rndNum = new Random();
 
