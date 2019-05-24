@@ -13,7 +13,7 @@ namespace TearsInRain.UI {
         private SadConsole.Controls.ScrollBar _messageScrollBar;
         private SadConsole.Controls.TextBox _messageTextBox;
         private int _scrollBarCurrentPosition;
-        private int _windowBorderThickness = 2;
+        private int _windowBorderThickness = 3;
 
         public ChatLogWindow(int width, int height, string title) : base(width, height) {
             _lines = new Queue<string>();

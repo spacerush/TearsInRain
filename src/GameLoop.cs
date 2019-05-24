@@ -19,6 +19,8 @@ namespace TearsInRain {
         static int oldWindowPixelWidth;
         static int oldWindowPixelHeight;
 
+        public static Random Random = new Random();
+
         static void Main(string[] args) {
             SadConsole.Game.Create(GameWidth, GameHeight);
             
@@ -37,12 +39,14 @@ namespace TearsInRain {
 
         private static void Init() {
             SadConsole.Themes.WindowTheme windowTheme = new SadConsole.Themes.WindowTheme(new SadConsole.Themes.Colors());
-            windowTheme.FillStyle.Background = Color.Black;
             windowTheme.BorderLineStyle = CellSurface.ConnectedLineThin;
-            windowTheme.TitleStyle.Foreground = Color.White;
-
             SadConsole.Themes.Library.Default.WindowTheme = windowTheme;
-            SadConsole.Themes.Library.Default.WindowTheme.RefreshTheme(new SadConsole.Themes.Colors());
+
+            SadConsole.Themes.Library.Default.Colors.TitleText = Color.White;
+            SadConsole.Themes.Library.Default.Colors.ControlHostBack = Color.Black;
+            SadConsole.Themes.Library.Default.Colors.Appearance_ControlNormal = new Cell();
+            SadConsole.Themes.Library.Default.Colors.Appearance_ControlOver = new Cell(Color.Blue, Color.Black);
+            SadConsole.Themes.Library.Default.Colors.Appearance_ControlMouseDown = new Cell(Color.DarkBlue, Color.Black);
 
 
 

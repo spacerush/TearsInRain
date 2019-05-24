@@ -40,7 +40,7 @@ namespace TearsInRain.UI {
             CreateConsoles();
 
             MessageLog = new MessageLogWindow(GameLoop.GameWidth / 2, GameLoop.GameHeight / 3, "[Message Log]");
-            MessageLog.Title.Align(HorizontalAlignment.Center, MessageLog.Width); 
+            MessageLog.Title.Align(HorizontalAlignment.Center, MessageLog.Title.Length); 
             Children.Add(MessageLog);
             MessageLog.Show();
             MessageLog.Position = new Point(0, GameLoop.GameHeight / 2);

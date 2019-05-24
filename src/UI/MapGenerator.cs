@@ -34,7 +34,7 @@ namespace TearsInRain {
                 }
             }
             
-            FloodWalls();
+            FloodFloor();
             
             foreach (Rectangle room in Rooms) {
                 CreateRoom(room);
@@ -60,15 +60,15 @@ namespace TearsInRain {
             return _map;
         }
         
-        private void FloodWalls() {
+        private void FloodFloor() {
             for (int i = 0; i < _map.Tiles.Length; i++) {
-                _map.Tiles[i] = new TileWall();
+                _map.Tiles[i] = new TileFloor(type:"grass");
             }
         }
         
         private void CreateRoom(Rectangle room) {
-            for (int x = room.Left + 1; x < room.Right - 1; x++) {
-                for (int y = room.Top + 1; y < room.Bottom - 1; y++) {
+            for (int x = room.Left + 1; x < room.Right; x++) {
+                for (int y = room.Top + 1; y < room.Bottom; y++) {
                     CreateFloor(new Point(x, y));
                 }
             }
@@ -80,7 +80,7 @@ namespace TearsInRain {
         }
         
         private void CreateFloor(Point location) {
-            _map.Tiles[location.ToIndex(_map.Width)] = new TileFloor();
+            _map.Tiles[location.ToIndex(_map.Width)] = new TileFloor(type:"room");
         }
         
         private void CreateWall(Point location) {
