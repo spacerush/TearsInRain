@@ -20,6 +20,7 @@ namespace TearsInRain.UI {
         public Window MultiplayerWindow;
 
         public Button hostButton;
+        public Button closeButton;
         public Button joinButton;
         public Button copyButton;
         public Button testButton;
@@ -38,12 +39,14 @@ namespace TearsInRain.UI {
         public void Init() {
             CreateConsoles();
 
-            MessageLog = new MessageLogWindow(GameLoop.GameWidth / 2, GameLoop.GameHeight / 3, "Message Log");
+            MessageLog = new MessageLogWindow(GameLoop.GameWidth / 2, GameLoop.GameHeight / 3, "[Message Log]");
+            MessageLog.Title.Align(HorizontalAlignment.Center, MessageLog.Width); 
             Children.Add(MessageLog);
             MessageLog.Show();
             MessageLog.Position = new Point(0, GameLoop.GameHeight / 2);
 
-            ChatLog = new ChatLogWindow(GameLoop.GameWidth / 2, GameLoop.GameHeight / 3, "Chat Log");
+            ChatLog = new ChatLogWindow(GameLoop.GameWidth / 2, GameLoop.GameHeight / 3, "[Chat Log]");
+            ChatLog.Title.Align(HorizontalAlignment.Center, ChatLog.Width, '-');
             Children.Add(MessageLog);
             ChatLog.Show();
             ChatLog.IsVisible = false;
@@ -54,16 +57,16 @@ namespace TearsInRain.UI {
 
             LoadMap(GameLoop.World.CurrentMap);
 
-            CreateMapWindow(GameLoop.GameWidth / 2, GameLoop.GameHeight / 2, "Game Map");
+            CreateMapWindow(GameLoop.GameWidth / 2, GameLoop.GameHeight / 2,"[Game Map]");
             UseMouse = true;
 
-            CreateMultiplayerWindow(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2, "Multiplayer");
+            CreateMultiplayerWindow(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2, "[Multiplayer]");
 
             CenterOnActor(GameLoop.World.Player);
         }
 
         public void CreateConsoles() {
-            MapConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);
+            MapConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);  
             MultiConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);
         } 
 
@@ -78,7 +81,7 @@ namespace TearsInRain.UI {
             MapConsole.Position = new Point(1, 1);
             
             
-            MapWindow.Title = title.Align(HorizontalAlignment.Center, mapConsoleWidth);
+            MapWindow.Title = title.Align(HorizontalAlignment.Center, mapConsoleWidth, '-');
             MapWindow.Children.Add(MapConsole);
 
             Children.Add(MapWindow);
@@ -98,10 +101,10 @@ namespace TearsInRain.UI {
             MultiConsole.ViewPort = new Rectangle(0, 0, multiConsoleW, multiConsoleH);
             MultiConsole.Position = new Point(1, 1);
 
-            Button closeButton = new Button(3, 1);
-            closeButton.Position = new Point(0, 0);
-            closeButton.Text = "[X]";
-            closeButton.MouseButtonClicked += exitButtonClick;
+            closeButton = new Button(3, 1);
+            closeButton.Position = new Point(1, 1);
+            closeButton.Text = "X";
+            closeButton.MouseButtonClicked += closeButtonClick;
 
             hostButton = new Button(6, 1);
             hostButton.Position = new Point((multiConsoleW / 2) - 3, 3);
@@ -131,10 +134,14 @@ namespace TearsInRain.UI {
             MultiplayerWindow.Add(testButton);
 
 
-            MultiplayerWindow.Title = title.Align(HorizontalAlignment.Center, multiConsoleW);
+            MultiplayerWindow.Title = title.Align(HorizontalAlignment.Center, multiConsoleW, '-');
 
             Children.Add(MultiplayerWindow);
             MultiplayerWindow.Show();
+            MultiplayerWindow.IsVisible = false;
+        }
+
+        private void closeButtonClick(object sender, MouseEventArgs e) {
             MultiplayerWindow.IsVisible = false;
         }
 
@@ -150,10 +157,6 @@ namespace TearsInRain.UI {
             if (lobbyManager != null) {
                 TextCopy.Clipboard.SetText(lobbyManager.GetLobbyActivitySecret(lobbyManager.GetLobbyId(0)));
             }
-        }
-
-        private void exitButtonClick(object sender, MouseEventArgs e) {
-            MultiplayerWindow.IsVisible = false;
         }
 
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
@@ -239,7 +242,7 @@ namespace TearsInRain.UI {
         private void SyncMapEntities(Map map) {
             MapConsole.Children.Clear();
 
-            foreach (TIREntity entity in map.Entities.Items) {
+            foreach (Entity entity in map.Entities.Items) {
                 MapConsole.Children.Add(entity);
             }
 
@@ -247,18 +250,17 @@ namespace TearsInRain.UI {
             map.Entities.ItemRemoved += OnMapEntityRemoved;
         }
 
-        public void OnMapEntityAdded (object sender, GoRogue.ItemEventArgs<TIREntity> args) {
+        public void OnMapEntityAdded (object sender, GoRogue.ItemEventArgs<Entity> args) {
             MapConsole.Children.Add(args.Item);
         }
 
-        public void OnMapEntityRemoved(object sender, GoRogue.ItemEventArgs<TIREntity> args) {
+        public void OnMapEntityRemoved(object sender, GoRogue.ItemEventArgs<Entity> args) {
             MapConsole.Children.Remove(args.Item);
         }
 
-        public void LoadMap(Map map) {
-            TileBase[] mapArr = new TileBase[map._TileDict.Count];
-            map._TileDict.Values.CopyTo(mapArr, 0);
-            MapConsole = new SadConsole.ScrollingConsole(GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height, Global.FontDefault, new Rectangle(0, 0, GameLoop.GameWidth, GameLoop.GameHeight), mapArr);
+        private void LoadMap(Map map) {
+            MapConsole = new SadConsole.ScrollingConsole(GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height, Global.FontDefault, new Rectangle(0, 0, GameLoop.GameWidth, GameLoop.GameHeight), map.Tiles);
+            
             SyncMapEntities(map);
         }
 

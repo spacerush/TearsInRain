@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework;
 
 namespace TearsInRain.Entities {
-    public class Item : TIREntity {
+    public class Item : Entity {
         public int _condition; 
         public int Weight { get; set; }
 

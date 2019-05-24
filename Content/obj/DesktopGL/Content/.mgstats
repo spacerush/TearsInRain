@@ -1,5 +1,5 @@
 Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
-"C:/Users/Annie/Desktop/TearsInRain/Content/actor.png","C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/actor.xnb","TextureProcessor","Texture2DContent",236,4181,0.1709992
-"C:/Users/Annie/Desktop/TearsInRain/Content/floor.png","C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/floor.xnb","TextureProcessor","Texture2DContent",1542,4181,0.1639771
-"C:/Users/Annie/Desktop/TearsInRain/Content/player.png","C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/player.xnb","TextureProcessor","Texture2DContent",434,4181,0.0049984
-"C:/Users/Annie/Desktop/TearsInRain/Content/wall.png","C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/wall.xnb","TextureProcessor","Texture2DContent",1551,4181,0.1649999
+"C:/Users/Annie/Desktop/TearsInRain/Content/actor.png","C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/actor.xnb","TextureProcessor","Texture2DContent",236,4181,1.451171
+"C:/Users/Annie/Desktop/TearsInRain/Content/floor.png","C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/floor.xnb","TextureProcessor","Texture2DContent",1542,4181,0.0030005
+"C:/Users/Annie/Desktop/TearsInRain/Content/player.png","C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/player.xnb","TextureProcessor","Texture2DContent",434,4181,0.0029993
+"C:/Users/Annie/Desktop/TearsInRain/Content/wall.png","C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/wall.xnb","TextureProcessor","Texture2DContent",1551,4181,0.0039992

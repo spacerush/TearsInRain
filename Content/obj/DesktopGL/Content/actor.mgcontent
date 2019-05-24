@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <SourceFile>C:/Users/Annie/Desktop/TearsInRain/Content/actor.png</SourceFile>
-  <SourceTime>2019-05-19T16:26:04.3837997-07:00</SourceTime>
+  <SourceTime>2019-05-22T18:15:48.00242-07:00</SourceTime>
   <DestFile>C:/Users/Annie/Desktop/TearsInRain/Content/bin/DesktopGL/Content/actor.xnb</DestFile>
-  <DestTime>2019-05-19T16:27:19.1749503-07:00</DestTime>
+  <DestTime>2019-05-22T18:16:34.973936-07:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2019-04-13T06:47:32-07:00</ImporterTime>
   <Processor>TextureProcessor</Processor>

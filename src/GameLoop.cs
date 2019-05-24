@@ -2,9 +2,6 @@
 using SadConsole;
 using Console = SadConsole.Console;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
-using SadConsole.Components;
 using TearsInRain.UI;
 using TearsInRain.Commands;
 
@@ -39,12 +36,20 @@ namespace TearsInRain {
         }
 
         private static void Init() {
+            SadConsole.Themes.WindowTheme windowTheme = new SadConsole.Themes.WindowTheme(new SadConsole.Themes.Colors());
+            windowTheme.FillStyle.Background = Color.Black;
+            windowTheme.BorderLineStyle = CellSurface.ConnectedLineThin;
+            windowTheme.TitleStyle.Foreground = Color.White;
+
+            SadConsole.Themes.Library.Default.WindowTheme = windowTheme;
+            SadConsole.Themes.Library.Default.WindowTheme.RefreshTheme(new SadConsole.Themes.Colors());
+
+
+
             Global.FontDefault = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
             Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 100, 75, 0, 0);
             Global.ResetRendering();
-
-            SadConsole.Themes.Library.Default.WindowTheme = new GlobalTheme();
-            SadConsole.Themes.Library.Default.WindowTheme.RefreshTheme(SadConsole.Themes.Library.Default.Colors);
+            
 
             Settings.AllowWindowResize = true;
 
@@ -58,6 +63,7 @@ namespace TearsInRain {
             SadConsole.Game.Instance.Window.ClientSizeChanged += Window_ClientSizeChanged;
 
             SadConsole.Game.OnUpdate += postUpdate;
+
         }
 
         private static void postUpdate(GameTime time) {

@@ -64,7 +64,6 @@
     <Compile Include="Discord\StorageManager.cs" />
     <Compile Include="Discord\StoreManager.cs" />
     <Compile Include="src\NetworkingManager.cs" />
-    <Compile Include="src\UI\GlobalTheme.cs" />
     <Compile Include="src\UI\Map.cs" />
     <Compile Include="src\UI\MapGenerator.cs" />
     <Compile Include="src\Entities\Player.cs" />

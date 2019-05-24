@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework;
 
 namespace TearsInRain.Entities {
     
-    public abstract class Actor : TIREntity {
+    public abstract class Actor : Entity {
         public int _health; // current health
         public int _maxHealth; // max possible health
 

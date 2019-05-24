@@ -18,7 +18,7 @@ namespace TearsInRain.UI {
         public ChatLogWindow(int width, int height, string title) : base(width, height) {
             _lines = new Queue<string>();
             CanDrag = true;
-            Title = title.Align(HorizontalAlignment.Center, Width);
+            Title = title.Align(HorizontalAlignment.Center, Width, '-');
 
             _messageConsole = new SadConsole.ScrollingConsole(width - _windowBorderThickness, _maxLines);
             _messageConsole.Position = new Point(1, 1);
