@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Discord;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -24,6 +25,8 @@ namespace TearsInRain.UI {
         public Button joinButton;
         public Button copyButton;
         public Button testButton;
+
+        public long tempUID = 0;
 
         public UIManager() {
             IsVisible = true;
@@ -62,7 +65,7 @@ namespace TearsInRain.UI {
 
             CreateMultiplayerWindow(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2, "[Multiplayer]");
 
-            CenterOnActor(GameLoop.World.Player);
+            CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
         }
 
         public void CreateConsoles() {
@@ -86,7 +89,7 @@ namespace TearsInRain.UI {
 
             Children.Add(MapWindow);
 
-            MapConsole.Children.Add(GameLoop.World.Player);
+            MapConsole.Children.Add(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
 
             MapWindow.Show();
         }
@@ -160,7 +163,7 @@ namespace TearsInRain.UI {
         }
 
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-           // GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+          //  GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             var txn = lobbyManager.GetLobbyCreateTransaction();
@@ -204,6 +207,14 @@ namespace TearsInRain.UI {
                     ChatLog.Add("User connected: " + user.Username);
                     kickstartNet();
                     GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes(Utils.SimpleMapString(GameLoop.World.CurrentMap.Tiles)));
+
+                    var playerList = "p_list";
+
+                    GameLoop.World.CreatePlayer(userId);
+
+                    foreach(KeyValuePair<long, Player> player in GameLoop.World.players) {
+                        playerList += "|" + player.Value;
+                    }
                 }
             });
         }
@@ -224,6 +235,7 @@ namespace TearsInRain.UI {
                     MessageLog.Add("Connected to lobby successfully!");
                     GameLoop.NetworkingManager.InitNetworking(lobby.Id);
                     kickstartNet();
+                    GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID);
                 } else {
                     MessageLog.Add("Encountered error: " + result);
                 }
@@ -268,12 +280,6 @@ namespace TearsInRain.UI {
         private void CheckKeyboard() {
             if (!ChatLog.TextBoxFocused()) {
                 if (Global.KeyboardState.IsKeyReleased(Keys.F5)) { Settings.ToggleFullScreen(); }
-
-                if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(0, -1)); CenterOnActor(GameLoop.World.Player); }
-                if (Global.KeyboardState.IsKeyPressed(Keys.Down) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(0, 1)); CenterOnActor(GameLoop.World.Player); }
-                if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(-1, 0)); CenterOnActor(GameLoop.World.Player); }
-                if (Global.KeyboardState.IsKeyPressed(Keys.Right) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.Player, new Point(1, 0)); CenterOnActor(GameLoop.World.Player); }
-
                 if (Global.KeyboardState.IsKeyReleased(Keys.Tab)) {
                     if (MultiplayerWindow.IsVisible)
                         MultiplayerWindow.IsVisible = false;
@@ -287,6 +293,14 @@ namespace TearsInRain.UI {
                         ChatLog.IsVisible = false;
                     else
                         ChatLog.IsVisible = true;
+                }
+
+                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+
+                    if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.players[GameLoop.NetworkingManager.myUID], new Point(0, -1)); CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]); }
+                    if (Global.KeyboardState.IsKeyPressed(Keys.Down) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.players[GameLoop.NetworkingManager.myUID], new Point(0, 1)); CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]); }
+                    if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.players[GameLoop.NetworkingManager.myUID], new Point(-1, 0)); CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]); }
+                    if (Global.KeyboardState.IsKeyPressed(Keys.Right) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) { GameLoop.CommandManager.MoveActorBy(GameLoop.World.players[GameLoop.NetworkingManager.myUID], new Point(1, 0)); CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]); }
                 }
             } else {
                 if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) { ChatLog.Unfocus(); }

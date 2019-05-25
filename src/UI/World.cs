@@ -1,9 +1,8 @@
-﻿using System;
-using SadConsole;
-using Microsoft.Xna.Framework;
-using SadConsole.Components;
+﻿using System; 
+using Microsoft.Xna.Framework; 
 using TearsInRain.Tiles;
 using TearsInRain.Entities;
+using System.Collections.Generic;
 
 namespace TearsInRain {
     public class World {
@@ -16,13 +15,13 @@ namespace TearsInRain {
         private int _minRoomSize = 4;
         private int _maxRoomSize = 15;
         public Map CurrentMap { get; set; }
-        
-        public Player Player { get; set; }
+
+        public Dictionary<long, Player> players = new Dictionary<long, Player>();
         
         public World() {
             CreateMap();
             
-            CreatePlayer();
+            CreatePlayer(GameLoop.NetworkingManager.myUID);
             
             CreateMonsters();
             
@@ -36,7 +35,7 @@ namespace TearsInRain {
             CurrentMap = new Map(tiles.Length, 1);
             CurrentMap.Tiles = tiles; 
 
-            CreatePlayer();
+            CreatePlayer(GameLoop.NetworkingManager.myUID);
             CreateMonsters();
             CreateLoot();
         }
@@ -69,17 +68,20 @@ namespace TearsInRain {
             }
         }
         
-        private void CreatePlayer() {
-            Player = new Player(Color.Yellow, Color.Transparent);
+        public void CreatePlayer(long playerUID) {
+            Player newPlayer = new Player(Color.Yellow, Color.Transparent);
             
             for (int i = 0; i < CurrentMap.Tiles.Length; i++) {
                 if (!CurrentMap.Tiles[i].IsBlockingMove) {
-                    Player.Position = SadConsole.Helpers.GetPointFromIndex(i, CurrentMap.Width);
+                    newPlayer.Position = SadConsole.Helpers.GetPointFromIndex(i, CurrentMap.Width);
                     break;
                 }
             }
-            
-            CurrentMap.Add(Player);
+
+            if (!players.ContainsKey(playerUID)) {
+                players.Add(playerUID, newPlayer);
+                CurrentMap.Add(players[playerUID]);
+            }
         }
         
         private void CreateLoot() {

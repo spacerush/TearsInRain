@@ -20,7 +20,6 @@ namespace TearsInRain {
         static int oldWindowPixelHeight;
 
         public static Random Random = new Random();
-
         static void Main(string[] args) {
             SadConsole.Game.Create(GameWidth, GameHeight);
             

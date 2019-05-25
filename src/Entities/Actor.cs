@@ -38,6 +38,9 @@ namespace TearsInRain.Entities {
 
 
                 Position += positionChange;
+
+                string msg = "move_p" + "|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y;
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
                 return true;
             } else {
                 return false;

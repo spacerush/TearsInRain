@@ -12,6 +12,7 @@ namespace TearsInRain {
         private static long applicationID = 579827348665532425;
 
         public long myUID = 0;
+        public bool updateUID = true;
         public long hostUID = 0;
         public long lobbyID = 0;
         public string myUsername = "";
@@ -35,7 +36,7 @@ namespace TearsInRain {
             lobbyManager.OnNetworkMessage += processMessage;
             
 
-            hostUID = lobbyManager.GetLobby(lobbyID).OwnerId;
+            hostUID = lobbyManager.GetLobby(lobbyID).OwnerId;  
             // We're ready to go!
         }
 
@@ -43,6 +44,26 @@ namespace TearsInRain {
             // DO SOME NETWORK PROCESSING BULLSHIT HERE
             if (data == System.Text.Encoding.UTF8.GetBytes("a")) {
                 return;
+            }
+
+            if (channelId == 0) {
+                var msg = System.Text.Encoding.UTF8.GetString(data);
+                var splitMsg = msg.Split('|');
+
+                System.Console.WriteLine(msg);
+                System.Console.WriteLine(splitMsg[0]);
+
+                if (splitMsg[0] == "move_p") {
+                    if (GameLoop.World.players[Convert.ToInt64(splitMsg[1])] != null) {
+                        GameLoop.World.players[Convert.ToInt64(splitMsg[1])].Position = new Point(Convert.ToInt32(splitMsg[2]), Convert.ToInt32(splitMsg[3]));
+                    }
+                }
+
+                if (splitMsg[0] == "p_list") {
+                    for (int i = 1; i < splitMsg.Length; i++) {
+                        GameLoop.World.CreatePlayer(Convert.ToInt64(splitMsg[i]));
+                    }
+                }
             }
 
             if (channelId == 1) { // Chat Processing 
@@ -73,38 +94,35 @@ namespace TearsInRain {
         public void SendNetMessage(byte channel, byte[] packet, long ignoredID=0) {
             var lobbyManager = discord.GetLobbyManager();
 
-            foreach (Discord.User user in lobbyManager.GetMemberUsers(lobbyID)) {
-                lobbyManager.SendNetworkMessage(lobbyID, user.Id, channel, packet);
+            try {
+
+                foreach (Discord.User user in lobbyManager.GetMemberUsers(lobbyID)) {
+                    lobbyManager.SendNetworkMessage(lobbyID, user.Id, channel, packet);
+                }
+
+                if (channel == 2) {
+                    GameLoop.UIManager.MessageLog.Add("Sent Map Packet");
+                }
+
+            } catch (Discord.ResultException e) {
             }
 
-            if (channel == 2) {
-                GameLoop.UIManager.MessageLog.Add("Sent Map Packet");
-            }
-
-
-           //lobbyManager.FlushNetwork();
-
-
-                //if (myUID != hostUID) {
-                //    lobbyManager.SendNetworkMessage(lobbyID, hostUID, channel, packet);
-
-                //    lobbyManager.FlushNetwork();
-                //} else {
-                //    foreach (Discord.User user in lobbyManager.GetMemberUsers(lobbyID)) {
-                //        if (ignoredID == user.Id) { continue; }
-                //        lobbyManager.SendNetworkMessage(lobbyID, user.Id, channel, packet);
-                //    }
-
-
-                //    lobbyManager.FlushNetwork();
-                //}
-
-            }
+        }
 
         public NetworkingManager() {
             discord = new Discord.Discord(applicationID, (UInt64)Discord.CreateFlags.Default);
             userManager = discord.GetUserManager();
             discord.RunCallbacks();
+
+            if (userManager != null) {
+
+                try {
+                    myUID = userManager.GetCurrentUser().Id;
+                } catch (Discord.ResultException e) {
+                    myUID = 0;
+                }
+
+            }
         }
 
         public void changeClientTarget(string cID) { // Only used for testing multiple clients on a single computer
@@ -122,6 +140,18 @@ namespace TearsInRain {
 
         public void Update() {
             discord.RunCallbacks();
+            
+            try {
+                if (myUID != userManager.GetCurrentUser().Id) {
+                    myUID = userManager.GetCurrentUser().Id;
+
+                    GameLoop.World.players.Add(myUID, GameLoop.World.players[0]);
+                    GameLoop.World.players.Remove(0);
+                    updateUID = false;
+                }
+            } catch (Discord.ResultException e) {
+
+            }
         }
     }
 }
