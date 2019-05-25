@@ -1,6 +1,9 @@
 ﻿using Discord;
+using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
+using SadConsole;
 using System;
+using TearsInRain.Tiles;
 using TearsInRain.UI;
 
 namespace TearsInRain {
@@ -12,6 +15,7 @@ namespace TearsInRain {
         public long hostUID = 0;
         public long lobbyID = 0;
         public string myUsername = "";
+        public string MD5map = "";
 
         public UserManager userManager;
 
@@ -48,13 +52,20 @@ namespace TearsInRain {
             }
 
             if (channelId == 2) { // World Data Processing
-                var json = System.Text.Encoding.UTF8.GetString(data);
+                var encoded = System.Text.Encoding.UTF8.GetString(data);
 
-                System.Console.WriteLine(json);
-
-                if (json != "a") {
+                if (encoded != "a") {
                     GameLoop.UIManager.MessageLog.Add("Map data received");
-                   // GameLoop.World.CurrentMap = JsonConvert.DeserializeObject<Map>(json, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
+                    TileBase[] pretiles = Utils.GetMapFromString(encoded);
+                    TileBase[] tiles = new TileBase[encoded.Length];
+                    tiles = pretiles;
+                    Map newMap = new Map(tiles);
+                    GameLoop.World.CurrentMap = newMap;
+                    //GameLoop.UIManager.MapConsole = new SadConsole.ScrollingConsole(GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height, Global.FontDefault, new Rectangle(0, 0, GameLoop.GameWidth, GameLoop.GameHeight), newMap.Tiles);
+                    //GameLoop.UIManager.MapWindow.Invalidate();
+                    GameLoop.UIManager.MapConsole.SetSurface(tiles, 100, 100);
+
+                    GameLoop.UIManager.MessageLog.Add("Map processed " + GameLoop.World.CurrentMap.Tiles.Length);
                 }
             }
         }

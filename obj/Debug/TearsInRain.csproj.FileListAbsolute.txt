@@ -135,3 +135,4 @@ C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRain.exe
 C:\Users\Annie\Desktop\TearsInRain\obj\Debug\TearsInRain.pdb
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\GoRogue.dll
 C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\GoRogue.xml
+C:\Users\Annie\Desktop\TearsInRain\bin\DesktopGL\AnyCPU\Debug\RogueSharp.dll

@@ -1,9 +1,8 @@
-﻿using System;
-using Microsoft.Xna.Framework;
-using TearsInRain.Tiles;
+﻿using TearsInRain.Tiles;
 using SadConsole;
 using TearsInRain.Entities;
 using System.Linq;
+using Point = Microsoft.Xna.Framework.Point;
 
 namespace TearsInRain {
     public class Map {
@@ -24,6 +23,16 @@ namespace TearsInRain {
             Tiles = new TileBase[width * height];
             Entities = new GoRogue.MultiSpatialMap<Entity>();
         }
+
+        public Map(TileBase[] tiles) {
+            _width = 100;
+            _height = 100;
+            Tiles = new TileBase[100 * 100];
+            Tiles = tiles;
+            Entities = new GoRogue.MultiSpatialMap<Entity>();
+        }
+
+
         public bool IsTileWalkable(Point location) {
             if (location.X < 0 || location.Y < 0 || location.X >= Width || location.Y >= Height)
                 return false;

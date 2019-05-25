@@ -8,6 +8,8 @@ namespace TearsInRain.Tiles {
 
         public TileDoor(bool locked, bool open) : base (Color.Orange, Color.Transparent, '+') {
             Glyph = '+';
+            Name = "door";
+            Background = new Color(71, 36, 0);
 
             Locked = locked;
             IsOpen = open;

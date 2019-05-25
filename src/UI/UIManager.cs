@@ -148,7 +148,7 @@ namespace TearsInRain.UI {
         private void testButtonClick(object sender, MouseEventArgs e) {
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             if (lobbyManager != null) {
-                GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes("fuck"));
+                GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes(Utils.SimpleMapString(GameLoop.World.CurrentMap.Tiles)));
             }
         }
 
@@ -160,7 +160,7 @@ namespace TearsInRain.UI {
         }
 
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-            GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+           // GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             var txn = lobbyManager.GetLobbyCreateTransaction();
@@ -203,6 +203,7 @@ namespace TearsInRain.UI {
                 if (result == Discord.Result.Ok) {
                     ChatLog.Add("User connected: " + user.Username);
                     kickstartNet();
+                    GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes(Utils.SimpleMapString(GameLoop.World.CurrentMap.Tiles)));
                 }
             });
         }
@@ -214,7 +215,7 @@ namespace TearsInRain.UI {
         }
 
         private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-            GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+          //  GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
@@ -258,7 +259,7 @@ namespace TearsInRain.UI {
             MapConsole.Children.Remove(args.Item);
         }
 
-        private void LoadMap(Map map) {
+        public void LoadMap(Map map) {
             MapConsole = new SadConsole.ScrollingConsole(GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height, Global.FontDefault, new Rectangle(0, 0, GameLoop.GameWidth, GameLoop.GameHeight), map.Tiles);
             
             SyncMapEntities(map);

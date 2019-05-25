@@ -29,6 +29,18 @@ namespace TearsInRain {
             CreateLoot();
         }
 
+        public World(TileBase[] tiles) {
+            _mapTiles = new TileBase[tiles.Length];
+            _mapTiles = tiles;
+
+            CurrentMap = new Map(tiles.Length, 1);
+            CurrentMap.Tiles = tiles; 
+
+            CreatePlayer();
+            CreateMonsters();
+            CreateLoot();
+        }
+
         private void CreateMap() {
             _mapTiles = new TileBase[_mapWidth * _mapHeight];
             CurrentMap = new Map(_mapWidth, _mapHeight);
