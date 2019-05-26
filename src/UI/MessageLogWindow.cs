@@ -71,6 +71,6 @@ namespace TearsInRain.UI {
 
             _messageConsole.Cursor.Position = new Point(1, _lines.Count);
             _messageConsole.Cursor.Print(message + "\n");
-        }
+        } 
     }
 }

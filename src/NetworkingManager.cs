@@ -50,18 +50,35 @@ namespace TearsInRain {
                 var msg = System.Text.Encoding.UTF8.GetString(data);
                 var splitMsg = msg.Split('|');
 
-                System.Console.WriteLine(msg);
-                System.Console.WriteLine(splitMsg[0]);
-
-                if (splitMsg[0] == "move_p") {
+                if (splitMsg[0] == "move_p") { // Player got moved
                     if (GameLoop.World.players[Convert.ToInt64(splitMsg[1])] != null) {
                         GameLoop.World.players[Convert.ToInt64(splitMsg[1])].Position = new Point(Convert.ToInt32(splitMsg[2]), Convert.ToInt32(splitMsg[3]));
                     }
                 }
 
-                if (splitMsg[0] == "p_list") {
+                if (splitMsg[0] == "p_list") { // Translates a list of players being sent
                     for (int i = 1; i < splitMsg.Length; i++) {
                         GameLoop.World.CreatePlayer(Convert.ToInt64(splitMsg[i]));
+                    }
+                }
+
+                if (splitMsg[0] == "t_data") { // Used for complex tile data
+                    if (splitMsg[1] == "door") {
+                        if (GameLoop.World.CurrentMap.GetTileAt<TileBase>(Convert.ToInt32(splitMsg[2]), Convert.ToInt32(splitMsg[3])) is TileDoor door) {
+                            if (splitMsg[4] == "open") {
+                                door.Open();
+                            } else {
+                                door.Close();
+                            }
+
+                            if(splitMsg[5] == "lock") {
+                                door.Lock();
+                            } else {
+                                door.Unlock();
+                            }
+
+                            GameLoop.UIManager.MapConsole.IsDirty = true;
+                        }
                     }
                 }
             }
@@ -94,16 +111,10 @@ namespace TearsInRain {
         public void SendNetMessage(byte channel, byte[] packet, long ignoredID=0) {
             var lobbyManager = discord.GetLobbyManager();
 
-            try {
-
+            try { 
                 foreach (Discord.User user in lobbyManager.GetMemberUsers(lobbyID)) {
                     lobbyManager.SendNetworkMessage(lobbyID, user.Id, channel, packet);
                 }
-
-                if (channel == 2) {
-                    GameLoop.UIManager.MessageLog.Add("Sent Map Packet");
-                }
-
             } catch (Discord.ResultException e) {
             }
 

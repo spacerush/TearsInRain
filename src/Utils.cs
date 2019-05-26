@@ -1,10 +1,27 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using TearsInRain.Tiles;
 
 namespace TearsInRain {
     class Utils {
+        public static Dictionary<string, Point> Directions = new Dictionary<string, Point>();
+
+
+        public static void InitDirections() {
+            Directions.Add("UR", new Point(1, -1)); // Num9
+            Directions.Add("U", new Point(0, -1)); // Num8, UpArrow
+            Directions.Add("UL", new Point(-1, -1)); // Num7
+            Directions.Add("R", new Point(1, 0)); // Num6
+            Directions.Add("L", new Point(-1, 0)); // Num4
+            Directions.Add("DR", new Point(1, 1)); // Num3
+            Directions.Add("D", new Point(0, 1)); // Num2
+            Directions.Add("DL", new Point(-1, 1)); // Num1
+        }
+
+
         public static string CalculateMD5Hash(string input) {
             // step 1, calculate MD5 hash from input
             MD5 md5 = System.Security.Cryptography.MD5.Create();

@@ -33,5 +33,13 @@ namespace TearsInRain.Tiles {
             IsBlockingMove = false;
             Glyph = '`';
         }
+
+        public void Lock() {
+            Locked = true;
+        }
+
+        public void Unlock() {
+            Locked = false;
+        }
     }
 }

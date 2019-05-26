@@ -7,9 +7,11 @@ using TearsInRain.Commands;
 
 namespace TearsInRain {
     class GameLoop {
+        public static UInt64 GameTime = 0; // Deciseconds since game launch (Decisecond = tenth of a second)
 
-        public const int GameWidth = 120;
-        public const int GameHeight = 80;
+
+        public const int GameWidth = 100;
+        public const int GameHeight = 75;
 
         public static UIManager UIManager;
         public static World World;
@@ -29,11 +31,12 @@ namespace TearsInRain {
 
             SadConsole.Game.Instance.Run();
             SadConsole.Game.Instance.Dispose();
-            
         }
 
         private static void Update(GameTime time) {
+            GameTime = (UInt64) time.TotalGameTime.TotalMilliseconds / 100;
             NetworkingManager.Update();
+            System.Console.WriteLine(GameTime + ", " + time.TotalGameTime.TotalMilliseconds);
         }
 
         private static void Init() {
@@ -43,11 +46,12 @@ namespace TearsInRain {
 
             SadConsole.Themes.Library.Default.Colors.TitleText = Color.White;
             SadConsole.Themes.Library.Default.Colors.ControlHostBack = Color.Black;
+            SadConsole.Themes.Library.Default.Colors.Appearance_ControlFocused = new Cell(Color.White, Color.Black);
             SadConsole.Themes.Library.Default.Colors.Appearance_ControlNormal = new Cell();
             SadConsole.Themes.Library.Default.Colors.Appearance_ControlOver = new Cell(Color.Blue, Color.Black);
             SadConsole.Themes.Library.Default.Colors.Appearance_ControlMouseDown = new Cell(Color.DarkBlue, Color.Black);
 
-
+            Utils.InitDirections();
 
             Global.FontDefault = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
             Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 100, 75, 0, 0);
