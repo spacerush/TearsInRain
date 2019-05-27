@@ -2,22 +2,26 @@
 using System.Collections.Generic;
 using Discord;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input; 
+using Microsoft.Xna.Framework.Input;
+using Newtonsoft.Json;
 using SadConsole;
 using SadConsole.Controls;
 using SadConsole.Input;
-using TearsInRain.Entities; 
+using TearsInRain.Entities;
+using Console = SadConsole.Console;
 using Utils = TearsInRain.Utils;
 
 namespace TearsInRain.UI {
     public class UIManager : ContainerConsole {
         public ScrollingConsole MapConsole;
         public ScrollingConsole MultiConsole;
+        public Console StatusConsole;
 
         public Window MapWindow;
         public MessageLogWindow MessageLog;
         public ChatLogWindow ChatLog;
         public Window MultiplayerWindow;
+        public Window StatusWindow;
 
         public Button hostButton;
         public Button closeButton;
@@ -45,39 +49,81 @@ namespace TearsInRain.UI {
         public void Init() {
             CreateConsoles();
 
-            MessageLog = new MessageLogWindow(70, GameLoop.GameHeight / 3, "[Message Log]");
+            MessageLog = new MessageLogWindow(70, (GameLoop.GameHeight / 3), "[MESSAGE LOG]");
             MessageLog.Title.Align(HorizontalAlignment.Center, MessageLog.Title.Length); 
             Children.Add(MessageLog);
             MessageLog.Show();
-            MessageLog.Position = new Point(0, GameLoop.GameHeight / 2);
+            MessageLog.Position = new Point(0, (GameLoop.GameHeight / 3) * 2);
 
-            ChatLog = new ChatLogWindow(70, GameLoop.GameHeight / 3, "[Chat Log]");
+            ChatLog = new ChatLogWindow(70, GameLoop.GameHeight / 3, "[CHAT LOG]");
             Children.Add(MessageLog);
             ChatLog.Show();
             ChatLog.IsVisible = false;
             ChatLog.Position = new Point((GameLoop.GameWidth / 2) - (ChatLog.Width / 2), (GameLoop.GameHeight / 2) - (ChatLog.Height / 2));
 
 
+
+
+
+
+
+
             // MessageLog.Add("Testing First");
 
             LoadMap(GameLoop.World.CurrentMap);
 
-            CreateMapWindow(70, GameLoop.GameHeight / 2,"[Game Map]");
+            CreateMapWindow(70, (GameLoop.GameHeight / 3) * 2,"[GAME MAP]");
             UseMouse = true;
 
-            CreateMultiplayerWindow(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2, "[Multiplayer]");
+            CreateMultiplayerWindow(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2, "[MULTIPLAYER]");
+
+            CreateStatusWindow(30, GameLoop.GameHeight, "[PLAYER INFO]");
 
             CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
         }
 
+        public void SaveMonster(Actor actor) {
+
+            string output = JsonConvert.SerializeObject(actor);
+            System.IO.File.WriteAllText(@"data\json\monsters\test.json", output);
+
+
+        }
+
+
+
+
+
+
+
         public void CreateConsoles() {
             MapConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);  
             MultiConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);
-        } 
+            StatusConsole = new Console(GameLoop.GameWidth, GameLoop.GameHeight);
+        }
+
+
+        public void CreateStatusWindow(int width, int height, string title) {
+            StatusWindow = new Window(width, height);
+
+            int statusConsoleWidth = width - 2;
+            int statusConsoleHeight = height - 2;
+
+            StatusConsole.Position = new Point(1, 1);
+
+
+            StatusWindow.Title = title.Align(HorizontalAlignment.Center, statusConsoleWidth, '-');
+            StatusWindow.Children.Add(StatusConsole);
+            StatusWindow.Position = new Point(70, 0);
+
+            Children.Add(StatusWindow);
+
+            StatusWindow.CanDrag = true;
+            StatusWindow.Show();
+        }
 
         public void CreateMapWindow(int width, int height, string title) {
             MapWindow = new Window(width, height);
-            MapWindow.CanDrag = true;
 
             int mapConsoleWidth = width - 2;
             int mapConsoleHeight = height - 2;
@@ -92,16 +138,19 @@ namespace TearsInRain.UI {
             Children.Add(MapWindow);
 
             MapConsole.Children.Add(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
-
+            
+            MapWindow.CanDrag = true;
             MapWindow.Show();
         }
 
         public void CreateMultiplayerWindow(int width, int height, string title) {
             MultiplayerWindow = new Window(width, height);
-            MapWindow.CanDrag = true;
+            MultiplayerWindow.CanDrag = true;
 
             int multiConsoleW = width - 2;
             int multiConsoleH = height - 2;
+
+            int center = multiConsoleW / 2;
 
             MultiConsole.ViewPort = new Rectangle(0, 0, multiConsoleW, multiConsoleH);
             MultiConsole.Position = new Point(1, 1);
@@ -112,23 +161,23 @@ namespace TearsInRain.UI {
             closeButton.MouseButtonClicked += closeButtonClick;
 
             hostButton = new Button(6, 1);
-            hostButton.Position = new Point((multiConsoleW / 2) - 3, 3);
+            hostButton.Position = new Point(center - (hostButton.Width - 2)/2, 3);
             hostButton.Text = "HOST";
             hostButton.MouseButtonClicked += hostButtonClick;
 
             joinButton = new Button(6, 1);
-            joinButton.Position = new Point((multiConsoleW / 2) - 3, 5);
+            joinButton.Position = new Point(center - (joinButton.Width - 2)/2, 5);
             joinButton.Text = "JOIN";
             joinButton.MouseButtonClicked += joinButtonClick;
 
             copyButton = new Button(10, 1);
-            copyButton.Position = new Point((multiConsoleW / 2) - 5, 3);
+            copyButton.Position = new Point(center - (copyButton.Width - 2)/2, 3);
             copyButton.Text = "GET CODE";
             copyButton.MouseButtonClicked += copyButtonClick;
             copyButton.IsVisible = false;
 
             testButton = new Button(6, 1);
-            testButton.Position = new Point((multiConsoleW / 2) - 3, 9);
+            testButton.Position = new Point(center - (testButton.Width - 2)/2, 9);
             testButton.Text = "TEST";
             testButton.MouseButtonClicked += testButtonClick;
 
@@ -166,7 +215,7 @@ namespace TearsInRain.UI {
         }
 
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-            GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+            //GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             var txn = lobbyManager.GetLobbyCreateTransaction();
@@ -233,7 +282,7 @@ namespace TearsInRain.UI {
         }
 
         private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-            GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+          //  GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
@@ -329,7 +378,7 @@ namespace TearsInRain.UI {
                     }
 
 
-                    if (player.TimeLastActed + (UInt64) player.MoveCost <= GameLoop.GameTime) {
+                    if (player.TimeLastActed + (UInt64) player.Speed <= GameLoop.GameTime) {
                         if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
                             if (waitingForCommand == "") {
                                 GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["UR"]);
@@ -451,10 +500,7 @@ namespace TearsInRain.UI {
             } else {
 
                 if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) {
-                    if (waitingForCommand == "")
-                        ChatLog.Unfocus();
-                    else
-                        ClearWait();
+                    ChatLog.Unfocus();
                 }
                 if (Global.KeyboardState.IsKeyReleased(Keys.Enter) && GameLoop.NetworkingManager.discord.GetLobbyManager() != null) {
                     if (ChatLog.GetText() != "") {
@@ -464,7 +510,7 @@ namespace TearsInRain.UI {
 
                         ChatLog.Add(assembled);
                         ChatLog.ClearText();
-                        
+                        ChatLog.Refocus();
                     } else {
                         ChatLog.Refocus();
                     }

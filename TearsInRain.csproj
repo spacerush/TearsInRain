@@ -64,6 +64,8 @@
     <Compile Include="Discord\StorageManager.cs" />
     <Compile Include="Discord\StoreManager.cs" />
     <Compile Include="src\NetworkingManager.cs" />
+    <Compile Include="src\Serializers\Actor.cs" />
+    <Compile Include="src\TimeManager.cs" />
     <Compile Include="src\UI\Map.cs" />
     <Compile Include="src\UI\MapGenerator.cs" />
     <Compile Include="src\Entities\Player.cs" />
@@ -79,7 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="GoRogue, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\GoRogue.2.2.2\lib\netstandard2.0\GoRogue.dll</HintPath>
+      <HintPath>packages\GoRogue.2.3.0\lib\netstandard2.0\GoRogue.dll</HintPath>
     </Reference>
     <Reference Include="MonoGame.Framework">
       <HintPath>$(MonoGameInstallDirectory)\MonoGame\v3.0\Assemblies\DesktopGL\MonoGame.Framework.dll</HintPath>

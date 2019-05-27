@@ -4,11 +4,12 @@ using Console = SadConsole.Console;
 using Microsoft.Xna.Framework;
 using TearsInRain.UI;
 using TearsInRain.Commands;
+using System.Collections.Generic;
+using TearsInRain.Entities;
 
 namespace TearsInRain {
     class GameLoop {
         public static UInt64 GameTime = 0; // Deciseconds since game launch (Decisecond = tenth of a second)
-
 
         public const int GameWidth = 100;
         public const int GameHeight = 75;
@@ -18,8 +19,17 @@ namespace TearsInRain {
         public static CommandManager CommandManager;
         public static NetworkingManager NetworkingManager;
 
+        public static TimeManager TimeManager;
+
+
+        public static Dictionary<string, Monster> MonsterLibrary = new Dictionary<string, Monster>();
+
+
         static int oldWindowPixelWidth;
         static int oldWindowPixelHeight;
+
+        public static bool timeFlowing = true;
+        public static int decisecondCounter = 0;
 
         public static Random Random = new Random();
         static void Main(string[] args) {
@@ -34,9 +44,21 @@ namespace TearsInRain {
         }
 
         private static void Update(GameTime time) {
-            GameTime = (UInt64) time.TotalGameTime.TotalMilliseconds / 100;
+            if (GameTime != (UInt64) time.TotalGameTime.TotalMilliseconds / 100) {
+                GameTime = (UInt64) time.TotalGameTime.TotalMilliseconds / 100;
+
+                World.CalculateFov();
+
+                if (timeFlowing) {
+                    decisecondCounter++;
+                    if (decisecondCounter >= 10) {
+                        decisecondCounter = 0;
+                        TimeManager.AddMinute();
+                    }
+                }
+            }
+            
             NetworkingManager.Update();
-            System.Console.WriteLine(GameTime + ", " + time.TotalGameTime.TotalMilliseconds);
         }
 
         private static void Init() {
@@ -64,6 +86,7 @@ namespace TearsInRain {
             CommandManager = new CommandManager();
 
             NetworkingManager = new NetworkingManager();
+            TimeManager = new TimeManager();
 
             World = new World();
             UIManager.Init();
@@ -78,6 +101,7 @@ namespace TearsInRain {
                 NetworkingManager.discord.GetLobbyManager().FlushNetwork();
             }
         }
+
 
         private static void Window_ClientSizeChanged(object sender, EventArgs e) {
             int windowPixelsWidth = SadConsole.Game.Instance.Window.ClientBounds.Width;
@@ -109,6 +133,7 @@ namespace TearsInRain {
             int totalCellsX = fontPixelsWidth / SadConsole.Global.FontDefault.Size.X;
             int totalCellsY = fontPixelsHeight / SadConsole.Global.FontDefault.Size.Y;
 
+            
             UIManager.checkResize(totalCellsX, totalCellsY);
         }
     }

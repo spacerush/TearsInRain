@@ -3,30 +3,30 @@ using SadConsole;
 using TearsInRain.Entities;
 using System.Linq;
 using Point = Microsoft.Xna.Framework.Point;
+using GoRogue.MapViews;
+using GoRogue;
 
 namespace TearsInRain {
-    public class Map {
+    public class Map{
         TileBase[] _tiles;
-        private int _width;
-        private int _height;
+        public int Width { get; }
+        public int Height { get; }
 
         public TileBase[] Tiles { get { return _tiles; } set { _tiles = value; } }
-        public int Width { get { return _width; } set { _width = value; } }
-        public int Height { get { return _height; } set { _height = value; } }
 
         public GoRogue.MultiSpatialMap<Entity> Entities;
         public static GoRogue.IDGenerator IDGenerator = new GoRogue.IDGenerator();
         
         public Map(int width, int height) {
-            _width = width;
-            _height = height;
+            Width = width;
+            Height = height;
             Tiles = new TileBase[width * height];
             Entities = new GoRogue.MultiSpatialMap<Entity>();
         }
 
         public Map(TileBase[] tiles) {
-            _width = 100;
-            _height = 100;
+            Width = 100;
+            Height = 100;
             Tiles = new TileBase[100 * 100];
             Tiles = tiles;
             Entities = new GoRogue.MultiSpatialMap<Entity>();
@@ -66,6 +66,11 @@ namespace TearsInRain {
         
         private void OnEntityMoved(object sender, Entity.EntityMovedEventArgs args) {
             Entities.Move(args.Entity as Entity, args.Entity.Position);
+        }
+
+
+        public bool IsTransparent (Coord position) {
+            return !Tiles[position.ToIndex(Width)].IsBlockingLOS;
         }
     }
 }

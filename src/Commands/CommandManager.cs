@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework;
 using TearsInRain.Entities;
 using System.Text;
 using GoRogue.DiceNotation;
-using TearsInRain.Tiles;
+using TearsInRain.Tiles; 
 
 namespace TearsInRain.Commands {
     public class CommandManager {
@@ -20,83 +20,50 @@ namespace TearsInRain.Commands {
         }
 
         public void Attack(Actor attacker, Actor defender) {
-            StringBuilder attackMessage = new StringBuilder();
-            StringBuilder defendMessage = new StringBuilder();
+            int attackChance = Dice.Roll("3d6");
+            int dodgeChance = Dice.Roll("3d6");
 
-            int hits = ResolveAttack(attacker, defender, attackMessage);
-            int blocks = ResolveDefense(defender, hits, attackMessage, defendMessage);
+            GameLoop.UIManager.SaveMonster(defender);
 
-            GameLoop.UIManager.MessageLog.Add(attackMessage.ToString());
-
-            if (!String.IsNullOrWhiteSpace(defendMessage.ToString())) {
-                GameLoop.UIManager.MessageLog.Add(defendMessage.ToString());
-            }
-
-            int damage = hits - blocks;
-
-            ResolveDamage(defender, damage);
-        }
-
-        private static int ResolveAttack(Actor attacker, Actor defender, StringBuilder attackMessage) {
-            int hits = 0;
-            attackMessage.AppendFormat("{0} attacks {1}, ", attacker.Name, defender.Name);
-
-            for (int dice = 0; dice < attacker.Attack; dice++) {
-                int diceOutcome = Dice.Roll("1d100");
-
-                if (diceOutcome >= 100 - attacker.AttackChance)
-                    hits++;
-            }
-
-            return hits;
-        }
-
-
-        private static int ResolveDefense(Actor defender, int hits, StringBuilder attackMessage, StringBuilder defendMessage) {
-            int blocks = 0;
-            if (hits > 0) {
-                attackMessage.AppendFormat("scoring {0} hits.", hits);
-                defendMessage.AppendFormat("{0} defends and rolls: ", defender.Name);
-
-                for (int dice = 0; dice < defender.Defense; dice++) {
-                    int diceOutcome = Dice.Roll("1d100");
-
-                    if (diceOutcome >= 100 - defender.DefenseChance)
-                        blocks++;
+            if (attackChance != 17 && attackChance != 18) { // Check to make sure attacker didn't critically miss
+                if (attackChance == 2 || attackChance == 3) { // Check to see if attacker critically hit
+                    int damage = Dice.Roll(attacker.GetMeleeDamage("swing"));
+                    GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " scored a critical hit on " + defender.Name + " for " + damage + " damage!", Color.LimeGreen); // Critical hit is a guaranteed hit and 1.5x damage
+                    ResolveDamage(defender, damage * 1.5);
+                } else { // Otherwise it's a normal attack
+                    if (dodgeChance > defender.Dodge) { // Check if defender failed to dodge
+                        int damage = Dice.Roll(attacker.GetMeleeDamage("swing"));
+                        GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " scored a hit on " + defender.Name + " for " + damage + " damage!", Color.CornflowerBlue); 
+                        ResolveDamage(defender, damage);
+                    } else { // Otherwise they successfully dodged the attack, negating all damage
+                        GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " attacked " + defender.Name + ", but the attack was dodged!", Color.Red);
+                    }
                 }
-            } else {
-                attackMessage.Append("and misses completely!");
+            } else { // Attacker critically missed, which means the defender didn't have to try and dodge.
+                GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " critically missed while attacking " + defender.Name + "!", Color.DarkRed);
             }
-
-            return blocks;
         }
 
 
-        private static void ResolveDamage(Actor defender, int damage) {
+        private static void ResolveDamage(Actor defender, double damage) {
+            int dmg = (int) Math.Ceiling(damage);
             if (damage > 0) {
-                defender.Health -= damage;
-                GameLoop.UIManager.MessageLog.Add($"{defender.Name} was hit for {damage} damage.");
+                defender.Health -= dmg;
                 
                 if (defender.Health <= 0) {
                     ResolveDeath(defender);
                 }
-            } else {
-                GameLoop.UIManager.MessageLog.Add($"{defender.Name} blocked all damage!");
             }
         }
         
         private static void ResolveDeath(Actor defender) {
-            StringBuilder deathMessage = new StringBuilder($"{defender.Name} died");
+            StringBuilder deathMessage = new StringBuilder($"{Utils.FirstCharToUpper(defender.Name)} died");
 
-            if (defender.Inventory.Count > 0) {
-                deathMessage.Append(" and dropped");
-
+            if (defender.Inventory.Count > 0) { 
                 foreach (Item item in defender.Inventory) {
                     item.Position = defender.Position;
                     GameLoop.World.CurrentMap.Add(item);
-                    deathMessage.Append(", " + item.Name);
-                }
-
+                } 
                 defender.Inventory.Clear();
             } else {
                 deathMessage.Append(".");
@@ -110,9 +77,7 @@ namespace TearsInRain.Commands {
             Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(pos);
 
             if (item != null) {
-                actor.Inventory.Add(item);
-                GameLoop.UIManager.MessageLog.Add($"{actor.Name} picked up {item.Name}.");
-                item.Destroy();
+                actor.PickupItem(item);
             } else {
                 GameLoop.UIManager.MessageLog.Add("Nothing to pick up there!");
             }

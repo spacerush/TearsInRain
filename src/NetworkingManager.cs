@@ -115,7 +115,7 @@ namespace TearsInRain {
                 foreach (Discord.User user in lobbyManager.GetMemberUsers(lobbyID)) {
                     lobbyManager.SendNetworkMessage(lobbyID, user.Id, channel, packet);
                 }
-            } catch (Discord.ResultException e) {
+            } catch (Discord.ResultException e) { 
             }
 
         }
@@ -129,7 +129,7 @@ namespace TearsInRain {
 
                 try {
                     myUID = userManager.GetCurrentUser().Id;
-                } catch (Discord.ResultException e) {
+                } catch (Discord.ResultException e) { 
                     myUID = 0;
                 }
 
@@ -161,7 +161,6 @@ namespace TearsInRain {
                     updateUID = false;
                 }
             } catch (Discord.ResultException e) {
-
             }
         }
     }

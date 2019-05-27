@@ -3,18 +3,9 @@ using Microsoft.Xna.Framework;
 
 namespace TearsInRain.Entities {
     public class Item : Entity {
-        public int _condition; 
-        public int Weight { get; set; }
-
-        public int Condition {
-            get { return _condition; }
-            set {
-                _condition += value;
-                if (_condition <= 0) {
-                    Destroy();
-                }
-            }
-        }
+        public int Condition; 
+        public double Volume { get; set; }
+        public double Weight { get; set; }
 
         public Item(Color foreground, Color background, string name, char glyph, int weight = 1, int condition = 100, int width = 1, int height = 1) : base(foreground, background, glyph) {
             Animation.CurrentFrame[0].Foreground = foreground;
@@ -24,6 +15,16 @@ namespace TearsInRain.Entities {
             Condition = condition;
             Name = name;
         }
+
+
+        public void DamageItem(int dmg) {
+            Condition -= dmg;
+
+            if (Condition <= 0) {
+                Destroy();
+            }
+        }
+
 
         public void Destroy() {
             GameLoop.World.CurrentMap.Remove(this);

@@ -3,6 +3,8 @@ using Microsoft.Xna.Framework;
 using TearsInRain.Tiles;
 using TearsInRain.Entities;
 using System.Collections.Generic;
+using System.Linq;
+using SadConsole.Effects;
 
 namespace TearsInRain {
     public class World {
@@ -16,6 +18,8 @@ namespace TearsInRain {
         private int _maxRoomSize = 15;
         public Map CurrentMap { get; set; }
 
+        public List<Point> SeenTiles = new List<Point>();
+
         public Dictionary<long, Player> players = new Dictionary<long, Player>();
         
         public World() {
@@ -26,6 +30,8 @@ namespace TearsInRain {
             CreateMonsters();
             
             CreateLoot();
+
+            SeenTiles.Add(players[GameLoop.NetworkingManager.myUID].Position);
         }
 
         public World(TileBase[] tiles) {
@@ -38,7 +44,10 @@ namespace TearsInRain {
             CreatePlayer(GameLoop.NetworkingManager.myUID);
             CreateMonsters();
             CreateLoot();
+
+            SeenTiles.Add(players[GameLoop.NetworkingManager.myUID].Position); 
         }
+
 
         private void CreateMap() {
             _mapTiles = new TileBase[_mapWidth * _mapHeight];
@@ -50,18 +59,15 @@ namespace TearsInRain {
         private void CreateMonsters() {
             int numMonsters = 10;
             for (int i = 0; i < numMonsters; i++) {
-                int monsterPosition = 0;
+                int monsterPosition = rndNum.Next(0, CurrentMap.Width * CurrentMap.Height);
                 Monster newMonster = new Monster(Color.Blue, Color.Transparent);
 
                 while (CurrentMap.Tiles[monsterPosition].IsBlockingMove) {
                     monsterPosition = rndNum.Next(0, CurrentMap.Width * CurrentMap.Height);
                 }
                 
-                newMonster.Defense = rndNum.Next(0, 10);
-                newMonster.DefenseChance = rndNum.Next(0, 50);
-                newMonster.Attack = rndNum.Next(0, 10);
-                newMonster.AttackChance = rndNum.Next(0, 50);
-                newMonster.Name = "a common troll";
+               
+                newMonster.Name = "the common troll";
                 
                 newMonster.Position = new Point(monsterPosition % CurrentMap.Width, monsterPosition / CurrentMap.Width);
                 CurrentMap.Add(newMonster);
@@ -88,7 +94,7 @@ namespace TearsInRain {
             int numLoot = 20;
             
             for (int i = 0; i < numLoot; i++) {
-                int lootPosition = 0;
+                int lootPosition = rndNum.Next(0, CurrentMap.Width * CurrentMap.Height);
                 Item newLoot = new Item(Color.Green, Color.Transparent, "fancy shirt", 'L', 2);
                 
                 while (CurrentMap.Tiles[lootPosition].IsBlockingMove) {
@@ -100,6 +106,47 @@ namespace TearsInRain {
                 CurrentMap.Add(newLoot);
             }
 
+        }
+
+
+
+        public void CalculateFov() {
+            // Use a GoRogue class that creates a map view so that the IsTransparent function is called whenever FOV asks for the value of a position
+            var fovMap = new GoRogue.MapViews.LambdaMapView<bool>(CurrentMap.Width, CurrentMap.Height, CurrentMap.IsTransparent);
+            GoRogue.FOV fov = new GoRogue.FOV(fovMap);
+
+            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                Point start = GameLoop.World.players[GameLoop.NetworkingManager.myUID].Position;
+                fov.Calculate(start, 10);
+
+                foreach (var spot in fov.NewlySeen) {
+                    TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
+                    tile.IsVisible = true;
+                    if (!SeenTiles.Contains(spot)) {
+                        SeenTiles.Add(new Point(spot.X, spot.Y));
+                    }
+                }
+
+
+                for (int i = SeenTiles.Count - 1; i > 0; i--) {
+                    var spot = SeenTiles[i];
+
+                    if (!fov.CurrentFOV.Contains(new GoRogue.Coord(spot.X, spot.Y))) {
+                        TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
+                        tile.Grayscale(true);
+
+
+                        SeenTiles.Remove(spot);
+                    } else {
+                        TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
+                        tile.Grayscale(false);
+
+                        GameLoop.UIManager.MapConsole.ClearDecorators(spot.X, spot.Y, 1);
+                    }
+                }
+
+                GameLoop.UIManager.MapConsole.IsDirty = true;
+            }
         }
     }
 }
