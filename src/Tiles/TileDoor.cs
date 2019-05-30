@@ -22,7 +22,6 @@ namespace TearsInRain.Tiles {
 
         public void Close() {
             IsOpen = false;
-            Glyph = '+';
             IsBlockingLOS = true;
             IsBlockingMove = true;
         }
@@ -31,8 +30,18 @@ namespace TearsInRain.Tiles {
             IsOpen = true;
             IsBlockingLOS = false;
             IsBlockingMove = false;
-            Glyph = '`';
         }
+
+
+        public void UpdateGlyph() {
+            if (IsOpen) {
+                Glyph = '`';
+            } else {
+                Glyph = '+';
+            }
+        }
+
+
 
         public void Lock() {
             Locked = true;

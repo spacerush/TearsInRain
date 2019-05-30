@@ -17,6 +17,16 @@ namespace TearsInRain.Entities {
 
             ID = Map.IDGenerator.UseID();
             Components.Add(new EntityViewSyncComponent());
+
+
+            IsVisible = false;
+        }
+
+        public void addParts() {
+            ID = Map.IDGenerator.UseID();
+            Components.Add(new EntityViewSyncComponent());
+
+            IsVisible = false;
         }
     }
 }

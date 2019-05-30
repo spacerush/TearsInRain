@@ -29,7 +29,7 @@ namespace TearsInRain {
         static int oldWindowPixelHeight;
 
         public static bool timeFlowing = true;
-        public static int decisecondCounter = 0;
+        public static int centisecondCounter = 0;
 
         public static Random Random = new Random();
         static void Main(string[] args) {
@@ -44,15 +44,13 @@ namespace TearsInRain {
         }
 
         private static void Update(GameTime time) {
-            if (GameTime != (UInt64) time.TotalGameTime.TotalMilliseconds / 100) {
-                GameTime = (UInt64) time.TotalGameTime.TotalMilliseconds / 100;
-
-                World.CalculateFov();
+            if (GameTime < (UInt64) time.TotalGameTime.TotalMilliseconds / 10) {
+                GameTime = (UInt64) time.TotalGameTime.TotalMilliseconds / 10;
 
                 if (timeFlowing) {
-                    decisecondCounter++;
-                    if (decisecondCounter >= 10) {
-                        decisecondCounter = 0;
+                    centisecondCounter++;
+                    if (centisecondCounter >= 75) {
+                        centisecondCounter = 0;
                         TimeManager.AddMinute();
                     }
                 }

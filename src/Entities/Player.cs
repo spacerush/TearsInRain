@@ -8,6 +8,7 @@ namespace TearsInRain.Entities {
         public Player(Color foreground, Color background) : base(foreground, background, '@') {
             Name = "Player";
             TimeLastActed = 0;
+            Dexterity = 13;
         }
     }
 }

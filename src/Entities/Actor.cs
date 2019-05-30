@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
+using RogueSharp.DiceNotation;
 using TearsInRain.Serializers;
 using TearsInRain.Tiles;
 
@@ -30,15 +31,17 @@ namespace TearsInRain.Entities {
         public double Carrying_Volume = 0;
         public double MaxCarriedVolume = 0;
 
-        public int Speed = 1;
+        public int Speed = 10;
 
         public int EncumbranceLv = 0;
 
         public int BaseDodge = 8;
         public int Dodge = 8;
 
-
-
+        public bool IsStealthing = false;
+        public bool FailedStealth = false; 
+        public int StealthResult = 0;
+        public int BaseStealthResult = 0;
 
         public int Gold { get; set; }
         public List<Item> Inventory = new List<Item>();
@@ -51,6 +54,9 @@ namespace TearsInRain.Entities {
 
         public bool MoveBy(Point positionChange) { 
             TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileDoor>(Position.X + positionChange.X, Position.Y + positionChange.Y);
+
+            Point justVert = new Point(0, positionChange.Y);
+            Point justHori = new Point(positionChange.X, 0);
 
             if (GameLoop.World.CurrentMap.IsTileWalkable(Position + positionChange) || tile is TileDoor) {
                 Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + positionChange);
@@ -70,6 +76,42 @@ namespace TearsInRain.Entities {
                 string msg = "move_p" + "|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y;
                 GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
                 return true;
+            } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justVert) || tile is TileDoor) {
+                Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + justVert);
+                Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + justVert);
+
+                if (monster != null) {
+                    GameLoop.CommandManager.Attack(this, monster);
+                    return true;
+                } else if (tile is TileDoor door && !door.IsOpen) {
+                    GameLoop.CommandManager.OpenDoor(this, door, Position + justVert);
+                    return true;
+                }
+
+
+                Position += justVert;
+
+                string msg = "move_p" + "|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y;
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
+                return true;
+            } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justHori) || tile is TileDoor) {
+                Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + justHori);
+                Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + justHori);
+
+                if (monster != null) {
+                    GameLoop.CommandManager.Attack(this, monster);
+                    return true;
+                } else if (tile is TileDoor door && !door.IsOpen) {
+                    GameLoop.CommandManager.OpenDoor(this, door, Position + justHori);
+                    return true;
+                }
+
+
+                Position += justHori;
+
+                string msg = "move_p" + "|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y;
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
+                return true;
             } else { 
                 return false;
             }
@@ -80,6 +122,58 @@ namespace TearsInRain.Entities {
             return true;
         }
 
+
+        public void Stealth(int stealthResult, bool IsLocal) {
+            IsStealthing = true;
+
+            if (stealthResult > Dexterity) {
+                FailedStealth = true;
+            }
+
+            if (IsLocal) {
+                Animation.CurrentFrame[0].Foreground = Color.DarkGray;
+                Animation.IsDirty = true;
+            } else {
+                UpdateStealth(0);
+            }
+
+            StealthResult = stealthResult;
+            Speed += 5;
+        }
+
+        public void Unstealth() {
+            IsStealthing = false;
+            FailedStealth = false;
+            StealthResult = 0;
+
+            Animation.CurrentFrame[0].Foreground.A = 255;
+            Animation.CurrentFrame[0].Foreground = Color.Yellow;
+            Animation.IsDirty = true;
+
+            Speed -= 5;
+        }
+
+
+        public void UpdateStealth(int mod) {
+            if (!IsStealthing) { return; }
+
+            TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(Position.X, Position.Y);
+            Color tColor = tile.Background;
+            Animation.CurrentFrame[0].Foreground = Color.Lerp(Color.Yellow, tColor, 0.05f * Dexterity);
+            Animation.CurrentFrame[0].Foreground.SetHSL(tColor.GetHue(), tColor.GetSaturation(), tColor.GetBrightness());
+
+            if (!FailedStealth) {
+                if (Dexterity >= (StealthResult - mod)) {
+                    int successBy = (Dexterity - (StealthResult - mod));
+                    int newA = 255 - (successBy * 10);
+                    if (newA < 75) { newA = 75; }
+                    if (newA > 255) { newA = 255; }
+                    Animation.CurrentFrame[0].Foreground.A = (byte)newA;
+                }
+            }
+
+            Animation.IsDirty = true;
+        }
 
 
         public string GetMeleeDamage(string type) {

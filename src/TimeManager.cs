@@ -35,21 +35,11 @@ namespace TearsInRain {
             }
         }
 
-        public void AddMinute() {
-            if (Minute == 59) {
-                Minute = 0;
-                if (Hour == 23) {
-                    EndDay();
-                } else {
-                    Hour++;
-                }
-            } else {
-                Minute++;
-            }
 
+        public void RefreshTimeDisplay() {
             Color SeasonColor = new Color();
 
-            switch(GetSeasonName()) {
+            switch (GetSeasonName()) {
                 case "Spring":
                     SeasonColor = Color.SpringGreen;
                     break;
@@ -78,6 +68,27 @@ namespace TearsInRain {
 
             GameLoop.UIManager.StatusConsole.Print(1, 1, season);
             GameLoop.UIManager.StatusConsole.Print(1 + GetDateLength() + 4, 1, time);
+        }
+
+        public void AddMinute() {
+            if (Minute == 59) {
+                Minute = 0;
+                if (Hour == 23) {
+                    EndDay();
+                } else {
+                    Hour++;
+                }
+            } else {
+                Minute++;
+            }
+
+            if (GameLoop.NetworkingManager.myUID == GameLoop.NetworkingManager.hostUID && GameLoop.NetworkingManager.myUID != 0) {
+                var timeString = "time|" + GameLoop.TimeManager.Year + "|" + GameLoop.TimeManager.Season + "|" + GameLoop.TimeManager.Day + "|" + GameLoop.TimeManager.Hour + "|" + GameLoop.TimeManager.Minute;
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(timeString));
+            }
+
+
+            RefreshTimeDisplay();
         }
 
         public int GetDateLength() {

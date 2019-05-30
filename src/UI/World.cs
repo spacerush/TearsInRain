@@ -5,6 +5,7 @@ using TearsInRain.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using SadConsole.Effects;
+using SadConsole.Components;
 
 namespace TearsInRain {
     public class World {
@@ -21,7 +22,9 @@ namespace TearsInRain {
         public List<Point> SeenTiles = new List<Point>();
 
         public Dictionary<long, Player> players = new Dictionary<long, Player>();
-        
+        public GoRogue.FOV lastFov;
+
+
         public World() {
             CreateMap();
             
@@ -75,16 +78,16 @@ namespace TearsInRain {
         }
         
         public void CreatePlayer(long playerUID) {
-            Player newPlayer = new Player(Color.Yellow, Color.Transparent);
-            
-            for (int i = 0; i < CurrentMap.Tiles.Length; i++) {
-                if (!CurrentMap.Tiles[i].IsBlockingMove) {
-                    newPlayer.Position = SadConsole.Helpers.GetPointFromIndex(i, CurrentMap.Width);
-                    break;
-                }
-            }
-
             if (!players.ContainsKey(playerUID)) {
+                Player newPlayer = new Player(Color.Yellow, Color.Transparent);
+            
+                for (int i = 0; i < CurrentMap.Tiles.Length; i++) {
+                    if (!CurrentMap.Tiles[i].IsBlockingMove) {
+                        newPlayer.Position = SadConsole.Helpers.GetPointFromIndex(i, CurrentMap.Width);
+                        break;
+                    }
+                }
+
                 players.Add(playerUID, newPlayer);
                 CurrentMap.Add(players[playerUID]);
             }
@@ -108,22 +111,64 @@ namespace TearsInRain {
 
         }
 
+        public void PlayerStealth(long UID, int StealthResult, bool ToStealth) {
+
+            if (ToStealth) {
+                GameLoop.World.players[UID].Stealth(StealthResult, false);
+            } else {
+                GameLoop.World.players[UID].Unstealth();
+            }
+        }
 
 
-        public void CalculateFov() {
+
+
+        public void CalculateFov(Point dir) {
             // Use a GoRogue class that creates a map view so that the IsTransparent function is called whenever FOV asks for the value of a position
             var fovMap = new GoRogue.MapViews.LambdaMapView<bool>(CurrentMap.Width, CurrentMap.Height, CurrentMap.IsTransparent);
-            GoRogue.FOV fov = new GoRogue.FOV(fovMap);
+            lastFov = new GoRogue.FOV(fovMap);
 
             if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
-                Point start = GameLoop.World.players[GameLoop.NetworkingManager.myUID].Position;
-                fov.Calculate(start, 10);
+                Point start = GameLoop.World.players[GameLoop.NetworkingManager.myUID].Position + dir;
+                lastFov.Calculate(start, 20);
 
-                foreach (var spot in fov.NewlySeen) {
+                foreach (var spot in lastFov.NewlySeen) {
                     TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
                     tile.IsVisible = true;
+
+                    if (tile is TileDoor door) {
+                        door.UpdateGlyph();
+                    } 
+
                     if (!SeenTiles.Contains(spot)) {
                         SeenTiles.Add(new Point(spot.X, spot.Y));
+                    }
+                }
+
+                foreach (KeyValuePair<long, Player> player in players) {
+                    if (!lastFov.BooleanFOV[player.Value.Position.X, player.Value.Position.Y]) { 
+                        player.Value.IsVisible = false;
+                    } else if (lastFov.BooleanFOV[player.Value.Position.X, player.Value.Position.Y]) {
+                        player.Value.IsVisible = true;
+
+
+                        if (player.Key != GameLoop.NetworkingManager.myUID) {
+                            Point myPos = players[GameLoop.NetworkingManager.myUID].Position;
+                            Point theirPos = player.Value.Position;
+                            int distance = (int) GoRogue.Distance.CHEBYSHEV.Calculate(myPos.X, myPos.Y, theirPos.X, theirPos.Y);
+
+                            player.Value.UpdateStealth((distance / 2) - 5);
+                        }
+
+                    }
+                }
+                foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
+                    if (!(entity is Player)) {
+                        if (!lastFov.BooleanFOV[entity.Position.X, entity.Position.Y]) {
+                            entity.IsVisible = false;
+                        } else if (lastFov.BooleanFOV[entity.Position.X, entity.Position.Y]) {
+                            entity.IsVisible = true;
+                        }
                     }
                 }
 
@@ -131,15 +176,14 @@ namespace TearsInRain {
                 for (int i = SeenTiles.Count - 1; i > 0; i--) {
                     var spot = SeenTiles[i];
 
-                    if (!fov.CurrentFOV.Contains(new GoRogue.Coord(spot.X, spot.Y))) {
+                    if (!lastFov.CurrentFOV.Contains(new GoRogue.Coord(spot.X, spot.Y))) {
                         TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
-                        tile.Grayscale(true);
-
+                        tile.Darken(true);
 
                         SeenTiles.Remove(spot);
                     } else {
                         TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
-                        tile.Grayscale(false);
+                        tile.Darken(false);
 
                         GameLoop.UIManager.MapConsole.ClearDecorators(spot.X, spot.Y, 1);
                     }

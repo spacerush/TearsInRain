@@ -16,7 +16,7 @@ namespace TearsInRain.Tiles {
             IsVisible = false;
         } 
 
-        public void Grayscale(bool isGray) {
+        public void Darken(bool isGray) {
             if (isGray) {
                 Foreground.A = 200;
                 Background.A = 200;

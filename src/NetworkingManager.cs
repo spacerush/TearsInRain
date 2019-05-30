@@ -3,6 +3,9 @@ using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using SadConsole;
 using System;
+using System.Collections.Generic;
+using TearsInRain.Entities;
+using TearsInRain.Serializers;
 using TearsInRain.Tiles;
 using TearsInRain.UI;
 
@@ -58,9 +61,73 @@ namespace TearsInRain {
 
                 if (splitMsg[0] == "p_list") { // Translates a list of players being sent
                     for (int i = 1; i < splitMsg.Length; i++) {
-                        GameLoop.World.CreatePlayer(Convert.ToInt64(splitMsg[i]));
+                        string[] playerData = splitMsg[i].Split(';');
+                        long uid = Convert.ToInt64(playerData[0]);
+                        int x = Convert.ToInt32(playerData[1]);
+                        int y = Convert.ToInt32(playerData[2]);
+                        int a = Convert.ToInt32(playerData[3]);
+
+                        GameLoop.World.CreatePlayer(uid);
+
+                        Player player = GameLoop.World.players[uid];
+                        player.Position = new Point(x, y);
+                        player.Animation.CurrentFrame[0].Foreground.A = (byte) a;
+
+                        if (a != 255) {
+                            player.IsStealthing = true;
+                        } else {
+                            player.IsStealthing = false;
+                        }
+
+                        player.Animation.IsDirty = true;
                     }
                 }
+
+                if (splitMsg[0] == "m_list") {
+                    GameLoop.World.CurrentMap.Entities = new GoRogue.MultiSpatialMap<Entity>();
+                    for (int i = 1; i < splitMsg.Length; i++) {
+                        string[] smallerMsg = splitMsg[i].Split('~');
+                        
+
+
+                        Entity entity = JsonConvert.DeserializeObject<Actor>(smallerMsg[0], new ActorJsonConverter());
+                        entity.Position = new Point(Convert.ToInt32(smallerMsg[1]), Convert.ToInt32(smallerMsg[2]));
+                        entity.addParts();
+                        GameLoop.World.CurrentMap.Entities.Add(entity, entity.Position);
+                    }
+                    
+
+                    GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+                }
+
+
+                if (splitMsg[0] == "time") {
+                    int Year = Convert.ToInt32(splitMsg[1]);
+                    int Season = Convert.ToInt32(splitMsg[2]);
+                    int Day = Convert.ToInt32(splitMsg[3]);
+                    int Hour = Convert.ToInt32(splitMsg[4]);
+                    int Minute = Convert.ToInt32(splitMsg[5]);
+
+                    GameLoop.TimeManager = new TimeManager(Day, Season, Year, Hour, Minute);
+                    GameLoop.TimeManager.RefreshTimeDisplay();
+                }
+
+
+                if (splitMsg[0] == "stealth") {
+                    long stealthUID = Convert.ToInt64(splitMsg[2]);
+                    int stealthResult = Convert.ToInt32(splitMsg[3]);
+
+                    if (splitMsg[1] == "yes") {
+                        if (GameLoop.World.players.ContainsKey(stealthUID)) {
+                            GameLoop.World.PlayerStealth(stealthUID, stealthResult, true);
+                        }
+                    } else {
+                        if (GameLoop.World.players.ContainsKey(stealthUID)) {
+                            GameLoop.World.PlayerStealth(stealthUID, stealthResult, false);
+                        }
+                    }
+                }
+
 
                 if (splitMsg[0] == "t_data") { // Used for complex tile data
                     if (splitMsg[1] == "door") {

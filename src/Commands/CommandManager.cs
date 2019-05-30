@@ -7,6 +7,9 @@ using TearsInRain.Tiles;
 
 namespace TearsInRain.Commands {
     public class CommandManager {
+        public Point lastPeek = new Point(0, 0);
+
+
         public CommandManager() { }
 
 
@@ -19,11 +22,27 @@ namespace TearsInRain.Commands {
             return false;
         }
 
+
+        public void Peek(Actor actor, Point dir) {
+            Point newPoint = actor.Position + dir;
+
+            if (!GameLoop.World.CurrentMap.GetTileAt<TileBase>(newPoint.X, newPoint.Y).IsBlockingLOS) {
+                lastPeek = dir;
+                actor.PositionOffset += dir;
+            }
+        }
+
+        public void ResetPeek(Actor actor) {
+            actor.PositionOffset -= lastPeek;
+            lastPeek = new Point(0, 0);
+        }
+
+
         public void Attack(Actor attacker, Actor defender) {
             int attackChance = Dice.Roll("3d6");
             int dodgeChance = Dice.Roll("3d6");
 
-            GameLoop.UIManager.SaveMonster(defender);
+            //GameLoop.UIManager.SaveMonster(defender);
 
             if (attackChance != 17 && attackChance != 18) { // Check to make sure attacker didn't critically miss
                 if (attackChance == 2 || attackChance == 3) { // Check to see if attacker critically hit
@@ -74,7 +93,8 @@ namespace TearsInRain.Commands {
         }
 
         public void Pickup(Actor actor, Point pos) {
-            Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(pos);
+            Point newPoint = actor.Position + pos;
+            Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(newPoint);
 
             if (item != null) {
                 actor.PickupItem(item);
@@ -96,8 +116,10 @@ namespace TearsInRain.Commands {
         }
 
         public void CloseDoor(Actor actor, Point pos) {
-            TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(pos.X, pos.Y);
-            Entity entity = GameLoop.World.CurrentMap.GetEntityAt<Entity>(pos);
+            Point newPoint = actor.Position + pos;
+
+            TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(newPoint.X, newPoint.Y);
+            Entity entity = GameLoop.World.CurrentMap.GetEntityAt<Entity>(newPoint);
 
             if (entity == null) {
                 if (tile is TileDoor door) {
@@ -106,7 +128,7 @@ namespace TearsInRain.Commands {
 
                         GameLoop.UIManager.MapConsole.IsDirty = true;
 
-                        var data = "t_data|door|" + pos.X + "|" + pos.Y + "|close|";
+                        var data = "t_data|door|" + newPoint.X + "|" + newPoint.Y + "|close|";
 
                         if (door.Locked) { data += "lock"; } else if (!door.Locked) { data += "unlock"; }
 

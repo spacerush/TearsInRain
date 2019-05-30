@@ -4,10 +4,13 @@ using Discord;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Newtonsoft.Json;
+using RogueSharp.DiceNotation;
 using SadConsole;
 using SadConsole.Controls;
 using SadConsole.Input;
 using TearsInRain.Entities;
+using TearsInRain.Serializers;
+using TearsInRain.Tiles;
 using Console = SadConsole.Console;
 using Utils = TearsInRain.Utils;
 
@@ -34,6 +37,7 @@ namespace TearsInRain.UI {
         public long tempUID = 0;
 
         public string waitingForCommand = "";
+        public Point viewOffset = new Point(0, 0);
 
         public UIManager() {
             IsVisible = true;
@@ -81,20 +85,6 @@ namespace TearsInRain.UI {
 
             CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
         }
-
-        public void SaveMonster(Actor actor) {
-
-            string output = JsonConvert.SerializeObject(actor);
-            System.IO.File.WriteAllText(@"data\json\monsters\test.json", output);
-
-
-        }
-
-
-
-
-
-
 
         public void CreateConsoles() {
             MapConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);  
@@ -215,7 +205,7 @@ namespace TearsInRain.UI {
         }
 
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-            //GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+           GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             var txn = lobbyManager.GetLobbyCreateTransaction();
@@ -252,6 +242,8 @@ namespace TearsInRain.UI {
             userManager.GetUser(userId, (Result result, ref User user) => {
                 if (result == Discord.Result.Ok) {
                     ChatLog.Add("User disconnected: " + user.Username);
+                    GameLoop.World.CurrentMap.Remove(GameLoop.World.players[user.Id]);
+                    GameLoop.World.players.Remove(user.Id);
                 }
             });
         }
@@ -264,13 +256,28 @@ namespace TearsInRain.UI {
                     kickstartNet();
                     GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes(Utils.SimpleMapString(GameLoop.World.CurrentMap.Tiles)));
 
-                    var playerList = "p_list";
+                    var playerList = "p_list"; 
+                    GameLoop.World.CreatePlayer(userId); 
+                    foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
+                        playerList += "|" + player.Key + ";" + player.Value.Position.X + ";" + player.Value.Position.Y + ";" + player.Value.Animation.CurrentFrame[0].Foreground.A;
+                    } 
+                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(playerList));
+                    
+                    var monsterList = "m_list"; 
+                    foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
+                        if (entity is Monster) {
+                            monsterList += "|" + JsonConvert.SerializeObject((Actor) entity, Formatting.Indented, new ActorJsonConverter()) + "~" + entity.Position.X + "~" + entity.Position.Y;
+                        }
+                    } 
+                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(monsterList));
 
-                    GameLoop.World.CreatePlayer(userId);
+                    var timeString = "time|" + GameLoop.TimeManager.Year + "|" + GameLoop.TimeManager.Season + "|" + GameLoop.TimeManager.Day + "|" + GameLoop.TimeManager.Hour + "|" + GameLoop.TimeManager.Minute;
+                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(timeString));
 
-                    foreach(KeyValuePair<long, Player> player in GameLoop.World.players) {
-                        playerList += "|" + player.Value;
-                    }
+
+
+
+                    MapConsole.IsDirty = true;
                 }
             });
         }
@@ -282,7 +289,7 @@ namespace TearsInRain.UI {
         }
 
         private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-          //  GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+            GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
@@ -304,15 +311,19 @@ namespace TearsInRain.UI {
 
         public override void Update(TimeSpan timeElapsed) {
             CheckKeyboard();
-            
             base.Update(timeElapsed);
+            GameLoop.World.CalculateFov(GameLoop.CommandManager.lastPeek);
         }
 
-        private void SyncMapEntities(Map map) {
+        public void SyncMapEntities(Map map) {
             MapConsole.Children.Clear();
 
             foreach (Entity entity in map.Entities.Items) {
                 MapConsole.Children.Add(entity);
+            }
+
+            foreach(KeyValuePair<long, Player> player in GameLoop.World.players) {
+                MapConsole.Children.Add(player.Value);
             }
 
             map.Entities.ItemAdded += OnMapEntityAdded; 
@@ -333,8 +344,9 @@ namespace TearsInRain.UI {
             SyncMapEntities(map);
         }
 
-        private void ClearWait() {
+        private void ClearWait(Actor actor) {
             waitingForCommand = "";
+            GameLoop.CommandManager.ResetPeek(actor);
         }
 
         private void CheckKeyboard() {
@@ -361,8 +373,6 @@ namespace TearsInRain.UI {
 
                 if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
                     Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
-
-
                     if (Global.KeyboardState.IsKeyPressed(Keys.C)) {
                         waitingForCommand = "c";
                     }
@@ -371,130 +381,180 @@ namespace TearsInRain.UI {
                         waitingForCommand = "g";
                     }
 
+                    if (Global.KeyboardState.IsKeyPressed(Keys.X)) {
+                        waitingForCommand = "x";
+                    }
+
+                    if (Global.KeyboardState.IsKeyPressed(Keys.S)) {
+                        if (!player.IsStealthing) {
+                            int skillCheck = Dice.Roll("3d6");
+                            player.Stealth(skillCheck, true);
+                            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|yes|" + GameLoop.NetworkingManager.myUID + "|" + skillCheck));
+                        } else {
+                            player.Unstealth();
+                            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|no|" + GameLoop.NetworkingManager.myUID + "|0"));
+                        }
+                    }
+
 
                     if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) {
                         if (waitingForCommand != "")
-                            ClearWait();
+                            ClearWait(player);
                     }
 
 
                     if (player.TimeLastActed + (UInt64) player.Speed <= GameLoop.GameTime) {
-                        if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
+                        if (Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
+                            Point thisDir = Utils.Directions["UR"];
                             if (waitingForCommand == "") {
-                                GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["UR"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
                                 CenterOnActor(player);
                             } else if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position + Utils.Directions["UR"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
                             } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["UR"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
                             }
 
                         }
 
-                        if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) {
+                        else if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) {
+                            Point thisDir = Utils.Directions["U"];
                             if (waitingForCommand == "") {
-                                GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["U"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
                                 CenterOnActor(player);
                             } else if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position + Utils.Directions["U"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
                             } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["U"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
                             }
 
-                        }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad7)) {
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad7)) {
+                            Point thisDir = Utils.Directions["UL"];
                             if (waitingForCommand == "") {
-                                GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["UL"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
                                 CenterOnActor(player);
                             } else if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position + Utils.Directions["UL"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
                             } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["UL"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
                             }
 
-                        }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.Right) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) {
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.Right) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) {
+                            Point thisDir = Utils.Directions["R"];
                             if (waitingForCommand == "") {
-                                GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["R"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
                                 CenterOnActor(player);
                             } else if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position + Utils.Directions["R"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
                             } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["R"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
                             }
-                        }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.NumPad5)) {
-                            if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["R"]);
-                            }
-                        }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) {
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad5)) {
+                            Point thisDir = Utils.Directions["C"];
                             if (waitingForCommand == "") {
-                                GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["L"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
                                 CenterOnActor(player);
                             } else if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position + Utils.Directions["L"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
                             } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["L"]);
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) {
+                            Point thisDir = Utils.Directions["L"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad3)) {
+                            Point thisDir = Utils.Directions["DR"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.Down) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) {
+                            Point thisDir = Utils.Directions["D"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad1)) {
+                            Point thisDir = Utils.Directions["DL"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
                             }
                         }
 
-                        if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad3)) {
-                            if (waitingForCommand == "") {
-                                GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["DR"]);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position + Utils.Directions["DR"]);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["DR"]);
-                            }
-                        }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.Down) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) {
-                            if (waitingForCommand == "") {
-                                GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["D"]);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position + Utils.Directions["D"]);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["D"]);
-                            }
-                        }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad1)) {
-                            if (waitingForCommand == "") {
-                                GameLoop.CommandManager.MoveActorBy(player, Utils.Directions["DL"]);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait();
-                                GameLoop.CommandManager.CloseDoor(player, player.Position + Utils.Directions["DL"]);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait();
-                                GameLoop.CommandManager.Pickup(player, player.Position + Utils.Directions["DL"]);
-                            }
-                        }
                     }
                 }
             } else {

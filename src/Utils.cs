@@ -15,25 +15,22 @@ namespace TearsInRain {
             Directions.Add("U", new Point(0, -1)); // Num8, UpArrow
             Directions.Add("UL", new Point(-1, -1)); // Num7
             Directions.Add("R", new Point(1, 0)); // Num6
+            Directions.Add("C", new Point(0, 0));
             Directions.Add("L", new Point(-1, 0)); // Num4
             Directions.Add("DR", new Point(1, 1)); // Num3
             Directions.Add("D", new Point(0, 1)); // Num2
             Directions.Add("DL", new Point(-1, 1)); // Num1
         }
 
+        public static Color Interpolate(Color color1, Color color2, double fraction) {
+            double r = Interpolate(color1.R, color2.R, fraction);
+            double g = Interpolate(color1.G, color2.G, fraction);
+            double b = Interpolate(color1.B, color2.B, fraction);
+            return new Color((int)Math.Round(r), (int)Math.Round(g), (int)Math.Round(b));
+        }
 
-        public static string CalculateMD5Hash(string input) {
-            // step 1, calculate MD5 hash from input
-            MD5 md5 = System.Security.Cryptography.MD5.Create();
-            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
-            byte[] hash = md5.ComputeHash(inputBytes);
-
-            // step 2, convert byte array to hex string
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < hash.Length; i++) {
-                sb.Append(hash[i].ToString("X2"));
-            }
-            return sb.ToString();
+        public static double Interpolate(double d1, double d2, double fraction) {
+            return d1 + (d2 - d1) * fraction;
         }
 
         public static string SimpleMapString(TileBase[] tiles) {
