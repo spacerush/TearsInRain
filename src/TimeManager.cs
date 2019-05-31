@@ -36,7 +36,7 @@ namespace TearsInRain {
         }
 
 
-        public void RefreshTimeDisplay() {
+        public ColoredString ColoredSeason() {
             Color SeasonColor = new Color();
 
             switch (GetSeasonName()) {
@@ -58,16 +58,8 @@ namespace TearsInRain {
             }
 
             var date = GetSeasonName() + " ";
-
-            if (Day < 10) { date += " "; }
-
-            date += Day + ", Year " + Year;
-
             ColoredString season = new ColoredString(date, SeasonColor, Color.TransparentBlack);
-            ColoredString time = new ColoredString(GetTimeString(), Color.White, Color.TransparentBlack);
-
-            GameLoop.UIManager.StatusConsole.Print(1, 1, season);
-            GameLoop.UIManager.StatusConsole.Print(1 + GetDateLength() + 4, 1, time);
+            return season;
         }
 
         public void AddMinute() {
@@ -86,19 +78,6 @@ namespace TearsInRain {
                 var timeString = "time|" + GameLoop.TimeManager.Year + "|" + GameLoop.TimeManager.Season + "|" + GameLoop.TimeManager.Day + "|" + GameLoop.TimeManager.Hour + "|" + GameLoop.TimeManager.Minute;
                 GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(timeString));
             }
-
-
-            RefreshTimeDisplay();
-        }
-
-        public int GetDateLength() {
-            var date = GetSeasonName() + " "; 
-            if (Day < 10) { date += " "; } 
-            date += Day + ", Year " + Year;
-
-
-
-            return date.Length;
         }
 
 

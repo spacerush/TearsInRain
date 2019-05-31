@@ -142,6 +142,7 @@ namespace TearsInRain.Entities {
         }
 
         public void Unstealth() {
+            if (!IsStealthing) { return; }
             IsStealthing = false;
             FailedStealth = false;
             StealthResult = 0;
@@ -188,7 +189,6 @@ namespace TearsInRain.Entities {
             }
 
             string[] splitDice = new string[2];
-            System.Console.WriteLine(diceFormula.ToString());
             splitDice = diceFormula.ToString().Split('.');
 
             dice = Convert.ToInt32(splitDice[0]);
@@ -233,26 +233,53 @@ namespace TearsInRain.Entities {
             Dodge = BaseDodge - EncumbranceLv;
         }
 
+        public void RecalculateWeight() {
+            double totalWeight = 0;
 
-        public void AddWeight(double added) {
-            Carrying_Weight += added;
-            CalculateEncumbrance();
-        }
+            for (int i = 0; i < Inventory.Count; i++) {
+                totalWeight += Inventory[i].StackWeight();
+            }
 
-        public void RemoveWeight(double removed) {
-            Carrying_Weight -= removed;
-            CalculateEncumbrance();
+            Carrying_Weight = totalWeight;
         }
 
 
         public void PickupItem(Item item) {
-            if (Carrying_Volume + item.Volume <= MaxCarriedVolume) {
-                AddWeight(item.Weight);
-
-                Inventory.Add(item);
-                GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Name}.");
-                item.Destroy();
+            bool alreadyHaveItem = false;
+            for (int i = 0; i < Inventory.Count; i++) {
+                if (Inventory[i].Name == item.Name) {
+                    alreadyHaveItem = true;
+                    Inventory[i].Quantity++;
+                    GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Name}.");
+                    item.Destroy();
+                    break;
+                }
             }
+
+            if (!alreadyHaveItem) {
+                if (Inventory.Count < 26) {
+                    Inventory.Add(item);
+                    GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Name}.");
+                    item.Destroy();
+                } else {
+                    GameLoop.UIManager.MessageLog.Add("Your inventory is full!");
+                }
+            } 
+
+            RecalculateWeight();
+            GameLoop.UIManager.UpdateInventory();
+        }
+
+
+        public void DropItem(int index) {
+            Item dropped = Inventory[index];
+            dropped.Position = Position;
+
+            GameLoop.World.CurrentMap.Add(dropped);
+            Inventory.RemoveAt(index);
+
+            RecalculateWeight();
+            GameLoop.UIManager.UpdateInventory();
         }
     }
 }

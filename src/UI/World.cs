@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SadConsole.Effects;
 using SadConsole.Components;
+using GoRogue;
 
 namespace TearsInRain {
     public class World {
@@ -126,11 +127,19 @@ namespace TearsInRain {
         public void CalculateFov(Point dir) {
             // Use a GoRogue class that creates a map view so that the IsTransparent function is called whenever FOV asks for the value of a position
             var fovMap = new GoRogue.MapViews.LambdaMapView<bool>(CurrentMap.Width, CurrentMap.Height, CurrentMap.IsTransparent);
+
             lastFov = new GoRogue.FOV(fovMap);
 
             if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
                 Point start = GameLoop.World.players[GameLoop.NetworkingManager.myUID].Position + dir;
-                lastFov.Calculate(start, 20);
+
+                Point playerRel = GameLoop.World.players[GameLoop.NetworkingManager.myUID].CalculatedPosition;
+
+
+                Point mouseLoc = GameLoop.MouseLoc;
+                double degrees = Math.Atan2((mouseLoc.Y - playerRel.Y), (mouseLoc.X - playerRel.X)) * (180.0 / Math.PI);
+                degrees = (degrees > 0.0 ? degrees : (360.0 + degrees));
+                lastFov.Calculate(start, 20, Radius.CIRCLE, degrees, 114);
 
                 foreach (var spot in lastFov.NewlySeen) {
                     TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
@@ -146,9 +155,9 @@ namespace TearsInRain {
                 }
 
                 foreach (KeyValuePair<long, Player> player in players) {
-                    if (!lastFov.BooleanFOV[player.Value.Position.X, player.Value.Position.Y]) { 
+                    if (!lastFov.BooleanFOV[player.Value.Position.X, player.Value.Position.Y] && player.Key != GameLoop.NetworkingManager.myUID) { 
                         player.Value.IsVisible = false;
-                    } else if (lastFov.BooleanFOV[player.Value.Position.X, player.Value.Position.Y]) {
+                    } else if (lastFov.BooleanFOV[player.Value.Position.X, player.Value.Position.Y] || player.Key == GameLoop.NetworkingManager.myUID) {
                         player.Value.IsVisible = true;
 
 

@@ -19,12 +19,17 @@ namespace TearsInRain.UI {
         public ScrollingConsole MapConsole;
         public ScrollingConsole MultiConsole;
         public Console StatusConsole;
-
+        public Console InventoryConsole;
+        
         public Window MapWindow;
         public MessageLogWindow MessageLog;
         public ChatLogWindow ChatLog;
         public Window MultiplayerWindow;
         public Window StatusWindow;
+        public Window InventoryWindow;
+
+        public Window ContextWindow;
+        public Console ContextConsole;
 
         public Button hostButton;
         public Button closeButton;
@@ -33,8 +38,11 @@ namespace TearsInRain.UI {
         public Button testButton;
 
 
+
+
         public bool chat = false;
         public long tempUID = 0;
+        public int invContextIndex = -1;
 
         public string waitingForCommand = "";
         public Point viewOffset = new Point(0, 0);
@@ -64,14 +72,7 @@ namespace TearsInRain.UI {
             ChatLog.Show();
             ChatLog.IsVisible = false;
             ChatLog.Position = new Point((GameLoop.GameWidth / 2) - (ChatLog.Width / 2), (GameLoop.GameHeight / 2) - (ChatLog.Height / 2));
-
-
-
-
-
-
-
-
+            
             // MessageLog.Add("Testing First");
 
             LoadMap(GameLoop.World.CurrentMap);
@@ -81,15 +82,24 @@ namespace TearsInRain.UI {
 
             CreateMultiplayerWindow(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2, "[MULTIPLAYER]");
 
-            CreateStatusWindow(30, GameLoop.GameHeight, "[PLAYER INFO]");
+            CreateStatusWindow(30, (GameLoop.GameHeight/3)*2 , "[PLAYER INFO]");
+
+            CreateContextWindow(30, GameLoop.GameHeight / 3, "[ITEM MENU]");
+
+            ContextConsole.MouseButtonClicked += contextClick;
+
+            CreateInventoryWindow(59, 28, "[INVENTORY]");
 
             CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+            
+            
         }
-
         public void CreateConsoles() {
             MapConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);  
             MultiConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);
             StatusConsole = new Console(GameLoop.GameWidth, GameLoop.GameHeight);
+            InventoryConsole = new Console(GameLoop.GameWidth, GameLoop.GameHeight);
+            ContextConsole = new Console(GameLoop.GameWidth, GameLoop.GameHeight);
         }
 
 
@@ -101,7 +111,6 @@ namespace TearsInRain.UI {
 
             StatusConsole.Position = new Point(1, 1);
 
-
             StatusWindow.Title = title.Align(HorizontalAlignment.Center, statusConsoleWidth, '-');
             StatusWindow.Children.Add(StatusConsole);
             StatusWindow.Position = new Point(70, 0);
@@ -110,6 +119,152 @@ namespace TearsInRain.UI {
 
             StatusWindow.CanDrag = true;
             StatusWindow.Show();
+        }
+
+        public void CreateContextWindow(int width, int height, string title) {
+            ContextWindow = new Window(width, height);
+
+            int contextConsoleWidth = width - 2;
+            int contextConsoleHeight = height - 2;
+
+            ContextConsole.Position = new Point(1, 1);
+
+            ContextWindow.Title = title.Align(HorizontalAlignment.Center, contextConsoleWidth, '-');
+            ContextWindow.Children.Add(ContextConsole);
+            ContextWindow.Position = new Point(70, GameLoop.GameHeight / 3 * 2);
+            
+            Children.Add(ContextWindow);
+
+            ContextWindow.CanDrag = true;
+            ContextWindow.Show();
+        }
+
+        public void UpdateContextWindow() {
+            ContextConsole.Clear();
+            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
+                 
+                if (player.Inventory.Count >= invContextIndex + 1 && invContextIndex >= 0) {
+                    Item item = player.Inventory[invContextIndex];
+
+                    ContextConsole.Print(0, 0, item.Name);
+                    ContextConsole.Print(0, 1, "-".Align(HorizontalAlignment.Center, 28, '-'));
+
+                    ContextConsole.Print(0, 2, "Drop".Align(HorizontalAlignment.Center, 28, ' '));
+                } else {
+                    ContextConsole.Print(0, 0, "No Item Selected");
+                    ContextConsole.Print(0, 1, "-".Align(HorizontalAlignment.Center, 28, '-'));
+                }
+            }
+        }
+
+        private void contextClick(object sender, MouseEventArgs e) {
+            if (e.MouseState.Mouse.LeftClicked) {
+                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                    Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
+
+                    if (invContextIndex != -1 && invContextIndex < player.Inventory.Count) {
+                        if (e.MouseState.ConsoleCellPosition.Y != 99) {
+                            System.Console.WriteLine("RIGHT Y");
+                            player.DropItem(invContextIndex);
+                            invContextIndex = -1;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void UpdateStatusWindow() { 
+            StatusConsole.Clear();
+
+            TimeManager time = GameLoop.TimeManager;
+
+            ColoredString season = time.ColoredSeason();
+            ColoredString timeString = new ColoredString(time.GetTimeString(), Color.White, Color.TransparentBlack);
+            string dayYear = time.Day.ToString();
+            if (time.Day < 10) { dayYear = " " + dayYear; }
+
+            dayYear += ", Year " + time.Year.ToString();
+
+            StatusConsole.Print(1, 1, season);
+            StatusConsole.Print(1 + season.Count, 1, dayYear);
+            StatusConsole.Print(22, 1, timeString);
+            StatusConsole.Print(0, 3, "----------------------------");
+        }
+
+        public void CreateInventoryWindow(int width, int height, string title) {
+            InventoryWindow = new Window(width, height);
+
+            int invConsoleW = width - 2;
+            int invConsoleH = height - 2;
+
+            InventoryConsole.Position = new Point(1, 1);
+
+
+            InventoryWindow.Title = title.Align(HorizontalAlignment.Center, invConsoleW, '-');
+            InventoryWindow.Children.Add(InventoryConsole);
+            InventoryWindow.Position = new Point((GameLoop.GameWidth/2) - InventoryWindow.Width/2, (GameLoop.GameHeight/2) - InventoryWindow.Height/2);
+
+            Children.Add(InventoryWindow);
+
+            InventoryWindow.CanDrag = true;
+            InventoryWindow.Show();
+            InventoryWindow.IsVisible = false;
+            InventoryWindow.FocusOnMouseClick = true;
+
+            UpdateInventory();
+
+
+
+
+            InventoryConsole.MouseButtonClicked += invMouseClick;
+        }
+
+
+
+
+        private void invMouseClick(object sender, MouseEventArgs e) {
+            if (e.MouseState.Mouse.LeftClicked) {
+                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                    Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
+                    if (player.Inventory.Count >= e.MouseState.ConsoleCellPosition.Y - 2 && e.MouseState.ConsoleCellPosition.Y - 2 >= 0) {
+                        invContextIndex = e.MouseState.ConsoleCellPosition.Y - 2;
+                    }
+                }
+            }
+        } 
+
+        public void UpdateInventory() {
+            InventoryConsole.Clear();
+            
+            InventoryConsole.Print(29, 0, "Item Name | QTY | WEIGHT");
+            InventoryConsole.Print(0, 1, "---------------------------------------------------------");
+
+            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
+                for (int i = 0; i < player.Inventory.Count; i++) {
+                    InventoryConsole.Print(38 - player.Inventory[i].Name.Length, i+2, player.Inventory[i].Name);
+
+                    string qty = player.Inventory[i].Quantity.ToString();
+                    if (player.Inventory[i].Quantity < 100) { qty = " " + qty; }
+                    if (player.Inventory[i].Quantity < 10) { qty = " " + qty; }
+
+                    var space = "";
+
+                    string wgt = string.Format("{0:N2}", player.Inventory[i].StackWeight());
+                    //string wgt = player.Inventory[i].StackWeight().ToString();
+                    ColoredString weight = new ColoredString(string.Format("{0:N2}", player.Inventory[i].StackWeight(), Color.White, Color.Transparent));
+                    if (player.Inventory[i].StackWeight() < 100) { space = " "; }
+                    if (player.Inventory[i].StackWeight() < 10) { space = "  "; }
+                    if (weight[weight.Count-1].Glyph == '0') { weight[weight.Count - 1].Foreground = Color.DarkSlateGray; }
+                    if (weight[weight.Count - 2].Glyph == '0' && weight[weight.Count - 1].Glyph == '0') { weight[weight.Count - 2].Foreground = Color.DarkSlateGray; weight[weight.Count - 3].Foreground = Color.DarkSlateGray; }
+
+                    InventoryConsole.Print(39, i + 2, "| " + qty + " | " + space + weight);
+                    InventoryConsole.Print(54, i + 2, "kg");
+                }
+            }
+            
+
         }
 
         public void CreateMapWindow(int width, int height, string title) {
@@ -128,9 +283,11 @@ namespace TearsInRain.UI {
             Children.Add(MapWindow);
 
             MapConsole.Children.Add(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
-            
+
             MapWindow.CanDrag = true;
             MapWindow.Show();
+
+            
         }
 
         public void CreateMultiplayerWindow(int width, int height, string title) {
@@ -205,7 +362,7 @@ namespace TearsInRain.UI {
         }
 
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-           GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+            GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             var txn = lobbyManager.GetLobbyCreateTransaction();
@@ -313,6 +470,8 @@ namespace TearsInRain.UI {
             CheckKeyboard();
             base.Update(timeElapsed);
             GameLoop.World.CalculateFov(GameLoop.CommandManager.lastPeek);
+            UpdateStatusWindow();
+            UpdateContextWindow();
         }
 
         public void SyncMapEntities(Map map) {
@@ -373,19 +532,31 @@ namespace TearsInRain.UI {
 
                 if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
                     Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
-                    if (Global.KeyboardState.IsKeyPressed(Keys.C)) {
-                        waitingForCommand = "c";
-                    }
-
                     if (Global.KeyboardState.IsKeyPressed(Keys.G)) {
                         waitingForCommand = "g";
                     }
 
                     if (Global.KeyboardState.IsKeyPressed(Keys.X)) {
-                        waitingForCommand = "x";
+                        if (GameLoop.CommandManager.lastPeek == new Point(0, 0)) {
+                            waitingForCommand = "x";
+                        } else {
+                            ClearWait(player);
+                        }
                     }
 
-                    if (Global.KeyboardState.IsKeyPressed(Keys.S)) {
+                    if (Global.KeyboardState.IsKeyPressed(Keys.C) && Global.KeyboardState.IsKeyDown(Keys.LeftShift)) {
+                        waitingForCommand = "c";
+                    }
+
+                    if (Global.KeyboardState.IsKeyPressed(Keys.I)) {
+                        if (InventoryWindow.IsVisible) {
+                            InventoryWindow.IsVisible = false;
+                        } else {
+                            InventoryWindow.IsVisible = true;
+                        }
+                    }
+
+                    if (Global.KeyboardState.IsKeyPressed(Keys.S) && Global.KeyboardState.IsKeyDown(Keys.LeftShift)) {
                         if (!player.IsStealthing) {
                             int skillCheck = Dice.Roll("3d6");
                             player.Stealth(skillCheck, true);
@@ -404,7 +575,7 @@ namespace TearsInRain.UI {
 
 
                     if (player.TimeLastActed + (UInt64) player.Speed <= GameLoop.GameTime) {
-                        if (Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
+                        if (Global.KeyboardState.IsKeyPressed(Keys.E) || Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
                             Point thisDir = Utils.Directions["UR"];
                             if (waitingForCommand == "") {
                                 ClearWait(player);
@@ -423,7 +594,7 @@ namespace TearsInRain.UI {
 
                         }
 
-                        else if (Global.KeyboardState.IsKeyPressed(Keys.Up) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) {
+                        else if (Global.KeyboardState.IsKeyPressed(Keys.W) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) {
                             Point thisDir = Utils.Directions["U"];
                             if (waitingForCommand == "") {
                                 ClearWait(player);
@@ -440,7 +611,7 @@ namespace TearsInRain.UI {
                                 GameLoop.CommandManager.Peek(player, thisDir);
                             }
 
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad7)) {
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.Q) || Global.KeyboardState.IsKeyPressed(Keys.NumPad7)) {
                             Point thisDir = Utils.Directions["UL"];
                             if (waitingForCommand == "") {
                                 ClearWait(player);
@@ -457,7 +628,7 @@ namespace TearsInRain.UI {
                                 GameLoop.CommandManager.Peek(player, thisDir);
                             }
 
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.Right) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) {
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.D) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) {
                             Point thisDir = Utils.Directions["R"];
                             if (waitingForCommand == "") {
                                 ClearWait(player);
@@ -489,7 +660,7 @@ namespace TearsInRain.UI {
                                 ClearWait(player);
                                 GameLoop.CommandManager.Peek(player, thisDir);
                             }
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.Left) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) {
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.A) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) {
                             Point thisDir = Utils.Directions["L"];
                             if (waitingForCommand == "") {
                                 ClearWait(player);
@@ -505,7 +676,7 @@ namespace TearsInRain.UI {
                                 ClearWait(player);
                                 GameLoop.CommandManager.Peek(player, thisDir);
                             }
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad3)) {
+                        } else if ((Global.KeyboardState.IsKeyPressed(Keys.C) && !Global.KeyboardState.IsKeyDown(Keys.LeftShift)) || Global.KeyboardState.IsKeyPressed(Keys.NumPad3)) {
                             Point thisDir = Utils.Directions["DR"];
                             if (waitingForCommand == "") {
                                 ClearWait(player);
@@ -521,7 +692,7 @@ namespace TearsInRain.UI {
                                 ClearWait(player);
                                 GameLoop.CommandManager.Peek(player, thisDir);
                             }
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.Down) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) {
+                        } else if ((Global.KeyboardState.IsKeyPressed(Keys.S) && !Global.KeyboardState.IsKeyDown(Keys.LeftShift)) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) {
                             Point thisDir = Utils.Directions["D"];
                             if (waitingForCommand == "") {
                                 ClearWait(player);
@@ -537,7 +708,7 @@ namespace TearsInRain.UI {
                                 ClearWait(player);
                                 GameLoop.CommandManager.Peek(player, thisDir);
                             }
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad1)) {
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.Z) || Global.KeyboardState.IsKeyPressed(Keys.NumPad1)) {
                             Point thisDir = Utils.Directions["DL"];
                             if (waitingForCommand == "") {
                                 ClearWait(player);

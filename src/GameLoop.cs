@@ -20,7 +20,7 @@ namespace TearsInRain {
         public static NetworkingManager NetworkingManager;
 
         public static TimeManager TimeManager;
-
+        public static Point MouseLoc = new Point(0, 0);
 
         public static Dictionary<string, Monster> MonsterLibrary = new Dictionary<string, Monster>();
 
@@ -33,6 +33,7 @@ namespace TearsInRain {
 
         public static Random Random = new Random();
         static void Main(string[] args) {
+
             SadConsole.Game.Create(GameWidth, GameHeight);
             
             SadConsole.Game.OnInitialize = Init;
@@ -55,7 +56,12 @@ namespace TearsInRain {
                     }
                 }
             }
-            
+
+
+            if (MouseLoc != Global.MouseState.ScreenPosition) {
+                MouseLoc = Global.MouseState.ScreenPosition;
+            }
+
             NetworkingManager.Update();
         }
 
@@ -76,7 +82,8 @@ namespace TearsInRain {
             Global.FontDefault = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
             Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 100, 75, 0, 0);
             Global.ResetRendering();
-            
+
+            Global.KeyboardState.InitialRepeatDelay = 0.5f;
 
             Settings.AllowWindowResize = true;
 
@@ -91,7 +98,7 @@ namespace TearsInRain {
             SadConsole.Game.Instance.Window.ClientSizeChanged += Window_ClientSizeChanged;
 
             SadConsole.Game.OnUpdate += postUpdate;
-
+            
         }
 
         private static void postUpdate(GameTime time) {

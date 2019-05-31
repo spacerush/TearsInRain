@@ -9,6 +9,9 @@ namespace TearsInRain.Entities {
             Name = "Player";
             TimeLastActed = 0;
             Dexterity = 13;
+            Item item = new Item(Color.White, Color.Transparent, "The Book of Incredible Tales", '$', 0.5);
+
+            Inventory.Add(item);
         }
     }
 }

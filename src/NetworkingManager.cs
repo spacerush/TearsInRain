@@ -109,7 +109,6 @@ namespace TearsInRain {
                     int Minute = Convert.ToInt32(splitMsg[5]);
 
                     GameLoop.TimeManager = new TimeManager(Day, Season, Year, Hour, Minute);
-                    GameLoop.TimeManager.RefreshTimeDisplay();
                 }
 
 
