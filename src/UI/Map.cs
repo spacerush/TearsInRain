@@ -5,6 +5,7 @@ using System.Linq;
 using Point = Microsoft.Xna.Framework.Point;
 using GoRogue.MapViews;
 using GoRogue;
+using System.Collections.Generic;
 
 namespace TearsInRain {
     public class Map{
@@ -41,7 +42,7 @@ namespace TearsInRain {
         
         public T GetTileAt<T>(int x, int y) where T : TileBase {
             int locationIndex = Helpers.GetIndexFromPoint(x, y, Width);
-            if (locationIndex <= Width * Height && locationIndex >= 0) {
+            if (locationIndex < Width * Height && locationIndex >= 0) {
                 if (Tiles[locationIndex] is T)
                     return (T)Tiles[locationIndex];
                 else return null;
@@ -51,7 +52,11 @@ namespace TearsInRain {
         public T GetEntityAt<T>(Point location) where T : Entity {
             return Entities.GetItems(location).OfType<T>().FirstOrDefault();
         }
-        
+
+        public List<T> GetEntitiesAt<T>(Point location) where T : Entity {
+            return Entities.GetItems(location).OfType<T>().ToList<T>();
+        }
+
         public void Remove(Entity entity) {
             Entities.Remove(entity);
             

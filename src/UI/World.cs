@@ -7,6 +7,7 @@ using System.Linq;
 using SadConsole.Effects;
 using SadConsole.Components;
 using GoRogue;
+using SadConsole;
 
 namespace TearsInRain {
     public class World {
@@ -81,7 +82,7 @@ namespace TearsInRain {
         public void CreatePlayer(long playerUID) {
             if (!players.ContainsKey(playerUID)) {
                 Player newPlayer = new Player(Color.Yellow, Color.Transparent);
-            
+
                 for (int i = 0; i < CurrentMap.Tiles.Length; i++) {
                     if (!CurrentMap.Tiles[i].IsBlockingMove) {
                         newPlayer.Position = SadConsole.Helpers.GetPointFromIndex(i, CurrentMap.Width);
@@ -122,6 +123,12 @@ namespace TearsInRain {
         }
 
 
+        
+        public void ResetFOV() {
+            lastFov = null;
+            
+            CalculateFov(new Point (0, 0));
+        }
 
 
         public void CalculateFov(Point dir) {

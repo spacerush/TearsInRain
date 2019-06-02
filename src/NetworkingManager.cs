@@ -93,7 +93,7 @@ namespace TearsInRain {
                         Entity entity = JsonConvert.DeserializeObject<Actor>(smallerMsg[0], new ActorJsonConverter());
                         entity.Position = new Point(Convert.ToInt32(smallerMsg[1]), Convert.ToInt32(smallerMsg[2]));
                         entity.addParts();
-                        GameLoop.World.CurrentMap.Entities.Add(entity, entity.Position);
+                        GameLoop.World.CurrentMap.Add(entity);
                     }
                     
 
@@ -147,6 +147,36 @@ namespace TearsInRain {
                         }
                     }
                 }
+
+                if (splitMsg[0] == "i_data") {
+                    if (splitMsg[1] == "list") { // Format: i_data|list|{itemjson}~posX~posY|{itemjson}~posX~posY|...
+                        for (int i = 2; i < splitMsg.Length; i++) {
+                            string[] smallerMsg = splitMsg[i].Split('~');
+
+                            
+
+                            Item item = JsonConvert.DeserializeObject<Item>(smallerMsg[0], new ItemJsonConverter());
+                            item.Position = new Point(Convert.ToInt32(smallerMsg[1]), Convert.ToInt32(smallerMsg[2]));
+                            item.addParts();
+                            GameLoop.World.CurrentMap.Add(item);
+                        }
+
+
+                        GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+                    }
+
+                    if (splitMsg[1] == "equipped") {
+
+                    }
+
+                    if (splitMsg[1] == "drop") {
+
+                    }
+
+                    if (splitMsg[1] == "pickup") {
+
+                    }
+                }
             }
 
             if (channelId == 1) { // Chat Processing 
@@ -159,17 +189,14 @@ namespace TearsInRain {
                 var encoded = System.Text.Encoding.UTF8.GetString(data);
 
                 if (encoded != "a") {
-                    GameLoop.UIManager.MessageLog.Add("Map data received");
                     TileBase[] pretiles = Utils.GetMapFromString(encoded);
                     TileBase[] tiles = new TileBase[encoded.Length];
                     tiles = pretiles;
                     Map newMap = new Map(tiles);
                     GameLoop.World.CurrentMap = newMap;
-                    //GameLoop.UIManager.MapConsole = new SadConsole.ScrollingConsole(GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height, Global.FontDefault, new Rectangle(0, 0, GameLoop.GameWidth, GameLoop.GameHeight), newMap.Tiles);
-                    //GameLoop.UIManager.MapWindow.Invalidate();
                     GameLoop.UIManager.MapConsole.SetSurface(tiles, 100, 100);
 
-                    GameLoop.UIManager.MessageLog.Add("Map processed " + GameLoop.World.CurrentMap.Tiles.Length);
+                    GameLoop.World.ResetFOV();
                 }
             }
         }

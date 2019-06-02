@@ -46,6 +46,8 @@ namespace TearsInRain.Entities {
         public int Gold { get; set; }
         public List<Item> Inventory = new List<Item>();
 
+        public Item[] Equipped = new Item[14];
+
         public Actor(Color foreground, Color background, int glyph, int width = 1, int height = 1) : base(foreground, background, width, height, glyph) {
             Animation.CurrentFrame[0].Foreground = foreground;
             Animation.CurrentFrame[0].Background = background;
@@ -62,9 +64,11 @@ namespace TearsInRain.Entities {
                 Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + positionChange);
                 Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + positionChange);
 
+                string msg = "";
+
                 if (monster != null) {
                     GameLoop.CommandManager.Attack(this, monster);
-                    return true;
+                    return false;
                 } else if (tile is TileDoor door && !door.IsOpen) {
                     GameLoop.CommandManager.OpenDoor(this, door, Position + positionChange);
                     return true;
@@ -72,9 +76,6 @@ namespace TearsInRain.Entities {
 
 
                 Position += positionChange;
-
-                string msg = "move_p" + "|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y;
-                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
                 return true;
             } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justVert) || tile is TileDoor) {
                 Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + justVert);
@@ -90,9 +91,6 @@ namespace TearsInRain.Entities {
 
 
                 Position += justVert;
-
-                string msg = "move_p" + "|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y;
-                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
                 return true;
             } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justHori) || tile is TileDoor) {
                 Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + justHori);
@@ -108,9 +106,6 @@ namespace TearsInRain.Entities {
 
 
                 Position += justHori;
-
-                string msg = "move_p" + "|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y;
-                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
                 return true;
             } else { 
                 return false;
@@ -244,13 +239,82 @@ namespace TearsInRain.Entities {
         }
 
 
+        public void Unequip(int index) {
+            Item item = Equipped[index];
+
+            bool alreadyHaveItem = false;
+            for (int i = 0; i < Inventory.Count; i++) {
+                if (Equipped[index] != null && Inventory[i].Name == item.Name) {
+                    alreadyHaveItem = true;
+                    Inventory[i].Quantity += item.Quantity;
+                    if (item.Quantity == 1) {
+                        GameLoop.UIManager.MessageLog.Add($"{Name} unequipped the {item.Name}.");
+                    } else {
+                        GameLoop.UIManager.MessageLog.Add($"{Name} unequipped {item.Quantity} {item.NamePlural}.");
+                    }
+
+                    Equipped[index] = null;
+                    break;
+                }
+            }
+
+            if (!alreadyHaveItem && item != null) {
+                if (Inventory.Count < 26) {
+                    Inventory.Add(item);
+                    if (item.Quantity == 1) {
+                        GameLoop.UIManager.MessageLog.Add($"Unequipped the {item.Name}.");
+                    } else {
+                        GameLoop.UIManager.MessageLog.Add($"Unequipped {item.Quantity} {item.NamePlural}.");
+                    }
+
+                    Equipped[index] = null;
+                } else {
+                    GameLoop.UIManager.MessageLog.Add("Your inventory is full!");
+                }
+            }
+
+            RecalculateWeight();
+            GameLoop.UIManager.UpdateInventory();
+        }
+
+        public void Equip(int index) {
+            if (index < Inventory.Count && Inventory.Count < 26) {
+                if (Inventory[index].Slot != -1) {
+                    Item toEquip = Inventory[index].Clone();
+                    
+                    Inventory[index].Quantity--;
+
+                    Unequip(toEquip.Slot);
+
+                    Equipped[toEquip.Slot] = toEquip;
+
+                    if (Inventory[index].Quantity <= 0) {
+                        Inventory.RemoveAt(index);
+                    }
+
+                    GameLoop.UIManager.UpdateInventory();
+                    GameLoop.UIManager.UpdateEquipment();
+                    GameLoop.UIManager.MessageLog.Add($"Equipped the {toEquip.Name}.");
+                }
+            } else {
+                GameLoop.UIManager.MessageLog.Add($"Inventory too full to do that!");
+            }
+        }
+
+
+
         public void PickupItem(Item item) {
             bool alreadyHaveItem = false;
             for (int i = 0; i < Inventory.Count; i++) {
                 if (Inventory[i].Name == item.Name) {
                     alreadyHaveItem = true;
-                    Inventory[i].Quantity++;
-                    GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Name}.");
+                    Inventory[i].Quantity += item.Quantity;
+                    if (item.Quantity == 1) {
+                        GameLoop.UIManager.MessageLog.Add($"{Name} picked up the {item.Name}.");
+                    } else {
+                        GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Quantity} {item.NamePlural}."); 
+                    }
+                    
                     item.Destroy();
                     break;
                 }
@@ -259,7 +323,11 @@ namespace TearsInRain.Entities {
             if (!alreadyHaveItem) {
                 if (Inventory.Count < 26) {
                     Inventory.Add(item);
-                    GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Name}.");
+                    if (item.Quantity == 1) {
+                        GameLoop.UIManager.MessageLog.Add($"{Name} picked up the {item.Name}.");
+                    } else {
+                        GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Quantity} {item.NamePlural}.");
+                    }
                     item.Destroy();
                 } else {
                     GameLoop.UIManager.MessageLog.Add("Your inventory is full!");
@@ -271,15 +339,62 @@ namespace TearsInRain.Entities {
         }
 
 
-        public void DropItem(int index) {
-            Item dropped = Inventory[index];
-            dropped.Position = Position;
+        public void DropItem(int index, int num) {
+            List<Item> itemsAtPos = GameLoop.World.CurrentMap.GetEntitiesAt<Item>(Position);
 
-            GameLoop.World.CurrentMap.Add(dropped);
-            Inventory.RemoveAt(index);
+            if (num == 0 || num >= Inventory[index].Quantity) {
+                Item dropped = Inventory[index].Clone();
+                dropped.Position = Position;
 
-            RecalculateWeight();
-            GameLoop.UIManager.UpdateInventory();
+                bool foundSame = false;
+
+                for (int i = 0; i < itemsAtPos.Count; i++) {
+                    if (itemsAtPos[i].Name == Inventory[index].Name) {
+                        itemsAtPos[i].Quantity += dropped.Quantity;
+                        foundSame = true;
+                        break;
+                    }
+                }
+
+                if (!foundSame) {
+                    GameLoop.World.CurrentMap.Add(dropped);
+                }
+                
+                Inventory.RemoveAt(index);
+
+                RecalculateWeight();
+                GameLoop.UIManager.UpdateInventory();
+            } else {
+                Item dropped = Inventory[index].Clone();
+                dropped.Position = Position;
+                dropped.Quantity = num;
+
+                Inventory[index].Quantity -= num;
+
+                bool foundSame = false;
+
+                for (int i = 0; i < itemsAtPos.Count; i++) {
+                    if (itemsAtPos[i].Name == Inventory[index].Name) {
+                        itemsAtPos[i].Quantity += dropped.Quantity;
+                        foundSame = true;
+                        break;
+                    }
+                }
+
+                if (!foundSame) {
+                    GameLoop.World.CurrentMap.Add(dropped);
+                }
+
+                if (dropped.Quantity == 1) {
+                    GameLoop.UIManager.MessageLog.Add($"{Name} dropped the {dropped.Name}.");
+                } else {
+                    GameLoop.UIManager.MessageLog.Add($"{Name} dropped {dropped.Quantity} {dropped.NamePlural}.");
+                }
+
+                RecalculateWeight();
+                GameLoop.UIManager.UpdateInventory();
+
+            }
         }
     }
 }

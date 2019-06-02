@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
+using SadConsole;
 using SadConsole.Components;
 using TearsInRain.UI;
 
@@ -14,6 +15,11 @@ namespace TearsInRain.Entities {
             Animation.CurrentFrame[0].Foreground = foreground;
             Animation.CurrentFrame[0].Background = background;
             Animation.CurrentFrame[0].Glyph = glyph;
+            
+            Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(GameLoop.UIManager.hold);
+            Position = Position;
+            IsDirty = true;
+            GameLoop.UIManager.IsDirty = true;
 
             ID = Map.IDGenerator.UseID();
             Components.Add(new EntityViewSyncComponent());

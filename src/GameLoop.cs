@@ -33,12 +33,11 @@ namespace TearsInRain {
 
         public static Random Random = new Random();
         static void Main(string[] args) {
-
             SadConsole.Game.Create(GameWidth, GameHeight);
-            
+
             SadConsole.Game.OnInitialize = Init;
             SadConsole.Game.OnUpdate = Update;
-            
+
 
             SadConsole.Game.Instance.Run();
             SadConsole.Game.Instance.Dispose();

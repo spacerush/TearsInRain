@@ -93,6 +93,7 @@
     <Compile Include="Discord\StorageManager.cs" />
     <Compile Include="Discord\StoreManager.cs" />
     <Compile Include="src\NetworkingManager.cs" />
+    <Compile Include="src\Serializers\Item.cs" />
     <Compile Include="src\Serializers\Actor.cs" />
     <Compile Include="src\TimeManager.cs" />
     <Compile Include="src\UI\Map.cs" />
@@ -196,14 +197,19 @@
     <None Include="fonts\Cheepicus12.font">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="fonts\Hack64.font">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
-    <None Include="TearsInRain_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\Cheepicus_12x12.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="fonts\Hack64.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

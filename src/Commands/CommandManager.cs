@@ -16,6 +16,9 @@ namespace TearsInRain.Commands {
         public bool MoveActorBy(Actor actor, Point position) {
             if (actor.MoveBy(position)) {
                 actor.TimeLastActed = GameLoop.GameTime;
+
+                string msg = "move_p" + "|" + GameLoop.NetworkingManager.myUID + "|" + actor.Position.X + "|" + actor.Position.Y;
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
                 return true;
             }
 
@@ -80,7 +83,9 @@ namespace TearsInRain.Commands {
 
             if (defender.Inventory.Count > 0) { 
                 foreach (Item item in defender.Inventory) {
+                    item.Font = SadConsole.Global.LoadFont("fonts/Cheepicus12.font").GetFont(GameLoop.UIManager.hold);
                     item.Position = defender.Position;
+                    
                     GameLoop.World.CurrentMap.Add(item);
                 } 
                 defender.Inventory.Clear();
