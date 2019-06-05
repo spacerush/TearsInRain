@@ -6,8 +6,8 @@ namespace TearsInRain.Tiles {
         public bool Locked;
         public bool IsOpen;
 
-        public TileDoor(bool locked, bool open) : base (Color.Orange, Color.Transparent, '+') {
-            Glyph = '+';
+        public TileDoor(bool locked, bool open) : base (Color.Orange, Color.Transparent, 260) {
+            Glyph = 260;
             Name = "door";
             Background = new Color(71, 36, 0);
 
@@ -24,20 +24,26 @@ namespace TearsInRain.Tiles {
             IsOpen = false;
             IsBlockingLOS = true;
             IsBlockingMove = true;
+
+            if (GameLoop.GameTime > 100)
+                GameLoop.SoundLibrary["door_close"].Play();
         }
 
         public void Open() {
             IsOpen = true;
             IsBlockingLOS = false;
             IsBlockingMove = false;
+
+            if (GameLoop.GameTime > 100)
+                GameLoop.SoundLibrary["door_open"].Play();
         }
 
 
         public void UpdateGlyph() {
             if (IsOpen) {
-                Glyph = '`';
+                Glyph = 261;
             } else {
-                Glyph = '+';
+                Glyph = 260;
             }
         }
 

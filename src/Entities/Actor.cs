@@ -24,7 +24,13 @@ namespace TearsInRain.Entities {
         public int MaxHealth = 10; // Starts equal to Strength
         public int Will = 10; // Starts equal to Intelligence
         public int Perception = 10; // Starts equal to Intelligence
-        public int Stamina = 10; // Starts equal to Vitality
+
+
+        public int MaxStamina = 10; // Starts equal to Vitality
+        public int CurrentStamina = 10;
+
+        public int MaxEnergy = 10;
+        public int CurrentEnergy = 10;
 
         // Secondary Attributes (Indirect)
         public double Carrying_Weight = 0;
@@ -32,8 +38,9 @@ namespace TearsInRain.Entities {
         public double MaxCarriedVolume = 0;
 
         public int Speed = 10;
-
         public int EncumbranceLv = 0;
+        public int BasicLift = (int) Math.Round((double)(10 * 10) / 5, 0);
+        public int HeldGold = 0;
 
         public int BaseDodge = 8;
         public int Dodge = 8;
@@ -42,6 +49,8 @@ namespace TearsInRain.Entities {
         public bool FailedStealth = false; 
         public int StealthResult = 0;
         public int BaseStealthResult = 0;
+
+
 
         public int Gold { get; set; }
         public List<Item> Inventory = new List<Item>();
@@ -61,10 +70,14 @@ namespace TearsInRain.Entities {
             Point justHori = new Point(positionChange.X, 0);
 
             if (GameLoop.World.CurrentMap.IsTileWalkable(Position + positionChange) || tile is TileDoor) {
-                Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + positionChange);
+                Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + positionChange);
                 Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + positionChange);
 
-                string msg = "";
+                foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
+                    if (player.Value.Position == Position + positionChange) {
+                        monster = player.Value;
+                    }
+                }
 
                 if (monster != null) {
                     GameLoop.CommandManager.Attack(this, monster);
@@ -78,8 +91,14 @@ namespace TearsInRain.Entities {
                 Position += positionChange;
                 return true;
             } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justVert) || tile is TileDoor) {
-                Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + justVert);
+                Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + justVert);
                 Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + justVert);
+
+                foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
+                    if (player.Value.Position == Position + justVert) {
+                        monster = player.Value;
+                    }
+                }
 
                 if (monster != null) {
                     GameLoop.CommandManager.Attack(this, monster);
@@ -93,8 +112,14 @@ namespace TearsInRain.Entities {
                 Position += justVert;
                 return true;
             } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justHori) || tile is TileDoor) {
-                Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(Position + justHori);
+                Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + justHori);
                 Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + justHori);
+
+                foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
+                    if (player.Value.Position == Position + justHori) {
+                        monster = player.Value;
+                    }
+                }
 
                 if (monster != null) {
                     GameLoop.CommandManager.Attack(this, monster);
@@ -211,7 +236,7 @@ namespace TearsInRain.Entities {
 
 
         public void CalculateEncumbrance() {
-            int BasicLift = (int) Math.Round((double) (Strength * Strength) / 5, 0); // Weight you can lift above your head with one hand comfortably.
+            BasicLift = (int) Math.Round((double) (Strength * Strength) / 5, 0); // Weight you can lift above your head with one hand comfortably.
 
             if (Carrying_Weight <= BasicLift) { EncumbranceLv = 0; } // Not Encumbered at all
             if (BasicLift < Carrying_Weight && Carrying_Weight <= BasicLift * 2) { EncumbranceLv = 1; } // Light
@@ -219,10 +244,14 @@ namespace TearsInRain.Entities {
             if (BasicLift * 3 < Carrying_Weight && Carrying_Weight <= BasicLift * 6) { EncumbranceLv = 3; } // Heavy
             if (BasicLift * 6 < Carrying_Weight && Carrying_Weight <= BasicLift * 10) { EncumbranceLv = 4; } // Extra Heavy
 
-            if (BasicLift * 10 < Carrying_Weight) {
-                Speed = 2;
-            } else {
-                Speed = 1;
+            if (IsStealthing) {
+                Speed -= 5;
+            }
+
+            Speed = 10;
+
+            if (IsStealthing) {
+                Speed += 5;
             }
 
             Dodge = BaseDodge - EncumbranceLv;
@@ -236,6 +265,7 @@ namespace TearsInRain.Entities {
             }
 
             Carrying_Weight = totalWeight;
+            CalculateEncumbrance();
         }
 
 
@@ -274,6 +304,12 @@ namespace TearsInRain.Entities {
             }
 
             RecalculateWeight();
+
+            if (this is Player) {
+                string msg = "p_update|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y + "|" + JsonConvert.SerializeObject(this, Formatting.Indented, new ActorJsonConverter());
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
+            }
+
             GameLoop.UIManager.UpdateInventory();
         }
 
@@ -299,6 +335,11 @@ namespace TearsInRain.Entities {
             } else {
                 GameLoop.UIManager.MessageLog.Add($"Inventory too full to do that!");
             }
+
+            if (this is Player) {
+                string msg = "p_update|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y + "|" + JsonConvert.SerializeObject(this, Formatting.Indented, new ActorJsonConverter());
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
+            }
         }
 
 
@@ -314,7 +355,10 @@ namespace TearsInRain.Entities {
                     } else {
                         GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Quantity} {item.NamePlural}."); 
                     }
-                    
+
+
+                    string pickupMsg = "i_data|pickup|" + item.Position.X + "|" + item.Position.Y + "|" + JsonConvert.SerializeObject(item, Formatting.Indented, new ItemJsonConverter()) + "|" + item.Quantity;
+                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(pickupMsg));
                     item.Destroy();
                     break;
                 }
@@ -328,6 +372,9 @@ namespace TearsInRain.Entities {
                     } else {
                         GameLoop.UIManager.MessageLog.Add($"{Name} picked up {item.Quantity} {item.NamePlural}.");
                     }
+
+                    string pickupMsg = "i_data|pickup|" + item.Position.X + "|" + item.Position.Y + "|" + JsonConvert.SerializeObject(item, Formatting.Indented, new ItemJsonConverter()) + "|" + item.Quantity;
+                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(pickupMsg));
                     item.Destroy();
                 } else {
                     GameLoop.UIManager.MessageLog.Add("Your inventory is full!");
@@ -336,6 +383,11 @@ namespace TearsInRain.Entities {
 
             RecalculateWeight();
             GameLoop.UIManager.UpdateInventory();
+
+            if (this is Player) {
+                string msg = "p_update|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y + "|" + JsonConvert.SerializeObject(this, Formatting.Indented, new ActorJsonConverter());
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
+            }
         }
 
 
@@ -344,6 +396,7 @@ namespace TearsInRain.Entities {
 
             if (num == 0 || num >= Inventory[index].Quantity) {
                 Item dropped = Inventory[index].Clone();
+                dropped.Font = SadConsole.Global.LoadFont("fonts/Cheepicus12.font").GetFont(GameLoop.UIManager.hold);
                 dropped.Position = Position;
 
                 bool foundSame = false;
@@ -358,14 +411,19 @@ namespace TearsInRain.Entities {
 
                 if (!foundSame) {
                     GameLoop.World.CurrentMap.Add(dropped);
+
                 }
-                
+
                 Inventory.RemoveAt(index);
 
                 RecalculateWeight();
                 GameLoop.UIManager.UpdateInventory();
+
+                string secondMsg = "i_data|drop|" + Position.X + "|" + Position.Y + "|" + JsonConvert.SerializeObject(dropped, Formatting.Indented, new ItemJsonConverter());
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(secondMsg));
             } else {
                 Item dropped = Inventory[index].Clone();
+                dropped.Font = SadConsole.Global.LoadFont("fonts/Cheepicus12.font").GetFont(GameLoop.UIManager.hold);
                 dropped.Position = Position;
                 dropped.Quantity = num;
 
@@ -394,7 +452,17 @@ namespace TearsInRain.Entities {
                 RecalculateWeight();
                 GameLoop.UIManager.UpdateInventory();
 
+                string secondMsg = "i_data|drop|" + Position.X + "|" + Position.Y + "|" + JsonConvert.SerializeObject(dropped, Formatting.Indented, new ItemJsonConverter());
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(secondMsg));
             }
+
+
+            if (this is Player) {
+                string msg = "p_update|" + GameLoop.NetworkingManager.myUID + "|" + Position.X + "|" + Position.Y + "|" + JsonConvert.SerializeObject(this, Formatting.Indented, new ActorJsonConverter());
+                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
+            }
+
+
         }
     }
 }

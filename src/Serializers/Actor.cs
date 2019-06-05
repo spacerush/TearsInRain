@@ -38,12 +38,18 @@ namespace TearsInRain.Serializers {
 
         // Secondary Direct
         [DataMember] public int HP; // Health
+        [DataMember] public int MaxHP;
         [DataMember] public int Will;
         [DataMember] public int PER; // Perception
         [DataMember] public int STA; // Stamina
+        [DataMember] public int MaxSTA;
+        [DataMember] public int ENG; // Energy
+        [DataMember] public int MaxENG;
 
         [DataMember] public int SPD; // Speed
         [DataMember] public int Dodge;
+
+        [DataMember] public List<Item> Inventory;
 
 
         public static implicit operator ActorSerialized(Actor actor) {
@@ -60,12 +66,17 @@ namespace TearsInRain.Serializers {
                 VT = actor.Vitality,
 
                 HP = actor.Health,
+                MaxHP = actor.MaxHealth,
                 Will = actor.Will,
                 PER = actor.Perception,
-                STA = actor.Stamina,
+                STA = actor.CurrentStamina,
+                MaxSTA = actor.MaxStamina,
+                ENG = actor.CurrentEnergy,
+                MaxENG = actor.MaxEnergy,
 
                 SPD = actor.Speed,
                 Dodge = actor.Dodge,
+                Inventory = actor.Inventory,
             };
 
             return serializedObject;
@@ -82,15 +93,19 @@ namespace TearsInRain.Serializers {
             entity.Vitality = serializedObject.VT;
 
             entity.Health = serializedObject.HP;
-            entity.MaxHealth = serializedObject.HP;
+            entity.MaxHealth = serializedObject.MaxHP;
             entity.Will = serializedObject.Will;
             entity.Perception = serializedObject.PER;
-            entity.Stamina = serializedObject.STA;
+            entity.CurrentStamina = serializedObject.STA;
+            entity.MaxStamina = serializedObject.MaxSTA;
+            entity.CurrentEnergy = serializedObject.ENG;
+            entity.MaxEnergy = serializedObject.MaxENG;
 
             entity.Speed = serializedObject.SPD;
             entity.BaseDodge = serializedObject.Dodge;
             entity.Dodge = serializedObject.Dodge;
 
+            entity.Inventory = serializedObject.Inventory;
 
             return entity;
         }

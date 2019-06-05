@@ -16,7 +16,7 @@ namespace TearsInRain.Entities {
             Animation.CurrentFrame[0].Background = background;
             Animation.CurrentFrame[0].Glyph = glyph;
             
-            Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(GameLoop.UIManager.hold);
+            Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
             Position = Position;
             IsDirty = true;
             GameLoop.UIManager.IsDirty = true;
@@ -24,13 +24,6 @@ namespace TearsInRain.Entities {
             ID = Map.IDGenerator.UseID();
             Components.Add(new EntityViewSyncComponent());
 
-
-            IsVisible = false;
-        }
-
-        public void addParts() {
-            ID = Map.IDGenerator.UseID();
-            Components.Add(new EntityViewSyncComponent());
 
             IsVisible = false;
         }

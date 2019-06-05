@@ -41,28 +41,46 @@ namespace TearsInRain.Commands {
         }
 
 
-        public void Attack(Actor attacker, Actor defender) {
-            int attackChance = Dice.Roll("3d6");
-            int dodgeChance = Dice.Roll("3d6");
+        public void Attack(Actor attacker, Actor defender, int preAttack = -1, int preDodge = -1, int preDamage = -1, bool received = false) {
+            if (attacker != null && defender != null) {
+                int attackChance = Dice.Roll("3d6");
+                int dodgeChance = Dice.Roll("3d6");
+                int damage = Dice.Roll(attacker.GetMeleeDamage("swing"));
 
-            //GameLoop.UIManager.SaveMonster(defender);
-
-            if (attackChance != 17 && attackChance != 18) { // Check to make sure attacker didn't critically miss
-                if (attackChance == 2 || attackChance == 3) { // Check to see if attacker critically hit
-                    int damage = Dice.Roll(attacker.GetMeleeDamage("swing"));
-                    GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " scored a critical hit on " + defender.Name + " for " + damage + " damage!", Color.LimeGreen); // Critical hit is a guaranteed hit and 1.5x damage
-                    ResolveDamage(defender, damage * 1.5);
-                } else { // Otherwise it's a normal attack
-                    if (dodgeChance > defender.Dodge) { // Check if defender failed to dodge
-                        int damage = Dice.Roll(attacker.GetMeleeDamage("swing"));
-                        GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " scored a hit on " + defender.Name + " for " + damage + " damage!", Color.CornflowerBlue); 
-                        ResolveDamage(defender, damage);
-                    } else { // Otherwise they successfully dodged the attack, negating all damage
-                        GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " attacked " + defender.Name + ", but the attack was dodged!", Color.Red);
-                    }
+                if (preAttack != -1) {
+                    attackChance = preAttack;
                 }
-            } else { // Attacker critically missed, which means the defender didn't have to try and dodge.
-                GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " critically missed while attacking " + defender.Name + "!", Color.DarkRed);
+
+                if (preDodge != -1) {
+                    dodgeChance = preDodge;
+                }
+
+                if (preDamage != -1) {
+                    damage = preDamage;
+                }
+
+                if (!received) {
+                    string msg = "dmg|" + defender.Position.X + "|" + defender.Position.Y + "|" + attacker.Position.X + "|" + attacker.Position.Y + "|" + attackChance + "|" + dodgeChance + "|" + damage;
+                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(msg));
+                }
+
+                //GameLoop.UIManager.SaveMonster(defender);
+
+                if (attackChance != 17 && attackChance != 18) { // Check to make sure attacker didn't critically miss
+                    if (attackChance == 2 || attackChance == 3) { // Check to see if attacker critically hit
+                        GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " scored a critical hit on " + defender.Name + " for " + damage + " damage!", Color.LimeGreen); // Critical hit is a guaranteed hit and 1.5x damage
+                        ResolveDamage(defender, damage * 1.5);
+                    } else { // Otherwise it's a normal attack
+                        if (dodgeChance > defender.Dodge) { // Check if defender failed to dodge
+                            GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " scored a hit on " + defender.Name + " for " + damage + " damage!", Color.CornflowerBlue);
+                            ResolveDamage(defender, damage);
+                        } else { // Otherwise they successfully dodged the attack, negating all damage
+                            GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " attacked " + defender.Name + ", but the attack was dodged!", Color.Red);
+                        }
+                    }
+                } else { // Attacker critically missed, which means the defender didn't have to try and dodge.
+                    GameLoop.UIManager.MessageLog.Add(Utils.FirstCharToUpper(attacker.Name) + " critically missed while attacking " + defender.Name + "!", Color.DarkRed);
+                }
             }
         }
 
@@ -92,8 +110,15 @@ namespace TearsInRain.Commands {
             } else {
                 deathMessage.Append(".");
             }
+            
 
-            GameLoop.World.CurrentMap.Remove(defender);
+            if (defender is Player) {
+                defender.Position = new Point(0, 0);
+                defender.Health = defender.MaxHealth;
+            } else {
+                GameLoop.World.CurrentMap.Remove(defender); 
+            }
+
             GameLoop.UIManager.MessageLog.Add(deathMessage.ToString());
         }
 

@@ -3,14 +3,14 @@ using Microsoft.Xna.Framework;
 
 namespace TearsInRain.Tiles { 
     public class TileFloor : TileBase {
-        public TileFloor(bool blocksMovement = false, bool blocksLOS = false, string type="floor") : base(Color.DarkGray, Color.Transparent, '.', blocksMovement, blocksLOS) {
+        public TileFloor(bool blocksMovement = false, bool blocksLOS = false, string type="floor") : base(Color.DarkGray, Color.Transparent, 262, blocksMovement, blocksLOS) {
             if (type == "floor") {
                 Name = "floor";
             } else if (type == "room") {
                 Name = "wood floor";
                 Foreground = new Color(86, 44, 0);
                 Background = new Color(71, 36, 0);
-                Glyph = '_';
+                Glyph = 265;
             } else if (type == "grass") {
                 Name = "grass";
                 Background = new Color(15, 109, 1);
@@ -19,9 +19,9 @@ namespace TearsInRain.Tiles {
                 var foliage = GameLoop.Random.Next(0, 5);
 
                 if (foliage == 0 || foliage == 1) {
-                    Glyph = '.';
+                    Glyph = 262;
                 } else if (foliage == 2 || foliage == 3) {
-                    Glyph = ',';
+                    Glyph = 263;
                 } else {
                     Glyph = '*';
                     var color = GameLoop.Random.Next(4, 10);
@@ -34,7 +34,7 @@ namespace TearsInRain.Tiles {
                 Background = new Color(15, 109, 1);
                 Foreground = new Color(21, 153, 1);
                 var rand = GameLoop.Random.Next(1, 2);
-                if (rand == 1) { Glyph = '.';  } else { Glyph = ','; }
+                if (rand == 1) { Glyph = 262;  } else { Glyph = 263; }
             } else if (type == "cornflower") {
                 Name = "cornflower";
                 Background = new Color(15, 109, 1);

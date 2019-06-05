@@ -182,7 +182,7 @@ namespace TearsInRain {
                     if (!(entity is Player)) {
                         if (!lastFov.BooleanFOV[entity.Position.X, entity.Position.Y]) {
                             entity.IsVisible = false;
-                        } else if (lastFov.BooleanFOV[entity.Position.X, entity.Position.Y]) {
+                        } else if (lastFov.BooleanFOV[entity.Position.X, entity.Position.Y] && GameLoop.UIManager.MapConsole.ViewPort.Contains(entity.Position.X, entity.Position.Y)) {
                             entity.IsVisible = true;
                         }
                     }

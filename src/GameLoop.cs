@@ -11,8 +11,8 @@ namespace TearsInRain {
     class GameLoop {
         public static UInt64 GameTime = 0; // Deciseconds since game launch (Decisecond = tenth of a second)
 
-        public const int GameWidth = 100;
-        public const int GameHeight = 75;
+        public const int GameWidth = 80;
+        public const int GameHeight = 60;
 
         public static UIManager UIManager;
         public static World World;
@@ -22,6 +22,8 @@ namespace TearsInRain {
         public static TimeManager TimeManager;
         public static Point MouseLoc = new Point(0, 0);
 
+
+        public static Dictionary<string, System.Media.SoundPlayer> SoundLibrary = new Dictionary<string, System.Media.SoundPlayer>();
         public static Dictionary<string, Monster> MonsterLibrary = new Dictionary<string, Monster>();
 
 
@@ -31,8 +33,13 @@ namespace TearsInRain {
         public static bool timeFlowing = true;
         public static int centisecondCounter = 0;
 
+
+        public static GoRogue.MultiSpatialMap<Entity> ReceivedEntities;
+
         public static Random Random = new Random();
         static void Main(string[] args) {
+            initSounds();
+
             SadConsole.Game.Create(GameWidth, GameHeight);
 
             SadConsole.Game.OnInitialize = Init;
@@ -79,7 +86,7 @@ namespace TearsInRain {
             Utils.InitDirections();
 
             Global.FontDefault = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
-            Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 100, 75, 0, 0);
+            Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 80, 60, 0, 0);
             Global.ResetRendering();
 
             Global.KeyboardState.InitialRepeatDelay = 0.5f;
@@ -97,13 +104,19 @@ namespace TearsInRain {
             SadConsole.Game.Instance.Window.ClientSizeChanged += Window_ClientSizeChanged;
 
             SadConsole.Game.OnUpdate += postUpdate;
-            
         }
 
         private static void postUpdate(GameTime time) {
             if (NetworkingManager.discord.GetLobbyManager() != null) {
                 NetworkingManager.discord.GetLobbyManager().FlushNetwork();
             }
+        }
+
+
+        private static void initSounds() {
+            SoundLibrary.Add("door_close", new System.Media.SoundPlayer(@"res/door_close.wav"));
+            SoundLibrary.Add("door_open", new System.Media.SoundPlayer(@"res/door_open.wav"));
+            
         }
 
 

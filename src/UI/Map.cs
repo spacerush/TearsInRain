@@ -22,7 +22,12 @@ namespace TearsInRain {
             Width = width;
             Height = height;
             Tiles = new TileBase[width * height];
-            Entities = new GoRogue.MultiSpatialMap<Entity>();
+
+            if (GameLoop.ReceivedEntities != null) {
+                Entities = GameLoop.ReceivedEntities;
+            } else {
+                Entities = new GoRogue.MultiSpatialMap<Entity>();
+            }
         }
 
         public Map(TileBase[] tiles) {
@@ -30,7 +35,11 @@ namespace TearsInRain {
             Height = 100;
             Tiles = new TileBase[100 * 100];
             Tiles = tiles;
-            Entities = new GoRogue.MultiSpatialMap<Entity>();
+            if (GameLoop.ReceivedEntities != null) {
+                Entities = GameLoop.ReceivedEntities;
+            } else {
+                Entities = new GoRogue.MultiSpatialMap<Entity>();
+            }
         }
 
 

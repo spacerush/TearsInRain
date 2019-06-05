@@ -37,7 +37,9 @@ namespace TearsInRain {
             lobbyManager.OpenNetworkChannel(lobbyId, 2, true); // World Logic
 
             lobbyManager.OnNetworkMessage += processMessage;
-            
+
+
+            myUID = userManager.GetCurrentUser().Id;
 
             hostUID = lobbyManager.GetLobby(lobbyID).OwnerId;  
             // We're ready to go!
@@ -83,8 +85,27 @@ namespace TearsInRain {
                     }
                 }
 
+                if (splitMsg[0] == "p_update") {
+                    long uid = Convert.ToInt64(splitMsg[1]);
+                    int x = Convert.ToInt32(splitMsg[2]);
+                    int y = Convert.ToInt32(splitMsg[3]);
+
+                    Actor newP = JsonConvert.DeserializeObject<Actor>(splitMsg[4], new ActorJsonConverter());
+
+                    if (GameLoop.World.players.ContainsKey(uid)) {
+                        GameLoop.World.players[uid] = new Player(newP.Animation.CurrentFrame[0].Foreground, newP.Animation.CurrentFrame[0].Background, newP);
+                        GameLoop.World.players[uid].Position = new Point(x, y);
+
+                        GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+                    } else {
+                        GameLoop.World.players.Add(uid, new Player(newP.Animation.CurrentFrame[0].Foreground, newP.Animation.CurrentFrame[0].Background, newP));
+                    }
+                }
+
                 if (splitMsg[0] == "m_list") {
-                    GameLoop.World.CurrentMap.Entities = new GoRogue.MultiSpatialMap<Entity>();
+                    //  GameLoop.World.CurrentMap.Entities = new GoRogue.MultiSpatialMap<Entity>();
+                    GameLoop.ReceivedEntities = new GoRogue.MultiSpatialMap<Entity>();
+                    GameLoop.ReceivedEntities.Clear();
                     for (int i = 1; i < splitMsg.Length; i++) {
                         string[] smallerMsg = splitMsg[i].Split('~');
                         
@@ -92,10 +113,14 @@ namespace TearsInRain {
 
                         Entity entity = JsonConvert.DeserializeObject<Actor>(smallerMsg[0], new ActorJsonConverter());
                         entity.Position = new Point(Convert.ToInt32(smallerMsg[1]), Convert.ToInt32(smallerMsg[2]));
-                        entity.addParts();
-                        GameLoop.World.CurrentMap.Add(entity);
+                        GameLoop.ReceivedEntities.Add(entity, entity.Position);
+
+                        entity.IsVisible = false;
+                        entity.IsDirty = true;
                     }
-                    
+
+
+                    GameLoop.World.CurrentMap.Entities = GameLoop.ReceivedEntities;
 
                     GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
                 }
@@ -157,25 +182,68 @@ namespace TearsInRain {
 
                             Item item = JsonConvert.DeserializeObject<Item>(smallerMsg[0], new ItemJsonConverter());
                             item.Position = new Point(Convert.ToInt32(smallerMsg[1]), Convert.ToInt32(smallerMsg[2]));
-                            item.addParts();
                             GameLoop.World.CurrentMap.Add(item);
+
+                            item.IsVisible = false;
+                            item.IsDirty = true;
                         }
 
 
                         GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
                     }
 
-                    if (splitMsg[1] == "equipped") {
-
-                    }
-
                     if (splitMsg[1] == "drop") {
+                        int x = Convert.ToInt32(splitMsg[2]);
+                        int y = Convert.ToInt32(splitMsg[3]);
+                        Item item = JsonConvert.DeserializeObject<Item>(splitMsg[4], new ItemJsonConverter());
+                        item.Position = new Point(x, y);
+                        GameLoop.World.CurrentMap.Add(item);
 
+                        item.IsVisible = false;
+                        item.IsDirty = true;
                     }
 
                     if (splitMsg[1] == "pickup") {
+                        int x = Convert.ToInt32(splitMsg[2]);
+                        int y = Convert.ToInt32(splitMsg[3]);
+                        Item item = JsonConvert.DeserializeObject<Item>(splitMsg[4], new ItemJsonConverter());
+                        int quantityGrabbed = Convert.ToInt32(splitMsg[5]);
+
+                        List<Item> items = GameLoop.World.CurrentMap.GetEntitiesAt<Item>(new Point(x, y));
+
+                        for (int i = 0; i < items.Count; i++) {
+                            if (items[i].Name == item.Name) {
+                                items[i].Quantity -= quantityGrabbed;
+
+                                if (items[i].Quantity <= 0) {
+                                    GameLoop.World.CurrentMap.Entities.Remove(items[i]);
+                                }
+
+                                break;
+                            }
+                        }
 
                     }
+                }
+
+
+                if (splitMsg[0] == "dmg") {
+                    Point def = new Point(Convert.ToInt32(splitMsg[1]), Convert.ToInt32(splitMsg[2])); 
+                    Point atk = new Point(Convert.ToInt32(splitMsg[3]),  Convert.ToInt32(splitMsg[4]));
+
+                    int attackChance = Convert.ToInt32(splitMsg[5]);
+                    int dodgeChance = Convert.ToInt32(splitMsg[6]);
+                    int damage = Convert.ToInt32(splitMsg[7]);
+
+                    Actor defender = GameLoop.World.CurrentMap.GetEntityAt<Monster>(def);
+                    Actor attacker = GameLoop.World.CurrentMap.GetEntityAt<Monster>(atk);
+
+                    foreach(KeyValuePair<long, Player> player in GameLoop.World.players) {
+                        if (player.Value.Position == def && defender == null) { defender = player.Value; }
+                        if (player.Value.Position == atk && attacker == null) { attacker = player.Value; }
+                    }
+
+                    GameLoop.CommandManager.Attack(attacker, defender, attackChance, dodgeChance, damage, true); 
                 }
             }
 

@@ -71,13 +71,13 @@ namespace TearsInRain.UI {
         public void Init() {
             CreateConsoles();
 
-            MessageLog = new MessageLogWindow(70, (GameLoop.GameHeight / 3), "[MESSAGE LOG]");
+            MessageLog = new MessageLogWindow(60, (GameLoop.GameHeight / 3), "[MESSAGE LOG]");
             MessageLog.Title.Align(HorizontalAlignment.Center, MessageLog.Title.Length); 
             Children.Add(MessageLog);
             MessageLog.Show();
             MessageLog.Position = new Point(0, (GameLoop.GameHeight / 3) * 2);
 
-            ChatLog = new ChatLogWindow(70, GameLoop.GameHeight / 3, "[CHAT LOG]");
+            ChatLog = new ChatLogWindow(60, GameLoop.GameHeight / 3, "[CHAT LOG]");
             Children.Add(MessageLog);
             ChatLog.Show();
             ChatLog.IsVisible = false;
@@ -87,14 +87,14 @@ namespace TearsInRain.UI {
 
             LoadMap(GameLoop.World.CurrentMap);
 
-            CreateMapWindow(70, (GameLoop.GameHeight/3) * 2,"[GAME MAP]");
+            CreateMapWindow(60, (GameLoop.GameHeight/3) * 2,"[GAME MAP]");
             UseMouse = true;
 
             CreateMultiplayerWindow(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2, "[MULTIPLAYER]");
 
-            CreateStatusWindow(30, (GameLoop.GameHeight / 3) * 2 , "[PLAYER INFO]");
+            CreateStatusWindow(20, (GameLoop.GameHeight / 3) * 2 , "[PLAYER INFO]");
 
-            CreateContextWindow(30, GameLoop.GameHeight / 3, "[ITEM MENU]");
+            CreateContextWindow(20, GameLoop.GameHeight / 3, "[ITEM MENU]");
 
             ContextConsole.MouseButtonClicked += contextClick;
 
@@ -109,12 +109,12 @@ namespace TearsInRain.UI {
             
         }
         public void CreateConsoles() {
-            MapConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);  
-            MultiConsole = new ScrollingConsole(GameLoop.GameWidth, GameLoop.GameHeight);
-            StatusConsole = new Console(30, 50);
-            InventoryConsole = new Console(GameLoop.GameWidth, GameLoop.GameHeight);
-            ContextConsole = new Console(30, 25);
-            EquipmentConsole = new Console(GameLoop.GameWidth, GameLoop.GameHeight);
+            MapConsole = new ScrollingConsole(60, (GameLoop.GameHeight / 3) * 2);  
+            MultiConsole = new ScrollingConsole(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2);
+            StatusConsole = new Console(20, 40);
+            InventoryConsole = new Console(59, 28);
+            ContextConsole = new Console(20, 20);
+            EquipmentConsole = new Console(30, 16);
         }
 
 
@@ -128,7 +128,7 @@ namespace TearsInRain.UI {
 
             StatusWindow.Title = title.Align(HorizontalAlignment.Center, statusConsoleWidth, '-');
             StatusWindow.Children.Add(StatusConsole);
-            StatusWindow.Position = new Point(70, 0);
+            StatusWindow.Position = new Point(60, 0);
 
             Children.Add(StatusWindow);
 
@@ -145,7 +145,7 @@ namespace TearsInRain.UI {
             ContextConsole.Position = new Point(1, 1);
 
             ContextWindow.Title = title.Align(HorizontalAlignment.Center, contextConsoleWidth, '-');
-            ContextWindow.Position = new Point(70, 50);
+            ContextWindow.Position = new Point(60, 40);
 
 
             ContextWindow.Children.Add(ContextConsole);
@@ -153,28 +153,28 @@ namespace TearsInRain.UI {
 
             ContextWindow.MoveToFrontOnMouseClick = true;
 
-            DropButton = new Button(30, 1);
-            DropButton.Text = "Drop 01".Align(HorizontalAlignment.Center, 30, ' ');
+            DropButton = new Button(20, 1);
+            DropButton.Text = "Drop 01".Align(HorizontalAlignment.Center, 20, ' ');
             DropButton.Position = new Point(0, 4);
             DropButton.MouseButtonClicked += contextClick;
 
-            DropButton5 = new Button(30, 1);
-            DropButton5.Text = "Drop 05".Align(HorizontalAlignment.Center, 30, ' ');
+            DropButton5 = new Button(20, 1);
+            DropButton5.Text = "Drop 05".Align(HorizontalAlignment.Center, 20, ' ');
             DropButton5.Position = new Point(0, 5);
             DropButton5.MouseButtonClicked += contextClick;
 
-            DropButton10 = new Button(30, 1);
-            DropButton10.Text = "Drop 10".Align(HorizontalAlignment.Center, 30, ' ');
+            DropButton10 = new Button(20, 1);
+            DropButton10.Text = "Drop 10".Align(HorizontalAlignment.Center, 20, ' ');
             DropButton10.Position = new Point(0, 6);
             DropButton10.MouseButtonClicked += contextClick;
 
-            DropButtonAll = new Button(30, 1);
-            DropButtonAll.Text = "Drop **".Align(HorizontalAlignment.Center, 30, ' ');
+            DropButtonAll = new Button(20, 1);
+            DropButtonAll.Text = "Drop **".Align(HorizontalAlignment.Center, 20, ' ');
             DropButtonAll.Position = new Point(0, 7);
             DropButtonAll.MouseButtonClicked += contextClick;
 
-            EquipButton = new Button(30, 1);
-            EquipButton.Text = "Equip".Align(HorizontalAlignment.Center, 30, ' ');
+            EquipButton = new Button(20, 1);
+            EquipButton.Text = "Equip".Align(HorizontalAlignment.Center, 20, ' ');
             EquipButton.Position = new Point(0, 9);
             EquipButton.MouseButtonClicked += contextClick;
 
@@ -196,10 +196,13 @@ namespace TearsInRain.UI {
                  
                 if (invContextIndex != -1 && invContextIndex < player.Inventory.Count) {
                     Item item = player.Inventory[invContextIndex];
+                    string itemName = item.Name;
 
-                    ContextConsole.Print(0, 0, item.Name.Align(HorizontalAlignment.Center, 28, ' '));
-                    ContextConsole.Print(0, 1, ("QTY: " + item.Quantity.ToString()).Align(HorizontalAlignment.Center, 28, ' '));
-                    ContextConsole.Print(0, 2, "-".Align(HorizontalAlignment.Center, 28, '-'));
+                    if (itemName.Length > 18) { itemName = itemName.Substring(0, 14) + "...";  }
+
+                    ContextConsole.Print(0, 0, itemName.Align(HorizontalAlignment.Center, 18, ' '));
+                    ContextConsole.Print(0, 1, ("QTY: " + item.Quantity.ToString()).Align(HorizontalAlignment.Center, 18, ' '));
+                    ContextConsole.Print(0, 2, "-".Align(HorizontalAlignment.Center, 18, '-'));
 
                     DropButton.IsVisible = true;
                     DropButton5.IsVisible = true;
@@ -212,8 +215,8 @@ namespace TearsInRain.UI {
                         EquipButton.IsVisible = false;
                     }
                 } else {
-                    ContextConsole.Print(0, 0, "No Item Selected".Align(HorizontalAlignment.Center, 28, ' '));
-                    ContextConsole.Print(0, 2, "-".Align(HorizontalAlignment.Center, 28, '-')); 
+                    ContextConsole.Print(0, 0, "No Item Selected".Align(HorizontalAlignment.Center, 18, ' '));
+                    ContextConsole.Print(0, 2, "-".Align(HorizontalAlignment.Center, 18, '-')); 
                     invContextIndex = -1;
 
                     DropButton.IsVisible = false;
@@ -272,6 +275,12 @@ namespace TearsInRain.UI {
         public void UpdateStatusWindow() { 
             StatusConsole.Clear();
 
+            Player player = null;
+
+            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
+            }
+
             TimeManager time = GameLoop.TimeManager;
 
             ColoredString season = time.ColoredSeason();
@@ -279,12 +288,103 @@ namespace TearsInRain.UI {
             string dayYear = time.Day.ToString();
             if (time.Day < 10) { dayYear = " " + dayYear; }
 
-            dayYear += ", Year " + time.Year.ToString();
+            string year = "Year " + time.Year.ToString();
+            
+            StatusConsole.Print(0, 1, season);
+            StatusConsole.Print(0 + season.Count, 1, dayYear);
+            StatusConsole.Print(0, 2, year);
+            StatusConsole.Print(StatusConsole.Width-timeString.Count - 2, 1, timeString);
+            
+            StatusConsole.Print(0, 3, "------------------");
 
-            StatusConsole.Print(1, 1, season);
-            StatusConsole.Print(1 + season.Count, 1, dayYear);
-            StatusConsole.Print(22, 1, timeString);
-            StatusConsole.Print(0, 3, "----------------------------");
+
+            if (player != null) {
+                ColoredString heldTIR = new ColoredString(player.HeldGold.ToString() + " TIR", Color.Yellow, Color.Transparent);
+                StatusConsole.Print(StatusConsole.Width - heldTIR.Count - 2, 2, heldTIR);
+
+
+                StatusConsole.Print(0, 4, " STR: " + player.Strength.ToString());
+                StatusConsole.Print(8, 4, "   DEX: " + player.Dexterity.ToString());
+                StatusConsole.Print(0, 5, " INT: " + player.Intelligence.ToString());
+                StatusConsole.Print(8, 5, "   VIT: " + player.Vitality.ToString());
+
+                StatusConsole.Print(0, 6, "WILL: " + player.Will.ToString());
+                StatusConsole.Print(8, 6, "   PER: " + player.Perception.ToString());
+                StatusConsole.Print(0, 7, "------------------");
+
+                Color wgtColor;
+
+                switch (player.EncumbranceLv) {
+                    case 0:
+                        wgtColor = Color.CornflowerBlue;
+                        break;
+                    case 1:
+                        wgtColor = Color.Green;
+                        break;
+                    case 2:
+                        wgtColor = Color.Yellow;
+                        break;
+                    case 3:
+                        wgtColor = Color.Orange;
+                        break;
+                    case 4:
+                        wgtColor = Color.Red;
+                        break;
+                    default:
+                        wgtColor = Color.CornflowerBlue;
+                        break;
+                }
+
+
+                ColoredString wgt = new ColoredString((player.Carrying_Weight.ToString() + " / " + (player.BasicLift * 10).ToString() + " kg"), wgtColor, Color.Transparent);
+                ColoredString spd = new ColoredString("SPD: " + player.Speed, wgtColor, Color.Transparent);
+                ColoredString dodge = new ColoredString("DODGE: " + player.Dodge, wgtColor, Color.Transparent);
+
+                StatusConsole.Print(0, 8, "WGT: ", wgtColor);
+                StatusConsole.Print(StatusConsole.Width - wgt.Count - 2, 8, wgt);
+                StatusConsole.Print(0, 9, spd);
+                StatusConsole.Print(10, 9, dodge);
+                StatusConsole.Print(0, 10, "------------------");
+
+
+                StatusConsole.Print(0, 11, "HEALTH: "); 
+                float percent = (float) player.Health /  (float) player.MaxHealth; 
+                ColorGradient hpgradient = new ColorGradient(Color.Red, Color.Green);
+                string hpbar = "";
+                for (int i = 0; i < 10; i++) {
+                    if (percent >= ((float) i * 0.1f)) {
+                        hpbar += "#";
+                    }
+                }
+                ColoredString health = new ColoredString(hpbar, hpgradient.Lerp(percent), Color.Transparent);
+                StatusConsole.Print(8, 11, health);
+
+
+                StatusConsole.Print(0, 12, "  STAM: ");
+                float stamPercent = (float)player.CurrentStamina / (float)player.MaxStamina;
+                ColorGradient stamGradient = new ColorGradient(Color.Red, Color.Yellow);
+                string stamBar = "";
+                for (int i = 0; i < 10; i++) {
+                    if (stamPercent >= ((float)i * 0.1f)) {
+                        stamBar += "#";
+                    }
+                }
+                ColoredString stamina = new ColoredString(stamBar, stamGradient.Lerp(stamPercent), Color.Transparent);
+                StatusConsole.Print(8, 12, stamina);
+
+
+                StatusConsole.Print(0, 13, "ENERGY: ");
+                float energyPercent = (float)player.CurrentEnergy / (float)player.MaxEnergy;
+                ColorGradient energyGradient = new ColorGradient(Color.Red, Color.Aqua);
+                string energyBar = "";
+                for (int i = 0; i < 10; i++) {
+                    if (energyPercent >= ((float)i * 0.1f)) {
+                        energyBar += "#";
+                    }
+                }
+                ColoredString energy = new ColoredString(energyBar, energyGradient.Lerp(energyPercent), Color.Transparent);
+                StatusConsole.Print(8, 13, energy);
+            }
         }
 
         public void CreateInventoryWindow(int width, int height, string title) {
@@ -552,7 +652,7 @@ namespace TearsInRain.UI {
         }
 
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-           // GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+            GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             var txn = lobbyManager.GetLobbyCreateTransaction();
@@ -641,7 +741,7 @@ namespace TearsInRain.UI {
         }
 
         private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
-          //  GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
+            GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
@@ -675,15 +775,18 @@ namespace TearsInRain.UI {
             MapConsole.Children.Clear();
 
             foreach (Entity entity in map.Entities.Items) {
-                MapConsole.Children.Add(entity);
+                if (!(entity is Player))
+                    MapConsole.Children.Add(entity);
             }
 
-            foreach(KeyValuePair<long, Player> player in GameLoop.World.players) {
+            foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
                 MapConsole.Children.Add(player.Value);
             }
 
             map.Entities.ItemAdded += OnMapEntityAdded; 
             map.Entities.ItemRemoved += OnMapEntityRemoved;
+
+            GameLoop.World.ResetFOV();
         }
 
         public void OnMapEntityAdded (object sender, GoRogue.ItemEventArgs<Entity> args) {
@@ -773,6 +876,9 @@ namespace TearsInRain.UI {
                         }
                     }
 
+                    if (Global.KeyboardState.IsKeyReleased(Keys.H)) {
+                        player.Health--;
+                    }
 
                     if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) {
                         if (waitingForCommand != "")
@@ -780,20 +886,18 @@ namespace TearsInRain.UI {
                         ContextWindow.IsVisible = false;
                     }
 
-
-
                     if (Global.KeyboardState.IsKeyReleased(Keys.OemPlus)) {
                         if (hold != Font.FontSizes.Four) {
                             switch (MapConsole.Font.SizeMultiple) {
                                 case Font.FontSizes.One:
                                     MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Two);
                                     hold = Font.FontSizes.Two;
-                                    MapConsole.ViewPort = new Rectangle(0, 0, 34, 24); 
+                                    MapConsole.ViewPort = new Rectangle(0, 0, 29, 19); 
                                     break;
                                 case Font.FontSizes.Two:
                                     MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Four);
                                     hold = Font.FontSizes.Four;
-                                    MapConsole.ViewPort = new Rectangle(0, 0, 17, 12);
+                                    MapConsole.ViewPort = new Rectangle(0, 0, 15, 9);
                                     break;
                             }
 
@@ -817,12 +921,12 @@ namespace TearsInRain.UI {
                                 case Font.FontSizes.Two:
                                     MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
                                     hold = Font.FontSizes.One;
-                                    MapConsole.ViewPort = new Rectangle(0, 0, 68, 48);
+                                    MapConsole.ViewPort = new Rectangle(0, 0, 58, 38);
                                     break;
                                 case Font.FontSizes.Four:
                                     MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Two);
                                     hold = Font.FontSizes.Two;
-                                    MapConsole.ViewPort = new Rectangle(0, 0, 34, 24);
+                                    MapConsole.ViewPort = new Rectangle(0, 0, 29, 19);
                                     break;
                             }
 
