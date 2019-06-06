@@ -25,6 +25,7 @@ namespace TearsInRain {
 
         public static Dictionary<string, System.Media.SoundPlayer> SoundLibrary = new Dictionary<string, System.Media.SoundPlayer>();
         public static Dictionary<string, Monster> MonsterLibrary = new Dictionary<string, Monster>();
+        public static Dictionary<string, Item> ItemLibrary = new Dictionary<string, Item>();
 
 
         static int oldWindowPixelWidth;

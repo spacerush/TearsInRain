@@ -90,12 +90,11 @@ namespace TearsInRain {
                     int x = Convert.ToInt32(splitMsg[2]);
                     int y = Convert.ToInt32(splitMsg[3]);
 
-                    Actor newP = JsonConvert.DeserializeObject<Actor>(splitMsg[4], new ActorJsonConverter());
+                    Actor newP = JsonConvert.DeserializeObject<Actor>(splitMsg[4], new ActorJsonConverter()); 
 
                     if (GameLoop.World.players.ContainsKey(uid)) {
-                        GameLoop.World.players[uid] = new Player(newP.Animation.CurrentFrame[0].Foreground, newP.Animation.CurrentFrame[0].Background, newP);
-                        GameLoop.World.players[uid].Position = new Point(x, y);
-
+                         GameLoop.World.players[uid] = new Player(newP.Animation.CurrentFrame[0].Foreground, newP.Animation.CurrentFrame[0].Background, newP);  
+                         GameLoop.World.players[uid].Position = new Point(x, y); 
                         GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
                     } else {
                         GameLoop.World.players.Add(uid, new Player(newP.Animation.CurrentFrame[0].Foreground, newP.Animation.CurrentFrame[0].Background, newP));
@@ -163,14 +162,20 @@ namespace TearsInRain {
                             }
 
                             if(splitMsg[5] == "lock") {
-                                door.Lock();
+                                door.ToggleLock(true, true);
                             } else {
-                                door.Unlock();
+                                door.ToggleLock(true, false);
                             }
-
-                            GameLoop.UIManager.MapConsole.IsDirty = true;
                         }
+                    } else if (splitMsg[1] == "farmland") {
+                        Point pos = new Point(Convert.ToInt32(splitMsg[2]), Convert.ToInt32(splitMsg[3]));
+                        GameLoop.World.CurrentMap.SetTile(pos, new TileFloor(false, false, "farmland"));
+                    } else if (splitMsg[1] == "flower_picked") {
+                        Point pos = new Point (Convert.ToInt32(splitMsg[2]), Convert.ToInt32(splitMsg[3]));
+                        GameLoop.World.CurrentMap.SetTile(pos, new TileFloor(false, false, "just-grass"));
                     }
+
+                    GameLoop.UIManager.RefreshMap();
                 }
 
                 if (splitMsg[0] == "i_data") {
@@ -230,18 +235,18 @@ namespace TearsInRain {
                 if (splitMsg[0] == "dmg") {
                     Point def = new Point(Convert.ToInt32(splitMsg[1]), Convert.ToInt32(splitMsg[2])); 
                     Point atk = new Point(Convert.ToInt32(splitMsg[3]),  Convert.ToInt32(splitMsg[4]));
-
+                    
                     int attackChance = Convert.ToInt32(splitMsg[5]);
                     int dodgeChance = Convert.ToInt32(splitMsg[6]);
                     int damage = Convert.ToInt32(splitMsg[7]);
 
-                    Actor defender = GameLoop.World.CurrentMap.GetEntityAt<Monster>(def);
-                    Actor attacker = GameLoop.World.CurrentMap.GetEntityAt<Monster>(atk);
+                    Actor defender = GameLoop.World.CurrentMap.GetEntityAt<Actor>(def);
+                    Actor attacker = GameLoop.World.CurrentMap.GetEntityAt<Actor>(atk);
 
-                    foreach(KeyValuePair<long, Player> player in GameLoop.World.players) {
+                    foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
                         if (player.Value.Position == def && defender == null) { defender = player.Value; }
                         if (player.Value.Position == atk && attacker == null) { attacker = player.Value; }
-                    }
+                    } 
 
                     GameLoop.CommandManager.Attack(attacker, defender, attackChance, dodgeChance, damage, true); 
                 }

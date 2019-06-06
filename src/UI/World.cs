@@ -141,6 +141,7 @@ namespace TearsInRain {
                 Point start = GameLoop.World.players[GameLoop.NetworkingManager.myUID].Position + dir;
 
                 Point playerRel = GameLoop.World.players[GameLoop.NetworkingManager.myUID].CalculatedPosition;
+                playerRel += new Point(6, 6);
 
 
                 Point mouseLoc = GameLoop.MouseLoc;
@@ -171,7 +172,7 @@ namespace TearsInRain {
                         if (player.Key != GameLoop.NetworkingManager.myUID) {
                             Point myPos = players[GameLoop.NetworkingManager.myUID].Position;
                             Point theirPos = player.Value.Position;
-                            int distance = (int) GoRogue.Distance.CHEBYSHEV.Calculate(myPos.X, myPos.Y, theirPos.X, theirPos.Y);
+                            int distance = (int) Distance.CHEBYSHEV.Calculate(myPos.X, myPos.Y, theirPos.X, theirPos.Y);
 
                             player.Value.UpdateStealth((distance / 2) - 5);
                         }

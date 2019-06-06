@@ -14,6 +14,9 @@ using TearsInRain.Serializers;
 using TearsInRain.Tiles;
 using Console = SadConsole.Console;
 using Utils = TearsInRain.Utils;
+using GoRogue;
+using Rectangle = Microsoft.Xna.Framework.Rectangle;
+using System.IO;
 
 namespace TearsInRain.UI {
     public class UIManager : ContainerConsole {
@@ -43,7 +46,6 @@ namespace TearsInRain.UI {
         public Button closeButton;
         public Button joinButton;
         public Button copyButton;
-        public Button testButton;
 
 
         public int currentZoomLV = 1; // Half, One, Two, Three, Four
@@ -573,11 +575,70 @@ namespace TearsInRain.UI {
             Children.Add(MapWindow);
 
             MapConsole.Children.Add(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+            MapConsole.MouseButtonClicked += mapClick;
 
             MapWindow.CanDrag = true;
             MapWindow.Show();
 
             
+        }
+
+        private void mapClick(object sender, MouseEventArgs e) {
+            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
+                Point offset = player.PositionOffset;
+                Point modifiedClick = e.MouseState.ConsoleCellPosition - offset;
+
+                int range = (int) Distance.CHEBYSHEV.Calculate(player.Position, modifiedClick);
+                Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(modifiedClick);
+
+                GameLoop.UIManager.MessageLog.Add("Click: " + modifiedClick + ", Offset: " + offset + ", Player: " + player.Position);
+
+                if (monster != null) {
+                    if ((player.Equipped[0] != null && range <= player.Equipped[0].Properties["melee"]) || range <= 1) {
+                        GameLoop.CommandManager.Attack(player, monster);
+                    }
+                } else {
+                    if (range <= 1) {
+                        TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(modifiedClick.X, modifiedClick.Y); 
+                                
+
+                        if (tile is TileDoor door) {
+                            if (!door.IsOpen)
+                                GameLoop.CommandManager.OpenDoor(player, door, modifiedClick);
+                            else
+                                GameLoop.CommandManager.CloseDoor(player, modifiedClick, true);
+
+                        }
+
+                        if (tile is TileFloor floor) {
+                            if (new List<string> { "cornflower", "rose", "violet", "dandelion", "tulip" }.Contains(tile.Name)) {
+                                Item flower = new Item(tile.Foreground, Color.Transparent, tile.Name, (char) tile.Glyph, 0.01, 100);
+                                flower.Position = modifiedClick;
+                                GameLoop.World.CurrentMap.Add(flower);
+
+                                GameLoop.World.CurrentMap.Tiles[modifiedClick.ToIndex(GameLoop.World.CurrentMap.Width)] = new TileFloor(false, false, "just-grass");
+
+                                string serialFlower = JsonConvert.SerializeObject(flower, Formatting.Indented, new ItemJsonConverter());
+
+                                string itemDrop = "i_data|drop|" + flower.Position.X + "|" + flower.Position.Y + "|" + serialFlower;
+                                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(itemDrop));
+
+                                string tileUpdate = "t_data|flower_picked|" + flower.Position.X + "|" + flower.Position.Y;
+                                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(tileUpdate));
+                                    
+                                player.PickupItem(flower); 
+                                GameLoop.UIManager.RefreshMap();
+                            }
+                        }
+
+                        if (player.Equipped[13] != null) {
+                            player.Equipped[13].UseItem(player, modifiedClick);
+                        }
+                    }
+                    
+                }
+            }
         }
 
         public void CreateMultiplayerWindow(int width, int height, string title) {
@@ -613,16 +674,10 @@ namespace TearsInRain.UI {
             copyButton.MouseButtonClicked += copyButtonClick;
             copyButton.IsVisible = false;
 
-            testButton = new Button(6, 1);
-            testButton.Position = new Point(center - (testButton.Width - 2)/2, 9);
-            testButton.Text = "TEST";
-            testButton.MouseButtonClicked += testButtonClick;
-
             MultiplayerWindow.Add(closeButton);
             MultiplayerWindow.Add(hostButton);
             MultiplayerWindow.Add(joinButton);
             MultiplayerWindow.Add(copyButton);
-            MultiplayerWindow.Add(testButton);
 
 
             MultiplayerWindow.Title = title.Align(HorizontalAlignment.Center, multiConsoleW, '-');
@@ -637,13 +692,7 @@ namespace TearsInRain.UI {
             MultiplayerWindow.IsVisible = false;
         }
 
-        private void testButtonClick(object sender, MouseEventArgs e) {
-            var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
-            if (lobbyManager != null) {
-                GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes(Utils.SimpleMapString(GameLoop.World.CurrentMap.Tiles)));
-            }
-        }
-
+        
         private void copyButtonClick(object sender, MouseEventArgs e) {
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
             if (lobbyManager != null) {
@@ -769,6 +818,11 @@ namespace TearsInRain.UI {
             UpdateContextWindow();
             UpdateEquipment();
             UpdateInventory();
+        }
+
+
+        public void RefreshMap() {
+            MapConsole.SetSurface(GameLoop.World.CurrentMap.Tiles, GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height);
         }
 
         public void SyncMapEntities(Map map) {

@@ -6,6 +6,7 @@ using Point = Microsoft.Xna.Framework.Point;
 using GoRogue.MapViews;
 using GoRogue;
 using System.Collections.Generic;
+using Microsoft.Xna.Framework;
 
 namespace TearsInRain {
     public class Map{
@@ -80,6 +81,10 @@ namespace TearsInRain {
         
         private void OnEntityMoved(object sender, Entity.EntityMovedEventArgs args) {
             Entities.Move(args.Entity as Entity, args.Entity.Position);
+        }
+
+        public void SetTile(Point pos, TileBase tile) {
+            Tiles[pos.ToIndex(GameLoop.World.CurrentMap.Width)] = tile;
         }
 
 

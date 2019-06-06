@@ -135,7 +135,7 @@ namespace TearsInRain.Commands {
 
 
         public void OpenDoor(Actor actor, TileDoor door, Point pos) {
-            if (!door.Locked) {
+            if (!door.IsLocked) {
                 door.Open();
 
                 GameLoop.UIManager.MapConsole.IsDirty = true;
@@ -145,8 +145,12 @@ namespace TearsInRain.Commands {
             }
         }
 
-        public void CloseDoor(Actor actor, Point pos) {
-            Point newPoint = actor.Position + pos;
+        public void CloseDoor(Actor actor, Point pos, bool literalPos = false) {
+            Point newPoint;
+            if (!literalPos)
+                newPoint = actor.Position + pos;
+            else
+                newPoint = pos;
 
             TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(newPoint.X, newPoint.Y);
             Entity entity = GameLoop.World.CurrentMap.GetEntityAt<Entity>(newPoint);
@@ -160,7 +164,7 @@ namespace TearsInRain.Commands {
 
                         var data = "t_data|door|" + newPoint.X + "|" + newPoint.Y + "|close|";
 
-                        if (door.Locked) { data += "lock"; } else if (!door.Locked) { data += "unlock"; }
+                        if (door.IsLocked) { data += "lock"; } else if (!door.IsLocked) { data += "unlock"; }
 
                         GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(data));
                     } else {

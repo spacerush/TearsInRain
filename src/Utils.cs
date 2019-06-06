@@ -22,17 +22,6 @@ namespace TearsInRain {
             Directions.Add("DL", new Point(-1, 1)); // Num1
         }
 
-        public static Color Interpolate(Color color1, Color color2, double fraction) {
-            double r = Interpolate(color1.R, color2.R, fraction);
-            double g = Interpolate(color1.G, color2.G, fraction);
-            double b = Interpolate(color1.B, color2.B, fraction);
-            return new Color((int)Math.Round(r), (int)Math.Round(g), (int)Math.Round(b));
-        }
-
-        public static double Interpolate(double d1, double d2, double fraction) {
-            return d1 + (d2 - d1) * fraction;
-        }
-
         public static string SimpleMapString(TileBase[] tiles) {
             var simpleMap = tiles.Length.ToString() + "|";
 
@@ -46,10 +35,11 @@ namespace TearsInRain {
                 else if (tiles[i].Name == "violet") { simpleMap += "3"; } 
                 else if (tiles[i].Name == "dandelion") { simpleMap += "4"; } 
                 else if (tiles[i].Name == "tulip") { simpleMap += "5"; } 
-                else if (tiles[i] is TileDoor door && door.IsOpen && !door.Locked) { simpleMap += "d"; }
-                else if (tiles[i] is TileDoor door1 && !door1.IsOpen && !door1.Locked) { simpleMap += "D"; } 
-                else if (tiles[i] is TileDoor door2 && door2.IsOpen && door2.Locked) { simpleMap += "l"; } 
-                else if (tiles[i] is TileDoor door3 && !door3.IsOpen && door3.Locked) { simpleMap += "L"; } 
+                else if (tiles[i].Name == "farmland") { simpleMap += "p"; }
+                else if (tiles[i] is TileDoor door && door.IsOpen && !door.IsLocked) { simpleMap += "d"; }
+                else if (tiles[i] is TileDoor door1 && !door1.IsOpen && !door1.IsLocked) { simpleMap += "D"; } 
+                else if (tiles[i] is TileDoor door2 && door2.IsOpen && door2.IsLocked) { simpleMap += "l"; } 
+                else if (tiles[i] is TileDoor door3 && !door3.IsOpen && door3.IsLocked) { simpleMap += "L"; } 
                 else if (tiles[i] is TileWall) { simpleMap += "W"; }
             }
 
@@ -85,6 +75,8 @@ namespace TearsInRain {
                     tiles[j] = new TileFloor(type: "dandelion");
                 } else if (tileString[j].ToString() == "5") {
                     tiles[j] = new TileFloor(type: "tulip");
+                } else if (tileString[j].ToString() == "p") {
+                    tiles[j] = new TileFloor(type: "farmland");
                 } else if (tileString[j].ToString() == "d") {
                     tiles[j] = new TileDoor(false, true);
                 } else if (tileString[j].ToString() == "D") {

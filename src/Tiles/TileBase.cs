@@ -1,8 +1,11 @@
 ﻿using System;
 using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 using SadConsole;
 
-namespace TearsInRain.Tiles { 
+namespace TearsInRain.Tiles {
+
+    [JsonObject(MemberSerialization.OptOut)]
     public class TileBase : Cell {
         public bool IsBlockingMove;
         public bool IsBlockingLOS;

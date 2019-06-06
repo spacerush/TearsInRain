@@ -26,8 +26,8 @@ namespace TearsInRain.Entities {
         public int Perception = 10; // Starts equal to Intelligence
 
 
-        public int MaxStamina = 10; // Starts equal to Vitality
-        public int CurrentStamina = 10;
+        public int MaxStamina = 100;
+        public int CurrentStamina = 100;
 
         public int MaxEnergy = 10;
         public int CurrentEnergy = 10;
@@ -177,12 +177,7 @@ namespace TearsInRain.Entities {
 
         public void UpdateStealth(int mod) {
             if (!IsStealthing) { return; }
-
-            TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(Position.X, Position.Y);
-            Color tColor = tile.Background;
-            Animation.CurrentFrame[0].Foreground = Color.Lerp(Color.Yellow, tColor, 0.05f * Dexterity);
-            Animation.CurrentFrame[0].Foreground.SetHSL(tColor.GetHue(), tColor.GetSaturation(), tColor.GetBrightness());
-
+            
             if (!FailedStealth) {
                 if (Dexterity >= (StealthResult - mod)) {
                     int successBy = (Dexterity - (StealthResult - mod));

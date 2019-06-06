@@ -1,5 +1,5 @@
-﻿using System;
-using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+using Microsoft.Xna.Framework; 
 
 namespace TearsInRain.Entities { 
     public class Player : Actor {
@@ -9,8 +9,11 @@ namespace TearsInRain.Entities {
             Name = "Player";
             TimeLastActed = 0;
             Dexterity = 13;
+            Dictionary<string, int> props = new Dictionary<string, int>();
+            props.Add("hoe", 0);
+
             Item item = new Item(Color.White, Color.Transparent, "Book of Incredible Tales", '$', 20, quantity:21, plural:"Books of Incredible Tales");
-            Item hoe = new Item(Color.Gray, Color.Transparent, "Shoddy Hoe", '\\', 3, slot:13);
+            Item hoe = new Item(Color.Gray, Color.Transparent, "Shoddy Hoe", '\\', 3, slot:13, properties:props);
 
             Inventory.Add(item);
             Inventory.Add(hoe);
