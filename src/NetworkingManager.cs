@@ -208,6 +208,26 @@ namespace TearsInRain {
                         item.IsDirty = true;
                     }
 
+                    if (splitMsg[1] == "update") {
+                        int x = Convert.ToInt32(splitMsg[2]);
+                        int y = Convert.ToInt32(splitMsg[3]);
+                        Item item = JsonConvert.DeserializeObject<Item>(splitMsg[4], new ItemJsonConverter());
+                        item.Position = new Point(x, y);
+
+                        Item existing = GameLoop.World.CurrentMap.GetEntityAt<Item>(new Point(x, y));
+                        if (existing != null) {
+                            GameLoop.World.CurrentMap.Remove(existing);
+                        }
+
+                        GameLoop.World.CurrentMap.Add(item);
+
+                        item.IsVisible = false;
+                        item.Animation.IsDirty = true;
+
+                        GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+                        GameLoop.UIManager.RefreshMap();
+                    }
+
                     if (splitMsg[1] == "pickup") {
                         int x = Convert.ToInt32(splitMsg[2]);
                         int y = Convert.ToInt32(splitMsg[3]);
@@ -322,11 +342,12 @@ namespace TearsInRain {
                 if (myUID != userManager.GetCurrentUser().Id) {
                     myUID = userManager.GetCurrentUser().Id;
 
-                    GameLoop.World.players.Add(myUID, GameLoop.World.players[0]);
+                    GameLoop.World.CreatePlayer(myUID);
                     GameLoop.World.players.Remove(0);
                     updateUID = false;
                 }
             } catch (Discord.ResultException e) {
+                System.Console.WriteLine(e);
             }
         }
     }

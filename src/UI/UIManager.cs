@@ -21,31 +21,37 @@ using System.IO;
 namespace TearsInRain.UI {
     public class UIManager : ContainerConsole {
         public ScrollingConsole MapConsole;
-        public ScrollingConsole MultiConsole;
         public Console StatusConsole;
         public Console InventoryConsole;
         public Console EquipmentConsole;
+        public Console SplashConsole;
+        public Console SplashRain;
+        public Console MenuConsole;
         
         public Window MapWindow;
         public MessageLogWindow MessageLog;
         public ChatLogWindow ChatLog;
-        public Window MultiplayerWindow;
         public Window StatusWindow;
         public Window InventoryWindow;
         public Window EquipmentWindow;
 
         public Window ContextWindow;
         public Console ContextConsole;
-        public Button DropButton;
-        public Button DropButton5;
-        public Button DropButton10;
-        public Button DropButtonAll;
-        public Button EquipButton;
 
         public Button hostButton;
         public Button closeButton;
         public Button joinButton;
-        public Button copyButton;
+
+        public ControlsConsole joinPrompt;
+        public TextBox joinBox;
+        public Window WorldCreateWindow;
+        public ControlsConsole WorldCreateConsole;
+        public TextBox WorldNameBox;
+        public Button CreateWorldButton;
+
+        public Point Mouse;
+        public string STATE = "MENU";
+        public string JOIN_CODE = "";
 
 
         public int currentZoomLV = 1; // Half, One, Two, Three, Four
@@ -54,6 +60,9 @@ namespace TearsInRain.UI {
         public bool chat = false;
         public long tempUID = 0;
         public int invContextIndex = -1;
+
+        public List<Entity> rain = new List<Entity>();
+        public int raindrops = 0;
 
         public string waitingForCommand = "";
         public Point viewOffset = new Point(0, 0);
@@ -71,48 +80,29 @@ namespace TearsInRain.UI {
         }
         
         public void Init() {
-            CreateConsoles();
-
-            MessageLog = new MessageLogWindow(60, (GameLoop.GameHeight / 3), "[MESSAGE LOG]");
-            MessageLog.Title.Align(HorizontalAlignment.Center, MessageLog.Title.Length); 
-            Children.Add(MessageLog);
-            MessageLog.Show();
-            MessageLog.Position = new Point(0, (GameLoop.GameHeight / 3) * 2);
-
-            ChatLog = new ChatLogWindow(60, GameLoop.GameHeight / 3, "[CHAT LOG]");
-            Children.Add(MessageLog);
-            ChatLog.Show();
-            ChatLog.IsVisible = false;
-            ChatLog.Position = new Point((GameLoop.GameWidth / 2) - (ChatLog.Width / 2), (GameLoop.GameHeight / 2) - (ChatLog.Height / 2));
-            
-            // MessageLog.Add("Testing First");
-
-            LoadMap(GameLoop.World.CurrentMap);
-
-            CreateMapWindow(60, (GameLoop.GameHeight/3) * 2,"[GAME MAP]");
             UseMouse = true;
+            LoadSplash();
 
-            CreateMultiplayerWindow(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2, "[MULTIPLAYER]");
 
-            CreateStatusWindow(20, (GameLoop.GameHeight / 3) * 2 , "[PLAYER INFO]");
+            joinPrompt = new ControlsConsole(8, 1, Global.FontDefault);
+            joinPrompt.IsVisible = true;
+            joinPrompt.Position = new Point(42, 53);
 
-            CreateContextWindow(20, GameLoop.GameHeight / 3, "[ITEM MENU]");
-
-            ContextConsole.MouseButtonClicked += contextClick;
-
-            CreateInventoryWindow(59, 28, "[INVENTORY]");
-            CreateEquipmentWindow(30, 16, "[EQUIPMENT]");
+            joinBox = new TextBox(5);
+            joinBox.Position = new Point(0,0);
+            joinBox.UseKeyboard = true;
+            joinBox.IsVisible = true;
+ 
+            joinPrompt.Add(joinBox);
             
-            MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
+            Children.Add(joinPrompt);
 
-
-            CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
-            
-            
+            joinPrompt.FocusOnMouseClick = true;
+            CreateWorld();
         }
+
         public void CreateConsoles() {
-            MapConsole = new ScrollingConsole(60, (GameLoop.GameHeight / 3) * 2);  
-            MultiConsole = new ScrollingConsole(GameLoop.GameWidth / 4, GameLoop.GameHeight / 2);
+            MapConsole = new ScrollingConsole(60, (GameLoop.GameHeight / 3) * 2); 
             StatusConsole = new Console(20, 40);
             InventoryConsole = new Console(59, 28);
             ContextConsole = new Console(20, 20);
@@ -128,7 +118,7 @@ namespace TearsInRain.UI {
 
             StatusConsole.Position = new Point(1, 1);
 
-            StatusWindow.Title = title.Align(HorizontalAlignment.Center, statusConsoleWidth, '-');
+            StatusWindow.Title = title.Align(HorizontalAlignment.Center, statusConsoleWidth, (char) 205);
             StatusWindow.Children.Add(StatusConsole);
             StatusWindow.Position = new Point(60, 0);
 
@@ -146,7 +136,7 @@ namespace TearsInRain.UI {
 
             ContextConsole.Position = new Point(1, 1);
 
-            ContextWindow.Title = title.Align(HorizontalAlignment.Center, contextConsoleWidth, '-');
+            ContextWindow.Title = title.Align(HorizontalAlignment.Center, contextConsoleWidth, (char) 205);
             ContextWindow.Position = new Point(60, 40);
 
 
@@ -154,37 +144,7 @@ namespace TearsInRain.UI {
             Children.Add(ContextWindow);
 
             ContextWindow.MoveToFrontOnMouseClick = true;
-
-            DropButton = new Button(20, 1);
-            DropButton.Text = "Drop 01".Align(HorizontalAlignment.Center, 20, ' ');
-            DropButton.Position = new Point(0, 4);
-            DropButton.MouseButtonClicked += contextClick;
-
-            DropButton5 = new Button(20, 1);
-            DropButton5.Text = "Drop 05".Align(HorizontalAlignment.Center, 20, ' ');
-            DropButton5.Position = new Point(0, 5);
-            DropButton5.MouseButtonClicked += contextClick;
-
-            DropButton10 = new Button(20, 1);
-            DropButton10.Text = "Drop 10".Align(HorizontalAlignment.Center, 20, ' ');
-            DropButton10.Position = new Point(0, 6);
-            DropButton10.MouseButtonClicked += contextClick;
-
-            DropButtonAll = new Button(20, 1);
-            DropButtonAll.Text = "Drop **".Align(HorizontalAlignment.Center, 20, ' ');
-            DropButtonAll.Position = new Point(0, 7);
-            DropButtonAll.MouseButtonClicked += contextClick;
-
-            EquipButton = new Button(20, 1);
-            EquipButton.Text = "Equip".Align(HorizontalAlignment.Center, 20, ' ');
-            EquipButton.Position = new Point(0, 9);
-            EquipButton.MouseButtonClicked += contextClick;
-
-            ContextWindow.Add(DropButton);
-            ContextWindow.Add(DropButton5);
-            ContextWindow.Add(DropButton10);
-            ContextWindow.Add(DropButtonAll);
-            ContextWindow.Add(EquipButton);
+            
             ContextWindow.CanDrag = true;
             ContextWindow.IsVisible = false;
         }
@@ -204,32 +164,24 @@ namespace TearsInRain.UI {
 
                     ContextConsole.Print(0, 0, itemName.Align(HorizontalAlignment.Center, 18, ' '));
                     ContextConsole.Print(0, 1, ("QTY: " + item.Quantity.ToString()).Align(HorizontalAlignment.Center, 18, ' '));
-                    ContextConsole.Print(0, 2, "-".Align(HorizontalAlignment.Center, 18, '-'));
+                    ContextConsole.Print(0, 2, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(new Color(51, 153, 255)));
 
-                    DropButton.IsVisible = true;
-                    DropButton5.IsVisible = true;
-                    DropButton10.IsVisible = true;
-                    DropButtonAll.IsVisible = true;
-
+                    ContextConsole.Print(0, 3, "Drop 01".Align(HorizontalAlignment.Center, 18, ' '));
+                    ContextConsole.Print(0, 4, "Drop 05".Align(HorizontalAlignment.Center, 18, ' '));
+                    ContextConsole.Print(0, 5, "Drop 10".Align(HorizontalAlignment.Center, 18, ' '));
+                    ContextConsole.Print(0, 6, "Drop **".Align(HorizontalAlignment.Center, 18, ' '));
+                    
                     if (item.Slot != -1) {
-                        EquipButton.IsVisible = true;
-                    } else {
-                        EquipButton.IsVisible = false;
-                    }
+                        ContextConsole.Print(0, 8, "Equip".Align(HorizontalAlignment.Center, 18, ' '));
+                    } 
                 } else {
                     ContextConsole.Print(0, 0, "No Item Selected".Align(HorizontalAlignment.Center, 18, ' '));
-                    ContextConsole.Print(0, 2, "-".Align(HorizontalAlignment.Center, 18, '-')); 
+                    ContextConsole.Print(0, 2, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(new Color(51, 153, 255)));
                     invContextIndex = -1;
-
-                    DropButton.IsVisible = false;
-                    DropButton5.IsVisible = false;
-                    DropButton10.IsVisible = false;
-                    DropButtonAll.IsVisible = false;
-                    EquipButton.IsVisible = false;
                 }
-
-                ContextWindow.IsDirty = true;
             }
+
+            ContextWindow.IsDirty = true;
         }
 
         private void contextClick(object sender, MouseEventArgs e) {
@@ -297,7 +249,8 @@ namespace TearsInRain.UI {
             StatusConsole.Print(0, 2, year);
             StatusConsole.Print(StatusConsole.Width-timeString.Count - 2, 1, timeString);
             
-            StatusConsole.Print(0, 3, "------------------");
+
+            StatusConsole.Print(0, 3, (("" + (char) 205).Align(HorizontalAlignment.Center, 18, (char) 205)).CreateColored(new Color(51, 153, 255)));
 
 
             if (player != null) {
@@ -312,30 +265,11 @@ namespace TearsInRain.UI {
 
                 StatusConsole.Print(0, 6, "WILL: " + player.Will.ToString());
                 StatusConsole.Print(8, 6, "   PER: " + player.Perception.ToString());
-                StatusConsole.Print(0, 7, "------------------");
+                StatusConsole.Print(0, 7, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(new Color(51, 153, 255)));
 
-                Color wgtColor;
-
-                switch (player.EncumbranceLv) {
-                    case 0:
-                        wgtColor = Color.CornflowerBlue;
-                        break;
-                    case 1:
-                        wgtColor = Color.Green;
-                        break;
-                    case 2:
-                        wgtColor = Color.Yellow;
-                        break;
-                    case 3:
-                        wgtColor = Color.Orange;
-                        break;
-                    case 4:
-                        wgtColor = Color.Red;
-                        break;
-                    default:
-                        wgtColor = Color.CornflowerBlue;
-                        break;
-                }
+                ColorGradient wgtGrad = new ColorGradient(Color.Green, Color.Red);
+                player.RecalculateWeight(); 
+                Color wgtColor = wgtGrad.Lerp((float) player.Carrying_Weight / (player.BasicLift * 10));
 
 
                 ColoredString wgt = new ColoredString((player.Carrying_Weight.ToString() + " / " + (player.BasicLift * 10).ToString() + " kg"), wgtColor, Color.Transparent);
@@ -346,7 +280,7 @@ namespace TearsInRain.UI {
                 StatusConsole.Print(StatusConsole.Width - wgt.Count - 2, 8, wgt);
                 StatusConsole.Print(0, 9, spd);
                 StatusConsole.Print(10, 9, dodge);
-                StatusConsole.Print(0, 10, "------------------");
+                StatusConsole.Print(0, 10, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(new Color(51, 153, 255)));
 
 
                 StatusConsole.Print(0, 11, "HEALTH: "); 
@@ -386,6 +320,51 @@ namespace TearsInRain.UI {
                 }
                 ColoredString energy = new ColoredString(energyBar, energyGradient.Lerp(energyPercent), Color.Transparent);
                 StatusConsole.Print(8, 13, energy);
+
+
+                Point Mouse = GameLoop.MouseLoc.PixelLocationToConsole(12, 12);
+                Mouse = Mouse - player.PositionOffset - new Point(1, 1) ;
+                TileBase hovered = GameLoop.World.CurrentMap.GetTileAt<TileBase>(Mouse.X, Mouse.Y);
+
+                StatusConsole.Print(0, 19, "HOVERED TILE".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(new Color(51, 153, 255)));
+                if (hovered != null && hovered.Background.A == 255 && hovered.IsVisible) {
+                    ColoredString hovName = new ColoredString(hovered.Name.Align(HorizontalAlignment.Center, 18, ' '), hovered.Foreground, Color.Transparent);
+                    StatusConsole.Print(0, 20, hovName);
+
+                    int drawLineAt = 21;
+
+                    List<Actor> monstersAtTile = GameLoop.World.CurrentMap.GetEntitiesAt<Actor>(Mouse);
+
+                    if (monstersAtTile.Count > 0) {
+                        drawLineAt++;
+                        StatusConsole.Print(0, drawLineAt, "ENTITIES".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(new Color(51, 153, 255)));
+                        drawLineAt++;
+                    }
+
+                    for (int i = 0; i < monstersAtTile.Count; i++) {
+                        ColorGradient enHealthGrad = new ColorGradient(Color.Red, Color.Green);
+                        ColoredString enHealth = new ColoredString(monstersAtTile[i].Name.Align(HorizontalAlignment.Center, 18, ' '), enHealthGrad.Lerp((float)monstersAtTile[i].Health / monstersAtTile[i].MaxHealth), Color.Transparent);
+                        StatusConsole.Print(0, drawLineAt, enHealth);
+                        drawLineAt++;
+                    }
+
+
+                    List<Item> itemsAtTile = GameLoop.World.CurrentMap.GetEntitiesAt<Item>(Mouse);
+
+                    if (itemsAtTile.Count > 0) {
+                        drawLineAt++;
+                        StatusConsole.Print(0, drawLineAt, "ITEMS".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(new Color(51, 153, 255)));
+                        drawLineAt++;
+                    }
+
+                    for (int i = 0; i < itemsAtTile.Count; i++) {
+                        string itemName = itemsAtTile[i].Name;
+                        if (itemName.Length > 16) { itemName = itemName.Substring(0, 13) + "..."; }
+                        StatusConsole.Print(2, drawLineAt, itemName.Align(HorizontalAlignment.Center, 16, ' '));
+                        StatusConsole.Print(0, drawLineAt, itemsAtTile[i].Quantity.ToString());
+                        drawLineAt++;
+                    }
+                }
             }
         }
 
@@ -398,7 +377,7 @@ namespace TearsInRain.UI {
             InventoryConsole.Position = new Point(1, 1);
 
 
-            InventoryWindow.Title = title.Align(HorizontalAlignment.Center, invConsoleW, '-');
+            InventoryWindow.Title = title.Align(HorizontalAlignment.Center, invConsoleW, (char) 205);
             InventoryWindow.Children.Add(InventoryConsole);
             InventoryWindow.Position = new Point((GameLoop.GameWidth/2) - InventoryWindow.Width/2, (GameLoop.GameHeight/2) - InventoryWindow.Height/2);
 
@@ -406,6 +385,7 @@ namespace TearsInRain.UI {
 
             InventoryWindow.CanDrag = true;
             InventoryWindow.IsVisible = false;
+            InventoryConsole.IsVisible = false;
             InventoryWindow.FocusOnMouseClick = true;
 
             UpdateInventory();
@@ -422,14 +402,15 @@ namespace TearsInRain.UI {
             EquipmentConsole.Position = new Point(1, 1);
 
 
-            EquipmentWindow.Title = title.Align(HorizontalAlignment.Center, eqpConsoleW, '-');
+            EquipmentWindow.Title = title.Align(HorizontalAlignment.Center, eqpConsoleW, (char) 205);
             EquipmentWindow.Children.Add(EquipmentConsole);
             EquipmentWindow.Position = new Point((GameLoop.GameWidth / 2) - EquipmentWindow.Width / 2, (GameLoop.GameHeight / 2) - EquipmentWindow.Height / 2);
 
             Children.Add(EquipmentWindow);
 
             EquipmentWindow.CanDrag = true;
-            EquipmentWindow.IsVisible = true;
+            EquipmentWindow.IsVisible = false;
+            EquipmentConsole.IsVisible = false;
             EquipmentWindow.FocusOnMouseClick = true;
 
             UpdateEquipment();
@@ -528,7 +509,7 @@ namespace TearsInRain.UI {
 
 
             InventoryConsole.Print(29, 0, "Item Name | QTY | WEIGHT");
-            InventoryConsole.Print(0, 1, "---------------------------------------------------------");
+            InventoryConsole.Print(0, 1, (("" + (char)205).Align(HorizontalAlignment.Center, InventoryConsole.Width - 2, (char)205)).CreateColored(new Color(51, 153, 255)));
 
             if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
                 Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
@@ -568,7 +549,7 @@ namespace TearsInRain.UI {
             MapConsole.Position = new Point(1, 1);
             
             
-            MapWindow.Title = title.Align(HorizontalAlignment.Center, mapConsoleWidth, '-');
+            MapWindow.Title = title.Align(HorizontalAlignment.Center, mapConsoleWidth, (char) 205);
             MapWindow.Children.Add(MapConsole);
             
 
@@ -578,7 +559,7 @@ namespace TearsInRain.UI {
             MapConsole.MouseButtonClicked += mapClick;
 
             MapWindow.CanDrag = true;
-            MapWindow.Show();
+            MapWindow.IsVisible = true;
 
             
         }
@@ -590,12 +571,10 @@ namespace TearsInRain.UI {
                 Point modifiedClick = e.MouseState.ConsoleCellPosition - offset;
 
                 int range = (int) Distance.CHEBYSHEV.Calculate(player.Position, modifiedClick);
-                Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(modifiedClick);
-
-                GameLoop.UIManager.MessageLog.Add("Click: " + modifiedClick + ", Offset: " + offset + ", Player: " + player.Position);
+                Monster monster = GameLoop.World.CurrentMap.GetEntityAt<Monster>(modifiedClick); 
 
                 if (monster != null) {
-                    if ((player.Equipped[0] != null && range <= player.Equipped[0].Properties["melee"]) || range <= 1) {
+                    if ((player.Equipped[0] != null && range <= Convert.ToInt32(player.Equipped[0].Properties["range"])) || range <= 1) {
                         GameLoop.CommandManager.Attack(player, monster);
                     }
                 } else {
@@ -613,7 +592,7 @@ namespace TearsInRain.UI {
 
                         if (tile is TileFloor floor) {
                             if (new List<string> { "cornflower", "rose", "violet", "dandelion", "tulip" }.Contains(tile.Name)) {
-                                Item flower = new Item(tile.Foreground, Color.Transparent, tile.Name, (char) tile.Glyph, 0.01, 100);
+                                Item flower = GameLoop.ItemLibrary[tile.Name].Clone();
                                 flower.Position = modifiedClick;
                                 GameLoop.World.CurrentMap.Add(flower);
 
@@ -641,92 +620,44 @@ namespace TearsInRain.UI {
             }
         }
 
-        public void CreateMultiplayerWindow(int width, int height, string title) {
-            MultiplayerWindow = new Window(width, height);
-            MultiplayerWindow.CanDrag = true;
-
-            int multiConsoleW = width - 2;
-            int multiConsoleH = height - 2;
-
-            int center = multiConsoleW / 2;
-
-            MultiConsole.ViewPort = new Rectangle(0, 0, multiConsoleW, multiConsoleH);
-            MultiConsole.Position = new Point(1, 1);
-
-            closeButton = new Button(3, 1);
-            closeButton.Position = new Point(1, 1);
-            closeButton.Text = "X";
-            closeButton.MouseButtonClicked += closeButtonClick;
-
-            hostButton = new Button(6, 1);
-            hostButton.Position = new Point(center - (hostButton.Width - 2)/2, 3);
-            hostButton.Text = "HOST";
-            hostButton.MouseButtonClicked += hostButtonClick;
-
-            joinButton = new Button(6, 1);
-            joinButton.Position = new Point(center - (joinButton.Width - 2)/2, 5);
-            joinButton.Text = "JOIN";
-            joinButton.MouseButtonClicked += joinButtonClick;
-
-            copyButton = new Button(10, 1);
-            copyButton.Position = new Point(center - (copyButton.Width - 2)/2, 3);
-            copyButton.Text = "GET CODE";
-            copyButton.MouseButtonClicked += copyButtonClick;
-            copyButton.IsVisible = false;
-
-            MultiplayerWindow.Add(closeButton);
-            MultiplayerWindow.Add(hostButton);
-            MultiplayerWindow.Add(joinButton);
-            MultiplayerWindow.Add(copyButton);
-
-
-            MultiplayerWindow.Title = title.Align(HorizontalAlignment.Center, multiConsoleW, '-');
-
-            Children.Add(MultiplayerWindow);
-            MultiplayerWindow.Show();
-            MultiplayerWindow.IsVisible = false;
-            MultiplayerWindow.Position = new Point((GameLoop.GameWidth / 2) - (MultiplayerWindow.Width/2), (GameLoop.GameHeight / 2) - (MultiplayerWindow.Height/2));
-        }
-
-        private void closeButtonClick(object sender, MouseEventArgs e) {
-            MultiplayerWindow.IsVisible = false;
-        }
+        
+        
 
         
-        private void copyButtonClick(object sender, MouseEventArgs e) {
-            var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
-            if (lobbyManager != null) {
-                TextCopy.Clipboard.SetText(lobbyManager.GetLobbyActivitySecret(lobbyManager.GetLobbyId(0)));
-            }
-        }
-
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
             GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
-            var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
-            var txn = lobbyManager.GetLobbyCreateTransaction();
+            var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager(); 
+            string possibleChars = "ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789";
+            string code = "";
+            
+            code = "";
 
+            for (int i = 0; i < 4; i++) {
+                code += possibleChars[GameLoop.Random.Next(0, possibleChars.Length)];
+            }
+
+
+
+            var txn = lobbyManager.GetLobbyCreateTransaction();
             txn.SetCapacity(6);
             txn.SetType(Discord.LobbyType.Public);
-            txn.SetMetadata("a", "123");
+            txn.SetMetadata("code", code);
 
 
             lobbyManager.CreateLobby(txn, (Result result, ref Lobby lobby) => {
                 if (result == Result.Ok) {
                     MessageLog.Add("Created lobby! Code has been copied to clipboard.");
-                    TextCopy.Clipboard.SetText(lobbyManager.GetLobbyActivitySecret(lobby.Id));
+                    
 
                     GameLoop.NetworkingManager.InitNetworking(lobby.Id);
                     lobbyManager.OnMemberConnect += onPlayerConnected;
                     lobbyManager.OnMemberDisconnect += onPlayerDisconnected;
-
-                    hostButton.IsVisible = false;
-                    joinButton.IsVisible = false;
-                    copyButton.IsVisible = true;
-
+                    
                     ChatLog.IsVisible = true;
-                    MultiplayerWindow.IsVisible = false;
-                    chat = true;
+                    JOIN_CODE = code;
+
+                    ChatLog.Title = ("[CHAT: " + code + "]").Align(HorizontalAlignment.Center, ChatLog.Width, (char) 205);
                 } else {
                     MessageLog.Add("Error: " + result);
                 }
@@ -792,16 +723,33 @@ namespace TearsInRain.UI {
         private void joinButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
             GameLoop.NetworkingManager.changeClientTarget("1"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
+            joinBox.IsFocused = false;
+            
 
             var lobbyManager = GameLoop.NetworkingManager.discord.GetLobbyManager();
-            lobbyManager.ConnectLobbyWithActivitySecret(TextCopy.Clipboard.GetText(), (Result result, ref Lobby lobby) => {
-                if (result == Discord.Result.Ok) {
-                    MessageLog.Add("Connected to lobby successfully!");
-                    GameLoop.NetworkingManager.InitNetworking(lobby.Id);
-                    kickstartNet();
-                    GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID);
-                } else {
-                    MessageLog.Add("Encountered error: " + result);
+            LobbySearchQuery searchQ = lobbyManager.GetSearchQuery();
+            searchQ.Filter("metadata.code", LobbySearchComparison.Equal, LobbySearchCast.String, joinBox.Text);
+
+            string acSec = "";
+
+            lobbyManager.Search(searchQ, (resultSearch) => {
+                if (resultSearch == Discord.Result.Ok) {
+                    var count = lobbyManager.LobbyCount();
+
+                    acSec = lobbyManager.GetLobbyActivitySecret(lobbyManager.GetLobbyId(0));
+
+
+
+                    lobbyManager.ConnectLobbyWithActivitySecret(acSec, (Result result, ref Lobby lobby) => {
+                        if (result == Discord.Result.Ok) {
+                            MessageLog.Add("Connected to lobby successfully!");
+                            GameLoop.NetworkingManager.InitNetworking(lobby.Id);
+                            kickstartNet();
+                            GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID);
+                        } else {
+                            MessageLog.Add("Encountered error: " + result);
+                        }
+                    });
                 }
             });
         }
@@ -811,13 +759,19 @@ namespace TearsInRain.UI {
         }
 
         public override void Update(TimeSpan timeElapsed) {
+            base.Update(timeElapsed); 
             CheckKeyboard();
-            base.Update(timeElapsed);
-            GameLoop.World.CalculateFov(GameLoop.CommandManager.lastPeek);
-            UpdateStatusWindow();
-            UpdateContextWindow();
-            UpdateEquipment();
-            UpdateInventory();
+            if (STATE == "GAME") { 
+                GameLoop.World.CalculateFov(GameLoop.CommandManager.lastPeek);
+                UpdateStatusWindow();
+                UpdateContextWindow();
+                UpdateEquipment();
+                UpdateInventory();
+            }
+
+            if (STATE == "MENU") {
+                SplashAnim();
+            }
         }
 
 
@@ -857,21 +811,277 @@ namespace TearsInRain.UI {
             SyncMapEntities(map);
         }
 
+        public void InitNewMap(string worldName = "Unnamed") {
+            GameLoop.World.WorldName = worldName;
+
+
+            CreateConsoles();
+
+            MessageLog = new MessageLogWindow(60, (GameLoop.GameHeight / 3), "[MESSAGE LOG]");
+            MessageLog.Title.Align(HorizontalAlignment.Center, MessageLog.Title.Length);
+            Children.Add(MessageLog);
+            MessageLog.IsVisible = true;
+            MessageLog.Position = new Point(0, (GameLoop.GameHeight / 3) * 2);
+
+            ChatLog = new ChatLogWindow(60, GameLoop.GameHeight / 3, "[CHAT LOG]");
+            Children.Add(MessageLog);
+            ChatLog.Show();
+            ChatLog.IsVisible = false;
+            ChatLog.Position = new Point((GameLoop.GameWidth / 2) - (ChatLog.Width / 2), (GameLoop.GameHeight / 2) - (ChatLog.Height / 2)); 
+            LoadMap(GameLoop.World.CurrentMap); 
+            CreateMapWindow(60, (GameLoop.GameHeight / 3) * 2, "[GAME MAP]");
+            CreateStatusWindow(20, (GameLoop.GameHeight / 3) * 2, "[PLAYER INFO]"); 
+            CreateContextWindow(20, GameLoop.GameHeight / 3, "[ITEM MENU]"); 
+            ContextConsole.MouseButtonClicked += contextClick;
+
+            CreateInventoryWindow(59, 28, "[INVENTORY]");
+            CreateEquipmentWindow(30, 16, "[EQUIPMENT]");
+
+            MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One); 
+            CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+        }
+
+        public void SplashAnim() {
+            if (SplashConsole.IsVisible) {
+                if (raindrops < 100 && GameLoop.Random.Next(0, 10) < 7) {
+                    raindrops++;
+
+                    Entity newRaindrop = new Entity(Color.Blue, Color.Transparent, '\\');
+                    int hori = GameLoop.Random.Next(0, 4);
+                    if (hori == 0 || hori == 1) {
+                        newRaindrop.Position = new Point(0, GameLoop.Random.Next(0, SplashConsole.Height - 14));
+                    } else {
+                        newRaindrop.Position = new Point(GameLoop.Random.Next(0, SplashConsole.Width - 2), 0);
+                    }
+                    rain.Add(newRaindrop);
+
+                    SplashRain.Children.Add(newRaindrop);
+                }
+
+
+                for (int i = rain.Count - 1; i >= 0; i--) {
+                    if (rain[i].Position.X + 1 < SplashConsole.Width - 2 && rain[i].Position.Y + 1 < SplashConsole.Height - 14) {
+                        rain[i].Position += new Point(1, 1);
+                    } else {
+                        int hori = GameLoop.Random.Next(0, 4);
+                        if (hori == 0 || hori == 1) {
+                            rain[i].Position = new Point(0, GameLoop.Random.Next(0, SplashConsole.Height - 14));
+                        } else {
+                            rain[i].Position = new Point(GameLoop.Random.Next(0, SplashConsole.Width - 2), 0);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public void LoadSplash() {
+
+            SadRex.Image splashScreen = SadRex.Image.Load(new FileStream("./data/splash.xp", FileMode.Open));
+            Cell[] splashCells = new Cell[splashScreen.Width * splashScreen.Height];
+            int logoCount = 0;
+            int lastY = 2;
+
+            for (int i = 0; i < splashScreen.Layers[0].Cells.Count; i++) {
+                SadRex.Cell temp = splashScreen.Layers[0].Cells[i];
+                Color fore = new Color(temp.Foreground.R, temp.Foreground.G, temp.Foreground.B);
+                Color back = new Color(temp.Background.R, temp.Background.G, temp.Background.B);
+
+                if (fore == new Color(17, 17, 17) || fore == new Color(26, 26, 26)) { fore.A = 150; } 
+                if (fore == new Color(35, 35, 35) || fore == new Color(48, 48, 48)) { fore.A = 170; } 
+                if (fore == new Color(69, 69, 69) || fore == new Color(78, 78, 78)) { fore.A = 190; } 
+                if (fore == new Color(255, 0, 255)) { fore.A = 0; } 
+                if (back == new Color(255, 0, 255)) {  back.A = 0; }
+
+                ColorGradient splashGrad = new ColorGradient(Color.DeepPink, Color.Cyan);
+                Point cellPos = i.ToPoint(splashScreen.Width);
+
+                if (fore == new Color(178, 0, 178)) {
+                    if (lastY < cellPos.Y) {
+                        logoCount++;
+                        lastY = cellPos.Y;
+                    }
+                    fore = splashGrad.Lerp((float)logoCount / 5);
+                }
+
+                splashCells[i] = new Cell(fore, back, temp.Character);
+            }
+
+            SplashConsole = new Console(splashScreen.Width, splashScreen.Height, Global.FontDefault, splashCells);
+            SplashConsole.IsVisible = true;
+            Children.Add(SplashConsole);
+
+            Cell[] rain = new Cell[(SplashConsole.Width - 2) * (SplashConsole.Height - 14)];
+
+            for (int i = 0; i < rain.Length; i++) {
+                rain[i] = new Cell(Color.Transparent, Color.Transparent, ' ');
+            }
+
+            SplashRain = new Console(SplashConsole.Width - 2, SplashConsole.Height - 14, Global.FontDefault, rain);
+            SplashRain.Position = new Point(1, 1);
+            SplashConsole.Children.Add(SplashRain);
+
+
+            Cell[] menu = new Cell[(SplashConsole.Width - 2) * 12];
+
+            for (int i = 0; i < menu.Length; i++) {
+                menu[i] = new Cell(Color.White, Color.Transparent, ' ');
+            }
+
+            MenuConsole = new Console(SplashConsole.Width - 2, 12, Global.FontDefault, menu);
+            SplashConsole.Children.Add(MenuConsole);
+
+            MenuConsole.Position = new Point(1, SplashConsole.Height - 12);
+            MenuConsole.Print(1, 1, "CREATE NEW WORLD".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
+            MenuConsole.Print(1, 2, "LOAD WORLD".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
+             
+            MenuConsole.Print(1, 5, "JOIN:    ".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
+            MenuConsole.Print(1, 7, "HOST".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
+
+            MenuConsole.Print(1, 10, "EXIT GAME".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
+
+            MenuConsole.MouseButtonClicked += menuClick; 
+        }
+
+        private void CreateWorld() {
+            WorldCreateWindow = new Window(20, 10, Global.FontDefault);
+            WorldCreateWindow.Position = new Point(GameLoop.GameWidth / 2 - 10, GameLoop.GameHeight / 2 - 5);
+            WorldCreateWindow.CanDrag = true;
+            WorldCreateWindow.IsVisible = false;
+            WorldCreateWindow.UseMouse = true;
+            WorldCreateWindow.Title = "[CREATE WORLD]".Align(HorizontalAlignment.Center, 18, (char)205); 
+            
+            WorldCreateConsole = new ControlsConsole(18, 8, Global.FontDefault);
+            WorldCreateConsole.Position = new Point(1, 1);
+            WorldCreateConsole.IsVisible = false;
+            WorldCreateConsole.FocusOnMouseClick = true;
+
+            WorldNameBox = new TextBox(16);
+            WorldNameBox.Position = new Point(1, 1);
+            WorldNameBox.IsVisible = true;
+            WorldNameBox.UseKeyboard = true;
+            WorldNameBox.TextAlignment = HorizontalAlignment.Center;
+
+
+            CreateWorldButton = new Button(18, 1);
+            CreateWorldButton.Text = "CREATE".Align(HorizontalAlignment.Center, 18, ' ');
+            CreateWorldButton.Position = new Point(0, 7);
+            CreateWorldButton.IsVisible = true;
+            CreateWorldButton.MouseButtonClicked += createWorldButtonClicked;
+
+            WorldCreateWindow.Children.Add(WorldCreateConsole);
+            WorldCreateConsole.Add(WorldNameBox);
+            WorldCreateConsole.Add(CreateWorldButton);
+            Children.Add(WorldCreateWindow); 
+        }
+
+        private void createWorldButtonClicked(object sender, MouseEventArgs e) {
+            WorldNameBox.Text = WorldNameBox.EditingText;
+            if (WorldNameBox.Text != "") {
+                WorldCreateConsole.IsVisible = false;
+                WorldCreateWindow.IsVisible = false;
+                WorldNameBox.IsVisible = false;
+                CreateWorldButton.IsVisible = false;
+
+
+                InitNewMap(WorldNameBox.Text);
+                ChangeState("GAME");
+
+                hostButtonClick(null, null);
+            }
+        }
+
+        private void SaveEverything() {
+            Directory.CreateDirectory(@"./saves/" + GameLoop.World.WorldName);
+
+            // string map = Utils.SimpleMapString(GameLoop.World.CurrentMap.Tiles);
+
+            string map = JsonConvert.SerializeObject(GameLoop.World, Formatting.Indented, new WorldJsonConverter());
+
+            File.WriteAllText(@"./saves/" + GameLoop.World.WorldName + "/map.json", map);
+        }
+
+        private void LoadMapFromFile() {
+            string map = File.ReadAllText(@"./saves/" + GameLoop.World.WorldName + "/map.json");
+
+            GameLoop.World = JsonConvert.DeserializeObject<World>(map, new WorldJsonConverter());
+            GameLoop.World.ResetFOV();
+            SyncMapEntities(GameLoop.World.CurrentMap);
+            
+        }
+
+
+
+        private void menuClick(object sender, MouseEventArgs e) {
+            if (e.MouseState.ConsoleCellPosition.Y == 1) { // Should open world creation dialogue
+                WorldCreateWindow.IsVisible = true;
+                WorldCreateConsole.IsVisible = true;
+            }
+
+            else if (e.MouseState.ConsoleCellPosition.Y == 2) { // Should open world loading dialogue
+                InitNewMap();
+                ChangeState("GAME");
+            }
+
+            else if (e.MouseState.ConsoleCellPosition.Y == 5) { // This one is probably fine like this, but should be switched so it doesn't make its own world before joining.
+                InitNewMap();
+                ChangeState("GAME");
+
+                joinButtonClick(null, null);
+            }
+
+            else if (e.MouseState.ConsoleCellPosition.Y == 7) { // Should open a dialogue that lets the player specify whether to use a new world or load an existing world
+                InitNewMap();
+                ChangeState("GAME");
+
+                hostButtonClick(null, null);
+            }
+        }
+
         private void ClearWait(Actor actor) {
             waitingForCommand = "";
             GameLoop.CommandManager.ResetPeek(actor);
         }
 
+        private void ChangeState(string newState) {
+            STATE = newState;
+            if (STATE == "MENU") {
+                MapConsole.IsVisible = false;
+                MapWindow.IsVisible = false;
+
+                InventoryConsole.IsVisible = false;
+                InventoryWindow.IsVisible = false;
+
+                StatusConsole.IsVisible = false;
+                StatusWindow.IsVisible = false;
+
+                EquipmentConsole.IsVisible = false;
+                EquipmentWindow.IsVisible = false;
+
+
+                SplashConsole.IsVisible = true;
+                SplashRain.IsVisible = true;
+            }
+
+            if (STATE == "GAME") {
+                MapConsole.IsVisible = true;
+                MapWindow.IsVisible = true;
+                
+                StatusConsole.IsVisible = true;
+                StatusWindow.IsVisible = true;
+                
+                SplashConsole.IsVisible = false;
+                SplashRain.IsVisible = false;
+            }
+        }
+
+
         private void CheckKeyboard() {
-            if (Global.KeyboardState.IsKeyReleased(Keys.Tab)) {
-                if (!chat) {
-                    if (MultiplayerWindow.IsVisible)
-                        MultiplayerWindow.IsVisible = false;
-                    else {
-                        MultiplayerWindow.Position = new Point((GameLoop.GameWidth / 2) - (MultiplayerWindow.Width / 2), (GameLoop.GameHeight / 2) - (MultiplayerWindow.Height / 2));
-                        MultiplayerWindow.IsVisible = true;
-                    }
-                } else {
+            if (STATE == "MENU") {
+            }
+
+            if (STATE == "GAME") { 
+                if (Global.KeyboardState.IsKeyReleased(Keys.Tab)) {
                     if (ChatLog.IsVisible)
                         ChatLog.IsVisible = false;
                     else {
@@ -879,302 +1089,324 @@ namespace TearsInRain.UI {
                         ChatLog.IsVisible = true;
                     }
                 }
-            }
 
-            if (!ChatLog.TextBoxFocused()) {
-                if (Global.KeyboardState.IsKeyReleased(Keys.F5)) { Settings.ToggleFullScreen(); }
+                if (!ChatLog.TextBoxFocused()) {
+                    if (Global.KeyboardState.IsKeyReleased(Keys.F5)) { Settings.ToggleFullScreen(); }
 
-                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
-                    Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
-                    if (Global.KeyboardState.IsKeyPressed(Keys.G)) {
-                        waitingForCommand = "g";
-                    }
-
-                    if (Global.KeyboardState.IsKeyPressed(Keys.X)) {
-                        if (GameLoop.CommandManager.lastPeek == new Point(0, 0)) {
-                            waitingForCommand = "x";
-                        } else {
-                            ClearWait(player);
+                    if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                        Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
+                        if (Global.KeyboardState.IsKeyPressed(Keys.G)) {
+                            waitingForCommand = "g";
                         }
-                    }
 
-                    if (Global.KeyboardState.IsKeyPressed(Keys.C)) {
-                        waitingForCommand = "c";
-                    }
-
-                    if (Global.KeyboardState.IsKeyPressed(Keys.E)) {
-                        if (EquipmentWindow.IsVisible) {
-                            EquipmentWindow.IsVisible = false;
-                        } else {
-                            EquipmentWindow.IsVisible = true;
+                        if (Global.KeyboardState.IsKeyPressed(Keys.X)) {
+                            if (GameLoop.CommandManager.lastPeek == new Point(0, 0)) {
+                                waitingForCommand = "x";
+                            } else {
+                                ClearWait(player);
+                            }
                         }
-                    }
 
-                    if (Global.KeyboardState.IsKeyPressed(Keys.I)) {
-                        if (InventoryWindow.IsVisible) {
-                            InventoryWindow.IsVisible = false;
+                        if (Global.KeyboardState.IsKeyPressed(Keys.C)) {
+                            waitingForCommand = "c";
+                        }
+
+                        if (Global.KeyboardState.IsKeyPressed(Keys.OemTilde)) {
+                            SaveEverything();
+                        }
+
+                        if (Global.KeyboardState.IsKeyPressed(Keys.OemPeriod)) {
+                            LoadMapFromFile();
+                        }
+
+
+                        if (Global.KeyboardState.IsKeyPressed(Keys.P)) {
+                            GameLoop.TimeManager.EndDay();
+                        }
+
+                        
+
+                        if (Global.KeyboardState.IsKeyPressed(Keys.E)) {
+                            if (EquipmentWindow.IsVisible) {
+                                EquipmentWindow.IsVisible = false;
+                                EquipmentConsole.IsVisible = false;
+                            } else {
+                                EquipmentWindow.IsVisible = true;
+                                EquipmentConsole.IsVisible = true;
+                            }
+                        }
+
+                        if (Global.KeyboardState.IsKeyPressed(Keys.I)) {
+                            if (InventoryWindow.IsVisible) {
+                                InventoryWindow.IsVisible = false;
+                                InventoryConsole.IsVisible = false;
+                                ContextWindow.IsVisible = false;
+                                ContextConsole.IsVisible = false;
+                                invContextIndex = -1;
+                            } else {
+                                InventoryWindow.IsVisible = true;
+                                InventoryConsole.IsVisible = true;
+                                ContextWindow.IsVisible = true;
+                                ContextConsole.IsVisible = true;
+                                invContextIndex = -1;
+                            }
+                        }
+
+                        if (Global.KeyboardState.IsKeyPressed(Keys.S) && Global.KeyboardState.IsKeyDown(Keys.LeftShift)) {
+                            if (!player.IsStealthing) {
+                                int skillCheck = Dice.Roll("3d6");
+                                player.Stealth(skillCheck, true);
+                                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|yes|" + GameLoop.NetworkingManager.myUID + "|" + skillCheck));
+                            } else {
+                                player.Unstealth();
+                                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|no|" + GameLoop.NetworkingManager.myUID + "|0"));
+                            }
+                        }
+
+                        if (Global.KeyboardState.IsKeyReleased(Keys.H)) {
+                            player.Health--;
+                        }
+
+                        if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) {
+                            if (waitingForCommand != "")
+                                ClearWait(player);
                             ContextWindow.IsVisible = false;
-                        } else {
-                            InventoryWindow.IsVisible = true;
+                        }
+
+                        if (Global.KeyboardState.IsKeyReleased(Keys.OemPlus)) {
+                            if (hold != Font.FontSizes.Four) {
+                                switch (MapConsole.Font.SizeMultiple) {
+                                    case Font.FontSizes.One:
+                                        MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Two);
+                                        hold = Font.FontSizes.Two;
+                                        MapConsole.ViewPort = new Rectangle(0, 0, 29, 19);
+                                        break;
+                                    case Font.FontSizes.Two:
+                                        MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Four);
+                                        hold = Font.FontSizes.Four;
+                                        MapConsole.ViewPort = new Rectangle(0, 0, 15, 9);
+                                        break;
+                                }
+
+                                foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
+                                    entity.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(hold);
+                                    entity.Position = entity.Position;
+                                    entity.IsDirty = true;
+                                }
+
+                                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                                    CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+                                }
+
+                                MapConsole.IsDirty = true;
+                            }
+                        }
+
+                        if (Global.KeyboardState.IsKeyReleased(Keys.OemMinus)) {
+                            if (hold != Font.FontSizes.One) {
+                                switch (MapConsole.Font.SizeMultiple) {
+                                    case Font.FontSizes.Two:
+                                        MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
+                                        hold = Font.FontSizes.One;
+                                        MapConsole.ViewPort = new Rectangle(0, 0, 58, 38);
+                                        break;
+                                    case Font.FontSizes.Four:
+                                        MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Two);
+                                        hold = Font.FontSizes.Two;
+                                        MapConsole.ViewPort = new Rectangle(0, 0, 29, 19);
+                                        break;
+                                }
+
+                                foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
+                                    entity.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(hold);
+                                    entity.Position = entity.Position;
+                                    entity.IsDirty = true;
+                                }
+
+
+                                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                                    CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+                                }
+
+                                MapConsole.IsDirty = true;
+
+                            }
+                        }
+
+
+
+                        if (player.TimeLastActed + (UInt64)player.Speed <= GameLoop.GameTime) {
+                            if (Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
+                                Point thisDir = Utils.Directions["UR"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+
+                            } else if (Global.KeyboardState.IsKeyPressed(Keys.W) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) {
+                                Point thisDir = Utils.Directions["U"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+
+                            } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad7)) {
+                                Point thisDir = Utils.Directions["UL"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+
+                            } else if (Global.KeyboardState.IsKeyPressed(Keys.D) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) {
+                                Point thisDir = Utils.Directions["R"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+                            } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad5)) {
+                                Point thisDir = Utils.Directions["C"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+                            } else if (Global.KeyboardState.IsKeyPressed(Keys.A) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) {
+                                Point thisDir = Utils.Directions["L"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+                            } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad3)) {
+                                Point thisDir = Utils.Directions["DR"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+                            } else if ((Global.KeyboardState.IsKeyPressed(Keys.S) && !Global.KeyboardState.IsKeyDown(Keys.LeftShift)) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) {
+                                Point thisDir = Utils.Directions["D"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+                            } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad1)) {
+                                Point thisDir = Utils.Directions["DL"];
+                                if (waitingForCommand == "") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                    CenterOnActor(player);
+                                } else if (waitingForCommand == "c") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
+                                } else if (waitingForCommand == "g") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Pickup(player, thisDir);
+                                } else if (waitingForCommand == "x") {
+                                    ClearWait(player);
+                                    GameLoop.CommandManager.Peek(player, thisDir);
+                                }
+                            }
+
                         }
                     }
-
-                    if (Global.KeyboardState.IsKeyPressed(Keys.S) && Global.KeyboardState.IsKeyDown(Keys.LeftShift)) {
-                        if (!player.IsStealthing) {
-                            int skillCheck = Dice.Roll("3d6");
-                            player.Stealth(skillCheck, true);
-                            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|yes|" + GameLoop.NetworkingManager.myUID + "|" + skillCheck));
-                        } else {
-                            player.Unstealth();
-                            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|no|" + GameLoop.NetworkingManager.myUID + "|0"));
-                        }
-                    }
-
-                    if (Global.KeyboardState.IsKeyReleased(Keys.H)) {
-                        player.Health--;
-                    }
+                } else {
 
                     if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) {
-                        if (waitingForCommand != "")
-                            ClearWait(player);
-                        ContextWindow.IsVisible = false;
+                        ChatLog.Unfocus();
                     }
+                    if (Global.KeyboardState.IsKeyReleased(Keys.Enter) && GameLoop.NetworkingManager.discord.GetLobbyManager() != null) {
+                        if (ChatLog.GetText() != "") {
+                            var assembled = GameLoop.NetworkingManager.userManager.GetCurrentUser().Username + ": " + ChatLog.GetText();
 
-                    if (Global.KeyboardState.IsKeyReleased(Keys.OemPlus)) {
-                        if (hold != Font.FontSizes.Four) {
-                            switch (MapConsole.Font.SizeMultiple) {
-                                case Font.FontSizes.One:
-                                    MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Two);
-                                    hold = Font.FontSizes.Two;
-                                    MapConsole.ViewPort = new Rectangle(0, 0, 29, 19); 
-                                    break;
-                                case Font.FontSizes.Two:
-                                    MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Four);
-                                    hold = Font.FontSizes.Four;
-                                    MapConsole.ViewPort = new Rectangle(0, 0, 15, 9);
-                                    break;
-                            }
+                            GameLoop.NetworkingManager.SendNetMessage(1, System.Text.Encoding.UTF8.GetBytes(assembled));
 
-                            foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
-                                entity.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(hold);
-                                entity.Position = entity.Position;
-                                entity.IsDirty = true;
-                            }
-
-                            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
-                                CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
-                            }
-
-                            MapConsole.IsDirty = true;
+                            ChatLog.Add(assembled);
+                            ChatLog.ClearText();
+                            ChatLog.Refocus();
+                        } else {
+                            ChatLog.Refocus();
                         }
-                    }
-
-                    if (Global.KeyboardState.IsKeyReleased(Keys.OemMinus)) {
-                        if (hold != Font.FontSizes.One) {
-                            switch (MapConsole.Font.SizeMultiple) {
-                                case Font.FontSizes.Two:
-                                    MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
-                                    hold = Font.FontSizes.One;
-                                    MapConsole.ViewPort = new Rectangle(0, 0, 58, 38);
-                                    break;
-                                case Font.FontSizes.Four:
-                                    MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Two);
-                                    hold = Font.FontSizes.Two;
-                                    MapConsole.ViewPort = new Rectangle(0, 0, 29, 19);
-                                    break;
-                            }
-
-                            foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
-                                entity.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(hold);
-                                entity.Position = entity.Position;
-                                entity.IsDirty = true;
-                            }
-
-
-                            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
-                                CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
-                            }
-
-                            MapConsole.IsDirty = true;
-
-                        }
-                    }
-
-
-
-                    if (player.TimeLastActed + (UInt64) player.Speed <= GameLoop.GameTime) {
-                        if (Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
-                            Point thisDir = Utils.Directions["UR"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-
-                        }
-
-                        else if (Global.KeyboardState.IsKeyPressed(Keys.W) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) {
-                            Point thisDir = Utils.Directions["U"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad7)) {
-                            Point thisDir = Utils.Directions["UL"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.D) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) {
-                            Point thisDir = Utils.Directions["R"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad5)) {
-                            Point thisDir = Utils.Directions["C"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.A) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) {
-                            Point thisDir = Utils.Directions["L"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad3)) {
-                            Point thisDir = Utils.Directions["DR"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-                        } else if ((Global.KeyboardState.IsKeyPressed(Keys.S) && !Global.KeyboardState.IsKeyDown(Keys.LeftShift)) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) {
-                            Point thisDir = Utils.Directions["D"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad1)) {
-                            Point thisDir = Utils.Directions["DL"];
-                            if (waitingForCommand == "") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                CenterOnActor(player);
-                            } else if (waitingForCommand == "c") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.CloseDoor(player, thisDir);
-                            } else if (waitingForCommand == "g") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Pickup(player, thisDir);
-                            } else if (waitingForCommand == "x") {
-                                ClearWait(player);
-                                GameLoop.CommandManager.Peek(player, thisDir);
-                            }
-                        }
-
                     }
                 }
-            } else {
-
-                if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) {
-                    ChatLog.Unfocus();
-                }
-                if (Global.KeyboardState.IsKeyReleased(Keys.Enter) && GameLoop.NetworkingManager.discord.GetLobbyManager() != null) {
-                    if (ChatLog.GetText() != "") {
-                        var assembled = GameLoop.NetworkingManager.userManager.GetCurrentUser().Username + ": " + ChatLog.GetText();
-
-                        GameLoop.NetworkingManager.SendNetMessage(1, System.Text.Encoding.UTF8.GetBytes(assembled));
-
-                        ChatLog.Add(assembled);
-                        ChatLog.ClearText();
-                        ChatLog.Refocus();
-                    } else {
-                        ChatLog.Refocus();
-                    }
-                }
-            }
+            } 
         }
     }
 }

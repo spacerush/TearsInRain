@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
+using TearsInRain.Entities;
 using TearsInRain.Tiles;
 
 namespace TearsInRain {
@@ -16,46 +17,46 @@ namespace TearsInRain {
         public Map GenerateMap(int mapWidth, int mapHeight, int maxRooms, int minRoomSize, int maxRoomSize) {
             _map = new Map(mapWidth, mapHeight);
             
-            List<Rectangle> Rooms = new List<Rectangle>();
+            //List<Rectangle> Rooms = new List<Rectangle>();
 
-            for (int i = 0; i < maxRooms; i++) {
-                int newRoomWidth = randNum.Next(minRoomSize, maxRoomSize);
-                int newRoomHeight = randNum.Next(minRoomSize, maxRoomSize);
+            //for (int i = 0; i < maxRooms; i++) {
+            //    int newRoomWidth = randNum.Next(minRoomSize, maxRoomSize);
+            //    int newRoomHeight = randNum.Next(minRoomSize, maxRoomSize);
                 
-                int newRoomX = randNum.Next(0, mapWidth - newRoomWidth - 1);
-                int newRoomY = randNum.Next(0, mapHeight - newRoomHeight - 1);
+            //    int newRoomX = randNum.Next(0, mapWidth - newRoomWidth - 1);
+            //    int newRoomY = randNum.Next(0, mapHeight - newRoomHeight - 1);
                 
-                Rectangle newRoom = new Rectangle(newRoomX, newRoomY, newRoomWidth, newRoomHeight);
+            //    Rectangle newRoom = new Rectangle(newRoomX, newRoomY, newRoomWidth, newRoomHeight);
                 
-                bool newRoomIntersects = Rooms.Any(room => newRoom.Intersects(room));
+            //    bool newRoomIntersects = Rooms.Any(room => newRoom.Intersects(room));
 
-                if (!newRoomIntersects) {
-                    Rooms.Add(newRoom);
-                }
-            }
+            //    if (!newRoomIntersects) {
+            //        Rooms.Add(newRoom);
+            //    }
+            //}
             
             FloodFloor();
-            
-            foreach (Rectangle room in Rooms) {
-                CreateRoom(room);
-            }
-            
-            for (int r = 1; r < Rooms.Count; r++) {
-                Point previousRoomCenter = Rooms[r - 1].Center;
-                Point currentRoomCenter = Rooms[r].Center;
-                
-                if (randNum.Next(1, 2) == 1) {
-                    CreateHorizontalTunnel(previousRoomCenter.X, currentRoomCenter.X, previousRoomCenter.Y);
-                    CreateVerticalTunnel(previousRoomCenter.Y, currentRoomCenter.Y, currentRoomCenter.X);
-                } else {
-                    CreateVerticalTunnel(previousRoomCenter.Y, currentRoomCenter.Y, previousRoomCenter.X);
-                    CreateHorizontalTunnel(previousRoomCenter.X, currentRoomCenter.X, currentRoomCenter.Y);
-                }
-            }
-            
-            foreach (Rectangle room in Rooms) {
-                CreateDoor(room);
-            }
+
+            //foreach (Rectangle room in Rooms) {
+            //    CreateRoom(room);
+            //}
+
+            //for (int r = 1; r < Rooms.Count; r++) {
+            //    Point previousRoomCenter = Rooms[r - 1].Center;
+            //    Point currentRoomCenter = Rooms[r].Center;
+
+            //    if (randNum.Next(1, 2) == 1) {
+            //        CreateHorizontalTunnel(previousRoomCenter.X, currentRoomCenter.X, previousRoomCenter.Y);
+            //        CreateVerticalTunnel(previousRoomCenter.Y, currentRoomCenter.Y, currentRoomCenter.X);
+            //    } else {
+            //        CreateVerticalTunnel(previousRoomCenter.Y, currentRoomCenter.Y, previousRoomCenter.X);
+            //        CreateHorizontalTunnel(previousRoomCenter.X, currentRoomCenter.X, currentRoomCenter.Y);
+            //    }
+            //}
+
+            //foreach (Rectangle room in Rooms) {
+            //    CreateDoor(room);
+            //}
             
             return _map;
         }

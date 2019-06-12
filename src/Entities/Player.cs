@@ -1,7 +1,10 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Xna.Framework; 
+using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 
-namespace TearsInRain.Entities { 
+namespace TearsInRain.Entities {
+
+    [JsonObject(MemberSerialization.OptOut)]
     public class Player : Actor {
 
 
@@ -9,14 +12,16 @@ namespace TearsInRain.Entities {
             Name = "Player";
             TimeLastActed = 0;
             Dexterity = 13;
-            Dictionary<string, int> props = new Dictionary<string, int>();
-            props.Add("hoe", 0);
+            Dictionary<string, string> props = new Dictionary<string, string>();
+            props.Add("qualities", "tilling");
 
-            Item item = new Item(Color.White, Color.Transparent, "Book of Incredible Tales", '$', 20, quantity:21, plural:"Books of Incredible Tales");
-            Item hoe = new Item(Color.Gray, Color.Transparent, "Shoddy Hoe", '\\', 3, slot:13, properties:props);
+            Item hoe = GameLoop.ItemLibrary["hoe_shoddy"].Clone();
+            Item book = GameLoop.ItemLibrary["book_incredible_tales"].Clone();
+            Item seed = GameLoop.ItemLibrary["seed_potato"].Clone();
 
-            Inventory.Add(item);
+            Inventory.Add(book);
             Inventory.Add(hoe);
+            Inventory.Add(seed);
         }
 
         public Player(Color foreground, Color background, Actor actor) : base(foreground, background, 1) {

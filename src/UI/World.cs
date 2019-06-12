@@ -4,22 +4,22 @@ using TearsInRain.Tiles;
 using TearsInRain.Entities;
 using System.Collections.Generic;
 using System.Linq;
-using SadConsole.Effects;
-using SadConsole.Components;
 using GoRogue;
-using SadConsole;
+using TearsInRain.Serializers;
+using Newtonsoft.Json;
 
 namespace TearsInRain {
+
+    [JsonConverter(typeof(WorldJsonConverter))]
     public class World {
-        Random rndNum = new Random();
         
         private int _mapWidth = 100;
         private int _mapHeight = 100;
-        private TileBase[] _mapTiles;
         private int _maxRooms = 100;
         private int _minRoomSize = 4;
         private int _maxRoomSize = 15;
         public Map CurrentMap { get; set; }
+        public string WorldName = "";
 
         public List<Point> SeenTiles = new List<Point>();
 
@@ -27,7 +27,9 @@ namespace TearsInRain {
         public GoRogue.FOV lastFov;
 
 
-        public World() {
+        public World(string Name) {
+            WorldName = Name;
+
             CreateMap();
             
             CreatePlayer(GameLoop.NetworkingManager.myUID);
@@ -36,13 +38,12 @@ namespace TearsInRain {
             
             CreateLoot();
 
+            CurrentMap.PlaceTrees(200);
+
             SeenTiles.Add(players[GameLoop.NetworkingManager.myUID].Position);
         }
 
         public World(TileBase[] tiles) {
-            _mapTiles = new TileBase[tiles.Length];
-            _mapTiles = tiles;
-
             CurrentMap = new Map(tiles.Length, 1);
             CurrentMap.Tiles = tiles; 
 
@@ -50,12 +51,17 @@ namespace TearsInRain {
             CreateMonsters();
             CreateLoot();
 
+            CurrentMap.PlaceTrees(200);
+
             SeenTiles.Add(players[GameLoop.NetworkingManager.myUID].Position); 
+        }
+
+        public World() {
+
         }
 
 
         private void CreateMap() {
-            _mapTiles = new TileBase[_mapWidth * _mapHeight];
             CurrentMap = new Map(_mapWidth, _mapHeight);
             MapGenerator mapGen = new MapGenerator();
             CurrentMap = mapGen.GenerateMap(_mapWidth, _mapHeight, _maxRooms, _minRoomSize, _maxRoomSize);
@@ -64,11 +70,11 @@ namespace TearsInRain {
         private void CreateMonsters() {
             int numMonsters = 10;
             for (int i = 0; i < numMonsters; i++) {
-                int monsterPosition = rndNum.Next(0, CurrentMap.Width * CurrentMap.Height);
+                int monsterPosition = GameLoop.Random.Next(0, CurrentMap.Width * CurrentMap.Height);
                 Monster newMonster = new Monster(Color.Blue, Color.Transparent);
 
                 while (CurrentMap.Tiles[monsterPosition].IsBlockingMove) {
-                    monsterPosition = rndNum.Next(0, CurrentMap.Width * CurrentMap.Height);
+                    monsterPosition = GameLoop.Random.Next(0, CurrentMap.Width * CurrentMap.Height);
                 }
                 
                
@@ -99,11 +105,11 @@ namespace TearsInRain {
             int numLoot = 20;
             
             for (int i = 0; i < numLoot; i++) {
-                int lootPosition = rndNum.Next(0, CurrentMap.Width * CurrentMap.Height);
+                int lootPosition = GameLoop.Random.Next(0, CurrentMap.Width * CurrentMap.Height);
                 Item newLoot = new Item(Color.Green, Color.Transparent, "fancy shirt", 'L', 2);
                 
                 while (CurrentMap.Tiles[lootPosition].IsBlockingMove) {
-                    lootPosition = rndNum.Next(0, CurrentMap.Width * CurrentMap.Height);
+                    lootPosition = GameLoop.Random.Next(0, CurrentMap.Width * CurrentMap.Height);
                 }
                 
                 newLoot.Position = new Point(lootPosition % CurrentMap.Width, lootPosition / CurrentMap.Width);

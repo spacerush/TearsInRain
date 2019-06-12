@@ -7,14 +7,18 @@ using GoRogue.MapViews;
 using GoRogue;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using TearsInRain.Serializers;
+using Newtonsoft.Json;
 
 namespace TearsInRain {
+
+    [JsonConverter(typeof(MapJsonConverter))]
     public class Map{
-        TileBase[] _tiles;
+        //TileBase[] _tiles;
         public int Width { get; }
         public int Height { get; }
 
-        public TileBase[] Tiles { get { return _tiles; } set { _tiles = value; } }
+        public TileBase[] Tiles;
 
         public GoRogue.MultiSpatialMap<Entity> Entities;
         public static GoRogue.IDGenerator IDGenerator = new GoRogue.IDGenerator();
@@ -31,10 +35,10 @@ namespace TearsInRain {
             }
         }
 
-        public Map(TileBase[] tiles) {
-            Width = 100;
-            Height = 100;
-            Tiles = new TileBase[100 * 100];
+        public Map(TileBase[] tiles, int W = 100, int H = 100) {
+            Width = W;
+            Height = H;
+            Tiles = new TileBase[W * H];
             Tiles = tiles;
             if (GameLoop.ReceivedEntities != null) {
                 Entities = GameLoop.ReceivedEntities;
@@ -47,7 +51,15 @@ namespace TearsInRain {
         public bool IsTileWalkable(Point location) {
             if (location.X < 0 || location.Y < 0 || location.X >= Width || location.Y >= Height)
                 return false;
-            return !_tiles[location.Y * Width + location.X].IsBlockingMove;
+
+
+            TerrainFeature terrain = GetEntityAt<TerrainFeature>(location);
+
+            if (terrain != null) {
+                return !Tiles[location.ToIndex(Width)].IsBlockingMove && !terrain.IsBlockingMove;
+            }
+
+            return !Tiles[location.Y * Width + location.X].IsBlockingMove;
         }
         
         public T GetTileAt<T>(int x, int y) where T : TileBase {
@@ -87,8 +99,32 @@ namespace TearsInRain {
             Tiles[pos.ToIndex(GameLoop.World.CurrentMap.Width)] = tile;
         }
 
+        public void SetItem(Point pos, Item item) {
+            
+        }
+
+
+        public void PlaceTrees(int num) {
+            TerrainFeature tree = new TerrainFeature(Color.SaddleBrown, Color.Transparent, "tree", (char)272, true, true, 1000, 100, 1, 1, Color.Green, (char)273, null);
+
+            for (int i = 0; i < num; i++) {
+                TerrainFeature treeCopy = tree.Clone();
+
+                treeCopy.Position = (GameLoop.Random.Next(0, Width * Height)).ToPoint(Width);
+
+                if (GetEntityAt<TerrainFeature>(treeCopy.Position) == null && GetTileAt<TileBase>(treeCopy.Position.X, treeCopy.Position.Y).Name == "grass")
+                   Add(treeCopy);
+            }
+        }
+
 
         public bool IsTransparent (Coord position) {
+            TerrainFeature terrain = GetEntityAt<TerrainFeature>(position);
+
+            if (terrain != null) {
+                return !Tiles[position.ToIndex(Width)].IsBlockingLOS && !terrain.IsBlockingLOS;
+            }
+
             return !Tiles[position.ToIndex(Width)].IsBlockingLOS;
         }
     }

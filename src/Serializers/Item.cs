@@ -35,7 +35,7 @@ namespace TearsInRain.Serializers {
         [DataMember] public int Slot; // Slot that item can be equipped to. If no applicable slot, this should be -1
         [DataMember] public int Quantity; // Number of items
 
-        [DataMember] public Dictionary<string, int> Properties;
+        [DataMember] public Dictionary<string, string> Properties;
 
         public static implicit operator ItemSerialized(Item item) {
             Color tempFG = item.Animation.CurrentFrame[0].Foreground;
@@ -45,7 +45,7 @@ namespace TearsInRain.Serializers {
                 FG = tempFG.R.ToString() + "," + tempFG.G.ToString() + "," + tempFG.B.ToString() + "," + tempFG.A.ToString(),
                 BG = tempBG.R.ToString() + "," + tempBG.G.ToString() + "," + tempBG.B.ToString() + "," + tempBG.A.ToString(),
                 Glyph = item.Animation.CurrentFrame[0].Glyph,
-                ID = item.ID,
+                ID = item._id,
                 Name = item.Name,
                 NamePlural = item.NamePlural,
                 Weight = item.Weight,

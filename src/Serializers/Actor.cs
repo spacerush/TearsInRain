@@ -46,6 +46,7 @@ namespace TearsInRain.Serializers {
         [DataMember] public int ENG; // Energy
         [DataMember] public int MaxENG;
 
+        [DataMember] public int BASE_SPD;
         [DataMember] public int SPD; // Speed
         [DataMember] public int Dodge;
 
@@ -75,6 +76,7 @@ namespace TearsInRain.Serializers {
                 MaxENG = actor.MaxEnergy,
 
                 SPD = actor.Speed,
+                BASE_SPD = actor.BaseSpeed,
                 Dodge = actor.Dodge,
                 Inventory = actor.Inventory,
             };
@@ -102,6 +104,7 @@ namespace TearsInRain.Serializers {
             entity.MaxEnergy = serializedObject.MaxENG;
 
             entity.Speed = serializedObject.SPD;
+            entity.BaseSpeed = serializedObject.BASE_SPD;
             entity.BaseDodge = serializedObject.Dodge;
             entity.Dodge = serializedObject.Dodge;
 

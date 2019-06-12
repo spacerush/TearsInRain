@@ -1,5 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
+using Newtonsoft.Json;
 using SadConsole;
+using System;
+using TearsInRain.Entities;
+using TearsInRain.Serializers;
 
 namespace TearsInRain {
     class TimeManager {
@@ -21,6 +25,7 @@ namespace TearsInRain {
 
 
         public void EndDay() {
+            Hour = 0;
             if (Day == 28) {
                 Day = 1;
                 if (Season == 3) {
@@ -30,8 +35,84 @@ namespace TearsInRain {
                     Season++;
                 }
             } else {
-                Hour = 0;
                 Day++;
+            }
+
+            for (int i = 0; i < GameLoop.World.CurrentMap.Tiles.Length; i++) {
+                if (GameLoop.World.CurrentMap.Tiles[i].Name == "farmland") {
+                    Item item = null;
+                    item = GameLoop.World.CurrentMap.GetEntityAt<Item>(i.ToPoint(GameLoop.World.CurrentMap.Width)); 
+
+                    if (item != null && item.Quantity == 1 && item.Properties.ContainsKey("qualities") && item.Properties["qualities"].Contains("plantable")) { 
+                        if (item.Properties.ContainsKey("growing-seasons") && item.Properties["growing-seasons"].Contains(GetSeasonName())) {
+
+                            GameLoop.UIManager.MessageLog.Add("Ticked crop, " + item.Properties["current-stage-time"]);
+                            string[] tempStr = item.Properties["current-stage-time"].Split(',');
+                            string[] stageTimes = item.Properties["growth-times"].Split(',');
+                            int currStage = Convert.ToInt32(tempStr[0]);
+                            int timeInStage = Convert.ToInt32(tempStr[1]);
+                            string newCurrTimer = "";
+
+                            if (stageTimes.Length > currStage) {
+                                timeInStage++;
+
+                                if (Convert.ToInt32(stageTimes[currStage]) <= timeInStage) {
+                                    currStage += 1;
+                                    newCurrTimer = currStage.ToString() + ",0";
+
+
+                                    if (currStage == 0) {
+                                        item.Animation.CurrentFrame[0].Glyph = 269;
+                                        item.Animation.CurrentFrame[0].Foreground = new Color(0, 255, 12, 255);
+                                    } else if (currStage < stageTimes.Length - 1) {
+                                        item.Animation.CurrentFrame[0].Glyph = 270;
+                                        item.Animation.CurrentFrame[0].Foreground = new Color(0, 255, 12, 255);
+                                    } else if (currStage >= stageTimes.Length - 1) {
+                                        item.Animation.CurrentFrame[0].Glyph = 271;
+                                        item.Animation.CurrentFrame[0].Foreground = new Color(0, 255, 12, 255);
+                                    }
+
+                                    item.Animation.IsDirty = true;
+                                } else {
+                                    newCurrTimer = currStage.ToString() + "," + (timeInStage).ToString();
+                                }
+
+                                if (currStage >= stageTimes.Length) {
+
+                                    string[] quantityStr = item.Properties["harvest-yield"].Split(',');
+                                    int minQ = Convert.ToInt32(quantityStr[0]);
+                                    int maxQ = Convert.ToInt32(quantityStr[1]);
+                                    int quan = GameLoop.Random.Next(minQ, maxQ + 1);
+
+                                    Point pos = item.Position;
+                                    newCurrTimer = "0,0";
+
+                                    Item newItem = GameLoop.ItemLibrary[item.Properties["grown"]].Clone();
+
+
+                                    newItem.Quantity = quan;
+                                    newItem.Position = pos;
+
+                                    newItem.Animation.IsDirty = true;
+
+                                    GameLoop.World.CurrentMap.Remove(item);
+                                    GameLoop.World.CurrentMap.Add(newItem);
+                                    GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+
+                                    string itemDrop = "i_data|update|" + item.Position.X + "|" + item.Position.Y + "|" + JsonConvert.SerializeObject(newItem, Formatting.Indented, new ItemJsonConverter());
+                                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(itemDrop));
+                                } else {
+                                    string itemDrop = "i_data|update|" + item.Position.X + "|" + item.Position.Y + "|" + JsonConvert.SerializeObject(item, Formatting.Indented, new ItemJsonConverter());
+                                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(itemDrop));
+
+                                }
+
+                                item.Properties["current-stage-time"] = newCurrTimer;
+
+                            }
+                        }
+                    }
+                }
             }
         }
 

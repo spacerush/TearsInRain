@@ -97,7 +97,7 @@ namespace TearsInRain.Commands {
         }
         
         private static void ResolveDeath(Actor defender) {
-            StringBuilder deathMessage = new StringBuilder($"{Utils.FirstCharToUpper(defender.Name)} died");
+            StringBuilder deathMessage = new StringBuilder($"{Utils.FirstCharToUpper(defender.Name)} died.");
 
             if (defender.Inventory.Count > 0) { 
                 foreach (Item item in defender.Inventory) {
@@ -107,10 +107,15 @@ namespace TearsInRain.Commands {
                     GameLoop.World.CurrentMap.Add(item);
                 } 
                 defender.Inventory.Clear();
-            } else {
-                deathMessage.Append(".");
             }
-            
+
+            for (int i = 0; i < 14; i++) {
+                if (defender.Equipped[i] != null) {
+                    defender.Unequip(i);
+                    defender.DropItem(0, 0);
+                }
+            }
+
 
             if (defender is Player) {
                 defender.Position = new Point(0, 0);

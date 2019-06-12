@@ -1,11 +1,14 @@
 ﻿using System;
 using SadConsole;
-using Console = SadConsole.Console;
+using Console = SadConsole.Console; 
 using Microsoft.Xna.Framework;
 using TearsInRain.UI;
 using TearsInRain.Commands;
 using System.Collections.Generic;
 using TearsInRain.Entities;
+using Newtonsoft.Json;
+using TearsInRain.Serializers;
+using System.IO; 
 
 namespace TearsInRain {
     class GameLoop {
@@ -74,15 +77,18 @@ namespace TearsInRain {
 
         private static void Init() {
             SadConsole.Themes.WindowTheme windowTheme = new SadConsole.Themes.WindowTheme(new SadConsole.Themes.Colors());
-            windowTheme.BorderLineStyle = CellSurface.ConnectedLineThin;
+            windowTheme.BorderLineStyle = CellSurface.ConnectedLineThick;
             SadConsole.Themes.Library.Default.WindowTheme = windowTheme;
 
-            SadConsole.Themes.Library.Default.Colors.TitleText = Color.White;
+            
+
+            SadConsole.Themes.Library.Default.Colors.TitleText = new Color(51, 153, 255);
+            SadConsole.Themes.Library.Default.Colors.Lines = new Color(51, 153, 255); 
             SadConsole.Themes.Library.Default.Colors.ControlHostBack = Color.Black;
-            SadConsole.Themes.Library.Default.Colors.Appearance_ControlFocused = new Cell(Color.White, Color.Black);
-            SadConsole.Themes.Library.Default.Colors.Appearance_ControlNormal = new Cell();
-            SadConsole.Themes.Library.Default.Colors.Appearance_ControlOver = new Cell(Color.Blue, Color.Black);
-            SadConsole.Themes.Library.Default.Colors.Appearance_ControlMouseDown = new Cell(Color.DarkBlue, Color.Black);
+            //SadConsole.Themes.Library.Default.Colors.Appearance_ControlNormal = new Cell();
+            //SadConsole.Themes.Library.Default.Colors.Appearance_ControlOver = new Cell(Color.Blue, Color.Black);
+            //SadConsole.Themes.Library.Default.Colors.Appearance_ControlMouseDown = new Cell(Color.DarkBlue, Color.Black);
+            //SadConsole.Themes.Library.Default.Colors.Appearance_ControlFocused = new Cell(Color.White, Color.Black);
 
             Utils.InitDirections();
 
@@ -95,12 +101,16 @@ namespace TearsInRain {
             Settings.AllowWindowResize = true;
 
             UIManager = new UIManager();
+
+            initLibraries();
+
             CommandManager = new CommandManager();
 
             NetworkingManager = new NetworkingManager();
             TimeManager = new TimeManager();
 
-            World = new World();
+            World = new World("");
+
             UIManager.Init();
             SadConsole.Game.Instance.Window.ClientSizeChanged += Window_ClientSizeChanged;
 
@@ -111,6 +121,36 @@ namespace TearsInRain {
             if (NetworkingManager.discord.GetLobbyManager() != null) {
                 NetworkingManager.discord.GetLobbyManager().FlushNetwork();
             }
+        }
+
+        private static void initLibraries() {
+            //Dictionary<string, string> props = new Dictionary<string, string>();
+            //props.Add("tags", "flower");
+            //Item Cornflower = new Item(Color.CornflowerBlue, Color.Transparent, "cornflower", (char)266, 0.01, 100, properties: props);
+
+            //ItemLibrary.Add("cornflower", Cornflower);
+            //ItemLibrary.Add("rose", new Item(Color.Red, Color.Transparent, "rose", (char)268, 0.01, 100));
+            //ItemLibrary.Add("violet", new Item(Color.Purple, Color.Transparent, "violet", (char)268, 0.01, 100));
+            //ItemLibrary.Add("dandelion", new Item(Color.Yellow, Color.Transparent, "dandelion", (char)267, 0.01, 100));
+            //ItemLibrary.Add("tulip", new Item(Color.HotPink, Color.Transparent, "tulip", (char)266, 0.01, 100));
+
+            //Dictionary<string, string> propsHoe = new Dictionary<string, string> { { "qualities", "tilling" } };
+            //Item hoe = new Item(Color.Gray, Color.Transparent, "Shoddy Hoe", '\\', 3, slot: 13, properties: propsHoe);
+
+            //ItemLibrary.Add("hoe_shoddy", hoe);
+
+            //Item book = new Item(Color.White, Color.Transparent, "Book of Incredible Tales", '$', 20, quantity: 21, plural: "Books of Incredible Tales");
+            //ItemLibrary.Add("book_incredible_tales", book);
+
+            //string json = JsonConvert.SerializeObject(ItemLibrary, Formatting.Indented, new ItemJsonConverter());
+
+            //Directory.CreateDirectory(@"./data/json/");
+            //File.WriteAllText(@"./data/json/items.json", json);
+
+            string itemLibJson = File.ReadAllText(@"./data/json/items.json");
+
+            ItemLibrary = JsonConvert.DeserializeObject<Dictionary<string, Item>>(itemLibJson, new ItemJsonConverter());
+
         }
 
 

@@ -37,8 +37,10 @@ namespace TearsInRain.Entities {
         public double Carrying_Volume = 0;
         public double MaxCarriedVolume = 0;
 
+        public int BaseSpeed = 10;
         public int Speed = 10;
-        public int EncumbranceLv = 0;
+
+        public float EncumbranceLv = 0;
         public int BasicLift = (int) Math.Round((double)(10 * 10) / 5, 0);
         public int HeldGold = 0;
 
@@ -232,24 +234,16 @@ namespace TearsInRain.Entities {
 
         public void CalculateEncumbrance() {
             BasicLift = (int) Math.Round((double) (Strength * Strength) / 5, 0); // Weight you can lift above your head with one hand comfortably.
+             
+            int maxCarry = BasicLift * 10; 
+            EncumbranceLv = (float) Carrying_Weight / maxCarry;
+            
+            Speed = (int) Math.Floor((float) BaseSpeed * (1.0f + EncumbranceLv));
 
-            if (Carrying_Weight <= BasicLift) { EncumbranceLv = 0; } // Not Encumbered at all
-            if (BasicLift < Carrying_Weight && Carrying_Weight <= BasicLift * 2) { EncumbranceLv = 1; } // Light
-            if (BasicLift * 2 < Carrying_Weight && Carrying_Weight <= BasicLift * 3) { EncumbranceLv = 2; } // Medium
-            if (BasicLift * 3 < Carrying_Weight && Carrying_Weight <= BasicLift * 6) { EncumbranceLv = 3; } // Heavy
-            if (BasicLift * 6 < Carrying_Weight && Carrying_Weight <= BasicLift * 10) { EncumbranceLv = 4; } // Extra Heavy
-
-            if (IsStealthing) {
-                Speed -= 5;
-            }
-
-            Speed = 10;
-
-            if (IsStealthing) {
+            if (IsStealthing) 
                 Speed += 5;
-            }
 
-            Dodge = BaseDodge - EncumbranceLv;
+            Dodge = 8;
         }
 
         public void RecalculateWeight() {
