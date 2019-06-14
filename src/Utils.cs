@@ -40,7 +40,7 @@ namespace TearsInRain {
                 else if (tiles[i] is TileDoor door1 && !door1.IsOpen && !door1.IsLocked) { simpleMap += "D"; } 
                 else if (tiles[i] is TileDoor door2 && door2.IsOpen && door2.IsLocked) { simpleMap += "l"; } 
                 else if (tiles[i] is TileDoor door3 && !door3.IsOpen && door3.IsLocked) { simpleMap += "L"; } 
-                else if (tiles[i] is TileWall) { simpleMap += "W"; }
+                else if (tiles[i].Name == "wall") { simpleMap += "W"; }
             }
 
             return simpleMap;
@@ -60,23 +60,23 @@ namespace TearsInRain {
             for (int j = 0; j < tileString.Length; j++) {
 
                 if (tileString[j].ToString() == "F") {
-                    tiles[j] = new TileFloor(type: "room");
+                    tiles[j] = GameLoop.TileLibrary["wood floor"].Clone();
                 } else if (tileString[j].ToString() == "f") {
-                    tiles[j] = new TileFloor(type: "floor");
+                    tiles[j] = GameLoop.TileLibrary["base floor"].Clone();
                 } else if (tileString[j].ToString() == "G") {
-                    tiles[j] = new TileFloor(type: "just-grass");
+                    tiles[j] = GameLoop.TileLibrary["grass"].Clone();
                 } else if (tileString[j].ToString() == "1") {
-                    tiles[j] = new TileFloor(type: "cornflower");
+                    tiles[j] = GameLoop.TileLibrary["cornflower"].Clone();
                 } else if (tileString[j].ToString() == "2") {
-                    tiles[j] = new TileFloor(type: "rose");
+                    tiles[j] = GameLoop.TileLibrary["rose"].Clone();
                 } else if (tileString[j].ToString() == "3") {
-                    tiles[j] = new TileFloor(type: "violet");
+                    tiles[j] = GameLoop.TileLibrary["violet"].Clone();
                 } else if (tileString[j].ToString() == "4") {
-                    tiles[j] = new TileFloor(type: "dandelion");
+                    tiles[j] = GameLoop.TileLibrary["dandelion"].Clone();
                 } else if (tileString[j].ToString() == "5") {
-                    tiles[j] = new TileFloor(type: "tulip");
+                    tiles[j] = GameLoop.TileLibrary["tulip"].Clone();
                 } else if (tileString[j].ToString() == "p") {
-                    tiles[j] = new TileFloor(type: "farmland");
+                    tiles[j] = GameLoop.TileLibrary["farmland"].Clone();
                 } else if (tileString[j].ToString() == "d") {
                     tiles[j] = new TileDoor(false, true);
                 } else if (tileString[j].ToString() == "D") {
@@ -86,7 +86,7 @@ namespace TearsInRain {
                 } else if (tileString[j].ToString() == "L") {
                     tiles[j] = new TileDoor(true, false);
                 } else if (tileString[j].ToString() == "W") {
-                    tiles[j] = new TileWall();
+                    tiles[j] = GameLoop.TileLibrary["wall"].Clone();
                 }
             }
 

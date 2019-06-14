@@ -3,11 +3,12 @@ using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using SadConsole;
 using SadConsole.Components;
+using TearsInRain.Serializers;
 using TearsInRain.UI;
 
 namespace TearsInRain.Entities {
 
-    [JsonObject(MemberSerialization.OptOut)]
+    [JsonConverter(typeof(EntityJsonConverter))]
     public class Entity : SadConsole.Entities.Entity, GoRogue.IHasID { 
         public uint ID { get; private set; }
 

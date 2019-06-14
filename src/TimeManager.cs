@@ -97,7 +97,7 @@ namespace TearsInRain {
 
                                     GameLoop.World.CurrentMap.Remove(item);
                                     GameLoop.World.CurrentMap.Add(newItem);
-                                    GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+                                    GameLoop.UIManager.SyncMapEntities(true);
 
                                     string itemDrop = "i_data|update|" + item.Position.X + "|" + item.Position.Y + "|" + JsonConvert.SerializeObject(newItem, Formatting.Indented, new ItemJsonConverter());
                                     GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(itemDrop));

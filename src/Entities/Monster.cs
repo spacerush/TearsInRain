@@ -11,7 +11,7 @@ namespace TearsInRain.Entities {
             int lootNum = GameLoop.Random.Next(1, 4);
 
             for (int i = 0; i < lootNum; i++) {
-                Item newLoot = new Item(Color.HotPink, Color.Transparent, "Spork", 'L', 2);
+                Item newLoot = GameLoop.ItemLibrary["book_incredible_tales"].Clone();
                 Inventory.Add(newLoot);
             }
         }

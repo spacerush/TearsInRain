@@ -49,6 +49,11 @@ namespace TearsInRain.UI {
         public TextBox WorldNameBox;
         public Button CreateWorldButton;
 
+        public Window LoadWindow;
+        public Console LoadConsole;
+        public string selectedWorldName = "";
+        public bool tryDelete = false;
+
         public Point Mouse;
         public string STATE = "MENU";
         public string JOIN_CODE = "";
@@ -99,6 +104,7 @@ namespace TearsInRain.UI {
 
             joinPrompt.FocusOnMouseClick = true;
             CreateWorld();
+            LoadWorldDialogue();
         }
 
         public void CreateConsoles() {
@@ -554,8 +560,7 @@ namespace TearsInRain.UI {
             
 
             Children.Add(MapWindow);
-
-            MapConsole.Children.Add(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+            
             MapConsole.MouseButtonClicked += mapClick;
 
             MapWindow.CanDrag = true;
@@ -563,7 +568,7 @@ namespace TearsInRain.UI {
 
             
         }
-
+        
         private void mapClick(object sender, MouseEventArgs e) {
             if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
                 Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
@@ -579,8 +584,8 @@ namespace TearsInRain.UI {
                     }
                 } else {
                     if (range <= 1) {
-                        TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(modifiedClick.X, modifiedClick.Y); 
-                                
+                        TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(modifiedClick.X, modifiedClick.Y);
+                        
 
                         if (tile is TileDoor door) {
                             if (!door.IsOpen)
@@ -589,26 +594,24 @@ namespace TearsInRain.UI {
                                 GameLoop.CommandManager.CloseDoor(player, modifiedClick, true);
 
                         }
+                        
+                        if (new List<string> { "cornflower", "rose", "violet", "dandelion", "tulip" }.Contains(tile.Name)) {
+                            Item flower = GameLoop.ItemLibrary[tile.Name].Clone();
+                            flower.Position = modifiedClick;
+                            GameLoop.World.CurrentMap.Add(flower);
 
-                        if (tile is TileFloor floor) {
-                            if (new List<string> { "cornflower", "rose", "violet", "dandelion", "tulip" }.Contains(tile.Name)) {
-                                Item flower = GameLoop.ItemLibrary[tile.Name].Clone();
-                                flower.Position = modifiedClick;
-                                GameLoop.World.CurrentMap.Add(flower);
+                            GameLoop.World.CurrentMap.Tiles[modifiedClick.ToIndex(GameLoop.World.CurrentMap.Width)] = GameLoop.TileLibrary["grass"].Clone();
 
-                                GameLoop.World.CurrentMap.Tiles[modifiedClick.ToIndex(GameLoop.World.CurrentMap.Width)] = new TileFloor(false, false, "just-grass");
+                            string serialFlower = JsonConvert.SerializeObject(flower, Formatting.Indented, new ItemJsonConverter());
 
-                                string serialFlower = JsonConvert.SerializeObject(flower, Formatting.Indented, new ItemJsonConverter());
+                            string itemDrop = "i_data|drop|" + flower.Position.X + "|" + flower.Position.Y + "|" + serialFlower;
+                            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(itemDrop));
 
-                                string itemDrop = "i_data|drop|" + flower.Position.X + "|" + flower.Position.Y + "|" + serialFlower;
-                                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(itemDrop));
-
-                                string tileUpdate = "t_data|flower_picked|" + flower.Position.X + "|" + flower.Position.Y;
-                                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(tileUpdate));
+                            string tileUpdate = "t_data|flower_picked|" + flower.Position.X + "|" + flower.Position.Y;
+                            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(tileUpdate));
                                     
-                                player.PickupItem(flower); 
-                                GameLoop.UIManager.RefreshMap();
-                            }
+                            player.PickupItem(flower); 
+                            RefreshMap();
                         }
 
                         if (player.Equipped[13] != null) {
@@ -681,33 +684,13 @@ namespace TearsInRain.UI {
                 if (result == Discord.Result.Ok) {
                     ChatLog.Add("User connected: " + user.Username);
                     kickstartNet();
-                    GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes(Utils.SimpleMapString(GameLoop.World.CurrentMap.Tiles)));
 
-                    var playerList = "p_list"; 
-                    GameLoop.World.CreatePlayer(userId); 
-                    foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
-                        playerList += "|" + player.Key + ";" + player.Value.Position.X + ";" + player.Value.Position.Y + ";" + player.Value.Animation.CurrentFrame[0].Foreground.A;
-                    } 
-                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(playerList));
-                    
-                    var monsterList = "m_list";
-                    var itemList = "i_data|list";
-                    foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
-                        if (entity is Monster && !(entity is Item)) {
-                            monsterList += "|" + JsonConvert.SerializeObject((Actor)entity, Formatting.Indented, new ActorJsonConverter()) + "~" + entity.Position.X + "~" + entity.Position.Y;
-                        } else if (entity is Item && !(entity is Monster)) {
-                            itemList += "|" + JsonConvert.SerializeObject((Item) entity, Formatting.Indented, new ItemJsonConverter()) + "~" + entity.Position.X + "~" + entity.Position.Y;
-                        }
-                    }
-
-                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(monsterList));
-                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(itemList));
+                    GameLoop.World.CreatePlayer(userId, new Player(Color.Yellow, Color.Transparent));
+                    SyncMapEntities(true);
+                    GameLoop.NetworkingManager.SendNetMessage(2, System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(GameLoop.World, Formatting.Indented, new WorldJsonConverter())));
 
                     var timeString = "time|" + GameLoop.TimeManager.Year + "|" + GameLoop.TimeManager.Season + "|" + GameLoop.TimeManager.Day + "|" + GameLoop.TimeManager.Hour + "|" + GameLoop.TimeManager.Minute;
-                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(timeString));
-
-
-
+                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(timeString)); 
 
                     MapConsole.IsDirty = true;
                 }
@@ -745,7 +728,7 @@ namespace TearsInRain.UI {
                             MessageLog.Add("Connected to lobby successfully!");
                             GameLoop.NetworkingManager.InitNetworking(lobby.Id);
                             kickstartNet();
-                            GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID);
+                            GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID, new Player(Color.Yellow, Color.Transparent));
                         } else {
                             MessageLog.Add("Encountered error: " + result);
                         }
@@ -767,6 +750,7 @@ namespace TearsInRain.UI {
                 UpdateContextWindow();
                 UpdateEquipment();
                 UpdateInventory();
+                
             }
 
             if (STATE == "MENU") {
@@ -777,24 +761,24 @@ namespace TearsInRain.UI {
 
         public void RefreshMap() {
             MapConsole.SetSurface(GameLoop.World.CurrentMap.Tiles, GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height);
+            MapConsole.IsDirty = true; 
         }
 
-        public void SyncMapEntities(Map map) {
+        public void SyncMapEntities(bool keepOldView = false) {
             MapConsole.Children.Clear();
 
-            foreach (Entity entity in map.Entities.Items) {
-                if (!(entity is Player))
-                    MapConsole.Children.Add(entity);
+            foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
+                MapConsole.Children.Add(entity);
             }
 
             foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
                 MapConsole.Children.Add(player.Value);
             }
 
-            map.Entities.ItemAdded += OnMapEntityAdded; 
-            map.Entities.ItemRemoved += OnMapEntityRemoved;
+            GameLoop.World.CurrentMap.Entities.ItemAdded += OnMapEntityAdded;
+            GameLoop.World.CurrentMap.Entities.ItemRemoved += OnMapEntityRemoved;
 
-            GameLoop.World.ResetFOV();
+            GameLoop.World.ResetFOV(keepOldView);
         }
 
         public void OnMapEntityAdded (object sender, GoRogue.ItemEventArgs<Entity> args) {
@@ -806,12 +790,21 @@ namespace TearsInRain.UI {
         }
 
         public void LoadMap(Map map) {
-            MapConsole = new SadConsole.ScrollingConsole(GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height, Global.FontDefault, new Rectangle(0, 0, GameLoop.GameWidth, GameLoop.GameHeight), map.Tiles);
+            GameLoop.World.CurrentMap = map;
+
+            MapConsole.Clear();
+            MapConsole.Children.Clear();
             
-            SyncMapEntities(map);
+
+            MapConsole = new ScrollingConsole(map.Width, map.Height, Global.FontDefault, new Rectangle(0, 0, MapWindow.Width - 2, MapWindow.Height - 2), GameLoop.World.CurrentMap.Tiles);
+            MapConsole.Parent = MapWindow;
+            MapConsole.Position = new Point(1, 1);
+            MapConsole.MouseButtonClicked += mapClick;
+
+            SyncMapEntities(false);
         }
 
-        public void InitNewMap(string worldName = "Unnamed") {
+        public void InitNewMap(string worldName = "Unnamed", bool justInit = false) {
             GameLoop.World.WorldName = worldName;
 
 
@@ -828,7 +821,8 @@ namespace TearsInRain.UI {
             ChatLog.Show();
             ChatLog.IsVisible = false;
             ChatLog.Position = new Point((GameLoop.GameWidth / 2) - (ChatLog.Width / 2), (GameLoop.GameHeight / 2) - (ChatLog.Height / 2)); 
-            LoadMap(GameLoop.World.CurrentMap); 
+
+            
             CreateMapWindow(60, (GameLoop.GameHeight / 3) * 2, "[GAME MAP]");
             CreateStatusWindow(20, (GameLoop.GameHeight / 3) * 2, "[PLAYER INFO]"); 
             CreateContextWindow(20, GameLoop.GameHeight / 3, "[ITEM MENU]"); 
@@ -837,8 +831,13 @@ namespace TearsInRain.UI {
             CreateInventoryWindow(59, 28, "[INVENTORY]");
             CreateEquipmentWindow(30, 16, "[EQUIPMENT]");
 
-            MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One); 
-            CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+
+            if (!justInit) {
+                GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID, new Player(Color.Yellow, Color.Transparent));
+                LoadMap(GameLoop.World.CurrentMap);
+                MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
+                CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+            }
         }
 
         public void SplashAnim() {
@@ -1001,16 +1000,136 @@ namespace TearsInRain.UI {
             File.WriteAllText(@"./saves/" + GameLoop.World.WorldName + "/map.json", map);
         }
 
-        private void LoadMapFromFile() {
-            string map = File.ReadAllText(@"./saves/" + GameLoop.World.WorldName + "/map.json");
-
-            GameLoop.World = JsonConvert.DeserializeObject<World>(map, new WorldJsonConverter());
-            GameLoop.World.ResetFOV();
-            SyncMapEntities(GameLoop.World.CurrentMap);
+        private void LoadMapFromFile(string path) {
+            InitNewMap("", true);
+            string map = File.ReadAllText(path + "/map.json");
             
+            GameLoop.World = JsonConvert.DeserializeObject<World>(map, new WorldJsonConverter());
+            
+            LoadMap(GameLoop.World.CurrentMap);
         }
 
 
+        public void LoadWorldDialogue() {
+            LoadWindow = new Window(40, 20, Global.FontDefault);
+            LoadWindow.Position = new Point(GameLoop.GameWidth / 2 - 20, GameLoop.GameHeight / 2 - 10);
+            LoadWindow.CanDrag = true;
+            LoadWindow.IsVisible = false;
+            LoadWindow.UseMouse = true;
+            LoadWindow.Title = "[CHOOSE WORLD]".Align(HorizontalAlignment.Center, 38, (char)205);
+
+            LoadConsole = new Console(38, 18, Global.FontDefault);
+            LoadConsole.Position = new Point(1, 1);
+            LoadConsole.IsVisible = false;
+
+            LoadConsole.MouseButtonClicked += loadWorldClick;
+
+
+
+            Directory.CreateDirectory(@"./saves"); 
+            string[] savelist = Directory.GetDirectories(@"./saves");
+            
+            int saveCount = 0;
+
+            foreach (string dir in savelist) {
+                string[] split = dir.Split('\\');
+
+                Color selected;
+
+                System.Console.WriteLine(selectedWorldName);
+                System.Console.WriteLine(dir);
+
+                if (dir == selectedWorldName) {
+                    selected = Color.Lime;
+                } else {
+                    selected = Color.DarkSlateGray;
+                }
+
+                LoadConsole.Print(0, saveCount, (split[split.Length - 1].Align(HorizontalAlignment.Center, 38, ' ')).CreateColored(selected));
+                saveCount++;
+            }
+
+
+            LoadWindow.Children.Add(LoadConsole);
+            Children.Add(LoadWindow);
+        }
+
+        private void UpdateLoadWindow() {
+            LoadConsole.Clear();
+
+            Directory.CreateDirectory(@"./saves");
+            string[] savelist = Directory.GetDirectories(@"./saves");
+
+            int saveCount = 0;
+
+            string selectedName = "";
+
+            foreach (string dir in savelist) {
+                string[] split = dir.Split('\\');
+
+                Color selected;
+
+                if (dir == selectedWorldName) {
+                    selected = Color.Lime;
+                    selectedName = split[split.Length - 1];
+                } else {
+                    selected = Color.DarkSlateGray;
+                }
+
+                LoadConsole.Print(0, saveCount, (split[split.Length - 1].Align(HorizontalAlignment.Center, 38, ' ')).CreateColored(selected));
+                saveCount++;
+            }
+
+
+            if (selectedWorldName != "") {
+                LoadConsole.Print(0, 14, ("Load " + selectedName).Align(HorizontalAlignment.Center, 38, ' '));
+                LoadConsole.Print(0, 15, (("Delete " + selectedName).Align(HorizontalAlignment.Center, 38, ' ')).CreateColored(Color.DarkRed));
+
+                if (tryDelete) {
+                    LoadConsole.Print(0, 16, (("Hold SHIFT and press Y to Confirm").Align(HorizontalAlignment.Center, 38, ' ')).CreateColored(Color.Red));
+                }
+            }
+
+            LoadConsole.Print(0, 17, "BACK TO MENU".Align(HorizontalAlignment.Center, 38, ' '));
+        }
+
+        private void loadWorldClick(object sender, MouseEventArgs e) {
+            Directory.CreateDirectory(@"./saves");
+            string[] savelist = Directory.GetDirectories(@"./saves");
+
+            if (e.MouseState.ConsoleCellPosition.Y < savelist.Length) {
+                //LoadMapFromFile(savelist[e.MouseState.ConsoleCellPosition.Y]);
+                //ChangeState("GAME");
+                selectedWorldName = savelist[e.MouseState.ConsoleCellPosition.Y];
+            }
+
+
+            if (e.MouseState.ConsoleCellPosition.Y == 14) {
+                LoadMapFromFile(selectedWorldName);
+                ChangeState("GAME");
+            }
+
+            if (e.MouseState.ConsoleCellPosition.Y == 15) {
+                if (!tryDelete) {
+                    tryDelete = true;
+                }
+            }
+
+            if (e.MouseState.ConsoleCellPosition.Y == 17) {
+                LoadWindow.IsVisible = false;
+                LoadConsole.IsVisible = false;
+
+                selectedWorldName = "";
+                tryDelete = false;
+            }
+
+           
+            if (e.MouseState.ConsoleCellPosition.Y != 15 && e.MouseState.ConsoleCellPosition.Y != 16) {
+                tryDelete = false;
+            }
+
+            UpdateLoadWindow();
+        }
 
         private void menuClick(object sender, MouseEventArgs e) {
             if (e.MouseState.ConsoleCellPosition.Y == 1) { // Should open world creation dialogue
@@ -1019,12 +1138,14 @@ namespace TearsInRain.UI {
             }
 
             else if (e.MouseState.ConsoleCellPosition.Y == 2) { // Should open world loading dialogue
-                InitNewMap();
-                ChangeState("GAME");
+                LoadWindow.IsVisible = true;
+                LoadConsole.IsVisible = true;
+
+                UpdateLoadWindow();
             }
 
             else if (e.MouseState.ConsoleCellPosition.Y == 5) { // This one is probably fine like this, but should be switched so it doesn't make its own world before joining.
-                InitNewMap();
+                InitNewMap("", true);
                 ChangeState("GAME");
 
                 joinButtonClick(null, null);
@@ -1072,12 +1193,20 @@ namespace TearsInRain.UI {
                 
                 SplashConsole.IsVisible = false;
                 SplashRain.IsVisible = false;
+
+                LoadWindow.IsVisible = false;
+                LoadConsole.IsVisible = false;
             }
         }
 
 
         private void CheckKeyboard() {
             if (STATE == "MENU") {
+                if (Global.KeyboardState.IsKeyDown(Keys.LeftShift) && Global.KeyboardState.IsKeyReleased(Keys.Y) && tryDelete) {
+                    Directory.Delete(selectedWorldName, true);
+                    selectedWorldName = "";
+                    UpdateLoadWindow();
+                }
             }
 
             if (STATE == "GAME") { 
@@ -1111,17 +1240,14 @@ namespace TearsInRain.UI {
                             waitingForCommand = "c";
                         }
 
-                        if (Global.KeyboardState.IsKeyPressed(Keys.OemTilde)) {
+                        if (Global.KeyboardState.IsKeyReleased(Keys.OemTilde)) {
                             SaveEverything();
                         }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.OemPeriod)) {
-                            LoadMapFromFile();
-                        }
+                        
 
 
                         if (Global.KeyboardState.IsKeyPressed(Keys.P)) {
-                            GameLoop.TimeManager.EndDay();
+                            System.Console.WriteLine(player.Position);
                         }
 
                         

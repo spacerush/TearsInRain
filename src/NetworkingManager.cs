@@ -69,7 +69,7 @@ namespace TearsInRain {
                         int y = Convert.ToInt32(playerData[2]);
                         int a = Convert.ToInt32(playerData[3]);
 
-                        GameLoop.World.CreatePlayer(uid);
+                        GameLoop.World.CreatePlayer(uid, new Player(Color.Yellow, Color.Transparent));
 
                         Player player = GameLoop.World.players[uid];
                         player.Position = new Point(x, y);
@@ -93,11 +93,10 @@ namespace TearsInRain {
                     Actor newP = JsonConvert.DeserializeObject<Actor>(splitMsg[4], new ActorJsonConverter()); 
 
                     if (GameLoop.World.players.ContainsKey(uid)) {
-                         GameLoop.World.players[uid] = new Player(newP.Animation.CurrentFrame[0].Foreground, newP.Animation.CurrentFrame[0].Background, newP);  
-                         GameLoop.World.players[uid].Position = new Point(x, y); 
-                        GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+                         GameLoop.World.players[uid] = new Player(newP, new Point(x, y));
+                        GameLoop.UIManager.SyncMapEntities(true);
                     } else {
-                        GameLoop.World.players.Add(uid, new Player(newP.Animation.CurrentFrame[0].Foreground, newP.Animation.CurrentFrame[0].Background, newP));
+                        GameLoop.World.players.Add(uid, new Player(newP, new Point(0, 0)));
                     }
                 }
 
@@ -121,7 +120,7 @@ namespace TearsInRain {
 
                     GameLoop.World.CurrentMap.Entities = GameLoop.ReceivedEntities;
 
-                    GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+                    GameLoop.UIManager.SyncMapEntities(true);
                 }
 
 
@@ -169,13 +168,13 @@ namespace TearsInRain {
                         }
                     } else if (splitMsg[1] == "farmland") {
                         Point pos = new Point(Convert.ToInt32(splitMsg[2]), Convert.ToInt32(splitMsg[3]));
-                        GameLoop.World.CurrentMap.SetTile(pos, new TileFloor(false, false, "farmland"));
+                        GameLoop.World.CurrentMap.SetTile(pos, GameLoop.TileLibrary["farmland"].Clone());
                     } else if (splitMsg[1] == "flower_picked") {
                         Point pos = new Point (Convert.ToInt32(splitMsg[2]), Convert.ToInt32(splitMsg[3]));
-                        GameLoop.World.CurrentMap.SetTile(pos, new TileFloor(false, false, "just-grass"));
+                        GameLoop.World.CurrentMap.SetTile(pos, GameLoop.TileLibrary["grass"].Clone());
                     }
 
-                    GameLoop.UIManager.RefreshMap();
+                    GameLoop.UIManager.SyncMapEntities(true);
                 }
 
                 if (splitMsg[0] == "i_data") {
@@ -194,7 +193,7 @@ namespace TearsInRain {
                         }
 
 
-                        GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
+                        GameLoop.UIManager.SyncMapEntities(true);
                     }
 
                     if (splitMsg[1] == "drop") {
@@ -224,8 +223,7 @@ namespace TearsInRain {
                         item.IsVisible = false;
                         item.Animation.IsDirty = true;
 
-                        GameLoop.UIManager.SyncMapEntities(GameLoop.World.CurrentMap);
-                        GameLoop.UIManager.RefreshMap();
+                        GameLoop.UIManager.SyncMapEntities(true);
                     }
 
                     if (splitMsg[1] == "pickup") {
@@ -282,14 +280,10 @@ namespace TearsInRain {
                 var encoded = System.Text.Encoding.UTF8.GetString(data);
 
                 if (encoded != "a") {
-                    TileBase[] pretiles = Utils.GetMapFromString(encoded);
-                    TileBase[] tiles = new TileBase[encoded.Length];
-                    tiles = pretiles;
-                    Map newMap = new Map(tiles);
-                    GameLoop.World.CurrentMap = newMap;
-                    GameLoop.UIManager.MapConsole.SetSurface(tiles, 100, 100);
-
-                    GameLoop.World.ResetFOV();
+                    GameLoop.World = JsonConvert.DeserializeObject<World>(encoded, new WorldJsonConverter());
+                    GameLoop.UIManager.LoadMap(GameLoop.World.CurrentMap);
+                    GameLoop.UIManager.MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
+                    GameLoop.UIManager.CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
                 }
             }
         }
@@ -342,7 +336,7 @@ namespace TearsInRain {
                 if (myUID != userManager.GetCurrentUser().Id) {
                     myUID = userManager.GetCurrentUser().Id;
 
-                    GameLoop.World.CreatePlayer(myUID);
+                    GameLoop.World.CreatePlayer(myUID, new Player(Color.Yellow, Color.Transparent));
                     GameLoop.World.players.Remove(0);
                     updateUID = false;
                 }

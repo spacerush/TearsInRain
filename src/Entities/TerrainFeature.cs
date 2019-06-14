@@ -6,7 +6,9 @@ using SadConsole.Components;
 using TearsInRain.Serializers;
 using TearsInRain.Tiles;
 
-namespace TearsInRain.Entities { 
+namespace TearsInRain.Entities {
+
+    [JsonConverter(typeof(TerrainJsonConverter))]
     public class TerrainFeature : Entity {
         public string madeBy = "";
         public double Weight;

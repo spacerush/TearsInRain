@@ -24,11 +24,13 @@ namespace TearsInRain.Serializers {
     [DataContract]
     public class ActorSerialized {
         // Visuals
-        [DataMember] public Color FG; // Foreground
-        [DataMember] public Color BG; // Background
+        [DataMember] public uint FG; // Foreground
+        [DataMember] public uint BG; // Background
         [DataMember] public int G; // Glyph
 
         [DataMember] public string Name;
+        [DataMember] public int X;
+        [DataMember] public int Y;
 
         //Primary Stats
         [DataMember] public int ST; // Strength
@@ -55,8 +57,8 @@ namespace TearsInRain.Serializers {
 
         public static implicit operator ActorSerialized(Actor actor) {
             var serializedObject = new ActorSerialized() {
-                FG = actor.Animation.CurrentFrame[0].Foreground,
-                BG = actor.Animation.CurrentFrame[0].Background,
+                FG = actor.Animation.CurrentFrame[0].Foreground.PackedValue,
+                BG = actor.Animation.CurrentFrame[0].Background.PackedValue,
                 G = actor.Animation.CurrentFrame[0].Glyph,
 
 
@@ -79,13 +81,15 @@ namespace TearsInRain.Serializers {
                 BASE_SPD = actor.BaseSpeed,
                 Dodge = actor.Dodge,
                 Inventory = actor.Inventory,
+                X = actor.Position.X,
+                Y = actor.Position.Y,
             };
 
             return serializedObject;
         }
 
         public static implicit operator Actor(ActorSerialized serializedObject) {
-            var entity = new Actor(serializedObject.FG, serializedObject.BG, serializedObject.G);
+            var entity = new Actor(new Color(serializedObject.FG), new Color(serializedObject.BG), serializedObject.G);
 
             entity.Name = serializedObject.Name;
 
@@ -109,6 +113,8 @@ namespace TearsInRain.Serializers {
             entity.Dodge = serializedObject.Dodge;
 
             entity.Inventory = serializedObject.Inventory;
+
+            entity.Position = new Point(serializedObject.X, serializedObject.Y);
 
             return entity;
         }

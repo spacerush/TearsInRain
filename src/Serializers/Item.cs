@@ -26,14 +26,17 @@ namespace TearsInRain.Serializers {
         [DataMember] public string Name; // Item Name
         [DataMember] public string NamePlural; // Item Name, Plural
 
-        [DataMember] public string FG; // Foreground
-        [DataMember] public string BG; // Background
+        [DataMember] public uint FG; // Foreground
+        [DataMember] public uint BG; // Background
         [DataMember] public int Glyph; // Glyph
 
         [DataMember] public double Weight; // Item Weight in kilograms
         [DataMember] public int Condition; // Item Condition (out of 100)
         [DataMember] public int Slot; // Slot that item can be equipped to. If no applicable slot, this should be -1
         [DataMember] public int Quantity; // Number of items
+        [DataMember] public int X;
+        [DataMember] public int Y;
+        [DataMember] public string Type;
 
         [DataMember] public Dictionary<string, string> Properties;
 
@@ -42,8 +45,8 @@ namespace TearsInRain.Serializers {
             Color tempBG = item.Animation.CurrentFrame[0].Background;
 
             var sObj = new ItemSerialized() {
-                FG = tempFG.R.ToString() + "," + tempFG.G.ToString() + "," + tempFG.B.ToString() + "," + tempFG.A.ToString(),
-                BG = tempBG.R.ToString() + "," + tempBG.G.ToString() + "," + tempBG.B.ToString() + "," + tempBG.A.ToString(),
+                FG = item.Animation.CurrentFrame[0].Foreground.PackedValue,
+                BG = item.Animation.CurrentFrame[0].Background.PackedValue,
                 Glyph = item.Animation.CurrentFrame[0].Glyph,
                 ID = item._id,
                 Name = item.Name,
@@ -53,18 +56,20 @@ namespace TearsInRain.Serializers {
                 Slot = item.Slot,
                 Quantity = item.Quantity,
                 Properties = item.Properties,
+                X = item.Position.X,
+                Y = item.Position.Y,
+                Type = item.GetType().ToString(),
             };
 
             return sObj;
         }
 
         public static implicit operator Item(ItemSerialized sObj) {
-            string[] sFG = sObj.FG.Split(',');
-            string[] sBG = sObj.BG.Split(',');
-            Color FG = new Color(Convert.ToInt32(sFG[0]), Convert.ToInt32(sFG[1]), Convert.ToInt32(sFG[2]), Convert.ToInt32(sFG[3]));
-            Color BG = new Color(Convert.ToInt32(sBG[0]), Convert.ToInt32(sBG[1]), Convert.ToInt32(sBG[2]), Convert.ToInt32(sBG[3]));
+            Item newItem = new Item(new Color(sObj.FG), new Color(sObj.BG), sObj.Name, (char)sObj.Glyph, sObj.Weight, sObj.Condition, quantity: sObj.Quantity, plural: sObj.NamePlural, slot: sObj.Slot, properties: sObj.Properties);
+            newItem.Position = new Point(sObj.X, sObj.Y);
 
-            return new Item(FG, BG, sObj.Name, (char)sObj.Glyph, sObj.Weight, sObj.Condition, quantity: sObj.Quantity, plural: sObj.NamePlural, slot: sObj.Slot, properties: sObj.Properties);
+
+            return newItem;
         }
     }
 }

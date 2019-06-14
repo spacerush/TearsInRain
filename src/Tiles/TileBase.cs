@@ -2,25 +2,30 @@
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using SadConsole;
+using TearsInRain.Serializers;
 
 namespace TearsInRain.Tiles {
 
-    [JsonObject(MemberSerialization.OptOut)]
+    [JsonConverter(typeof(TileJsonConverter))]
     public class TileBase : Cell {
         public bool IsBlockingMove;
         public bool IsBlockingLOS;
         public string Name;
         public bool IsExplored = false;
-        public bool IsLocked;
-        public bool IsOpen;
 
 
-        public TileBase(Color foreground, Color background, int glyph, bool blockingMove=false, bool blockingLOS=false, String name="") : base(foreground, background, glyph) {
+        public TileBase(Color FG, Color BG, int glyph = 0, bool blockingMove = false, bool blockingLOS = false, String name = "") : base(FG, BG, glyph) {
             IsBlockingMove = blockingMove;
             IsBlockingLOS = blockingLOS;
             Name = name;
-            IsVisible = false;
-        } 
+            IsVisible = false; 
+        }
+
+
+        public new TileBase Clone() {
+            return new TileBase(Foreground, Background, Glyph, IsBlockingMove, IsBlockingLOS, Name);
+        }
+
 
         public void Darken(bool isGray) {
             if (isGray) {
@@ -30,6 +35,13 @@ namespace TearsInRain.Tiles {
                 Foreground.A = 255;
                 Background.A = 255;
             }
+        }
+
+
+        public void Reset() {
+            IsVisible = false;
+            Foreground.A = 255;
+            Background.A = 255;
         }
     }
 }

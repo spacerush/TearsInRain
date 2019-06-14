@@ -33,22 +33,35 @@ namespace TearsInRain.Serializers {
         [DataMember] public TileBase[] tiles;
         [DataMember] public int mapW;
         [DataMember] public int mapH;
-        [DataMember] public List<Entity> entities = new List<Entity>();
-
+        [DataMember] public List<Actor> entities;
+        [DataMember] public List<Item> items;
+        [DataMember] public List<TerrainFeature> terrain;
 
 
 
         public static implicit operator MapSerialized(Map map) {
-            List<Entity> ents = new List<Entity>();
+            List<Actor> ents = new List<Actor>();
+            List<Item> items = new List<Item>();
+            List<TerrainFeature> TFs = new List<TerrainFeature>();
 
-            foreach (Entity entity in map.Entities) {
-                ents.Add(entity);
+            foreach (Entity entity in map.Entities.Items) {
+                if (entity is Item item) {
+                    items.Add(item);
+                } else if (entity is TerrainFeature terr) {
+                    TFs.Add(terr);
+                } else if (entity is Actor actor && !(entity is Player)) {
+                    ents.Add(actor);
+                } 
             }
+
+
 
 
             var sObj = new MapSerialized() {
                 tiles = map.Tiles,
                 entities = ents,
+                items = items,
+                terrain = TFs,
                 mapW = map.Width,
                 mapH = map.Height,
             };
@@ -57,17 +70,23 @@ namespace TearsInRain.Serializers {
         }
 
         public static implicit operator Map(MapSerialized sObj) {
-            GameLoop.ReceivedEntities = new GoRogue.MultiSpatialMap<Entity>();
-            GameLoop.ReceivedEntities.Clear();
+            Map map = new Map(sObj.tiles, sObj.mapW, sObj.mapH);
 
-            for (int i = 1; i < sObj.entities.Count; i++) {
-                sObj.entities[i].IsVisible = false;
-                sObj.entities[i].IsDirty = true;
+            map.Entities = new GoRogue.MultiSpatialMap<Entity>();
 
-                GameLoop.ReceivedEntities.Add(sObj.entities[i], sObj.entities[i].Position);
+            for (int i = 0; i < sObj.entities.Count; i++) {
+                map.Add(sObj.entities[i]);
             }
 
-            return new Map(sObj.tiles, sObj.mapW, sObj.mapH);
+            for (int i = 0; i < sObj.items.Count; i++) {
+                map.Add(sObj.items[i]);
+            }
+
+            for (int i = 0; i < sObj.terrain.Count; i++) {
+                map.Add(sObj.terrain[i]);
+            }
+
+            return map;
         }
     }
 }

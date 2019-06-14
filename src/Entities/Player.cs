@@ -24,7 +24,7 @@ namespace TearsInRain.Entities {
             Inventory.Add(seed);
         }
 
-        public Player(Color foreground, Color background, Actor actor) : base(foreground, background, 1) {
+        public Player(Actor actor, Point pos) : base(actor.Animation.CurrentFrame[0].Foreground, actor.Animation.CurrentFrame[0].Background, 1) {
             Name = actor.Name;
 
             Strength = actor.Strength;
@@ -36,17 +36,38 @@ namespace TearsInRain.Entities {
             MaxHealth = actor.MaxHealth;
             Will = actor.Will;
             Perception = actor.Perception;
-            CurrentStamina = actor.CurrentStamina;
-            MaxStamina = actor.MaxStamina;
-            CurrentEnergy = actor.CurrentEnergy;
-            MaxEnergy = actor.MaxEnergy;
 
+
+            MaxStamina = actor.MaxStamina;
+            CurrentStamina = actor.CurrentStamina;
+
+            MaxEnergy = actor.MaxEnergy;
+            CurrentEnergy = actor.CurrentEnergy;
+            Carrying_Weight = actor.Carrying_Weight;
+            Carrying_Volume = actor.Carrying_Volume;
+            MaxCarriedVolume = actor.MaxCarriedVolume;
+
+            BaseSpeed = actor.BaseSpeed;
             Speed = actor.Speed;
+
+            EncumbranceLv = actor.EncumbranceLv;
+            BasicLift = actor.BasicLift;
+            HeldGold = actor.HeldGold;
+
             BaseDodge = actor.BaseDodge;
             Dodge = actor.Dodge;
 
+            IsStealthing = actor.IsStealthing;
+            FailedStealth = actor.FailedStealth;
+            StealthResult = actor.StealthResult;
+            BaseStealthResult = actor.BaseStealthResult;
+
             Inventory = actor.Inventory;
+
             Equipped = actor.Equipped;
+
+            Position = pos;
+            
         }
     }
 }

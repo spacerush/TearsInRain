@@ -127,5 +127,12 @@ namespace TearsInRain {
 
             return !Tiles[position.ToIndex(Width)].IsBlockingLOS;
         }
+
+
+        public void ReplaceAllTiles (TileBase[] newTiles) {
+            for (int i = 0; i < newTiles.Length; i++) {
+                Tiles[i] = newTiles[i];
+            }
+        }
     }
 }

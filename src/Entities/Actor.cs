@@ -66,75 +66,80 @@ namespace TearsInRain.Entities {
         }
 
         public bool MoveBy(Point positionChange) { 
-            TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileDoor>(Position.X + positionChange.X, Position.Y + positionChange.Y);
+            TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(Position.X + positionChange.X, Position.Y + positionChange.Y);
 
-            Point justVert = new Point(0, positionChange.Y);
-            Point justHori = new Point(positionChange.X, 0);
 
-            if (GameLoop.World.CurrentMap.IsTileWalkable(Position + positionChange) || tile is TileDoor) {
-                Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + positionChange);
-                Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + positionChange);
+            if (tile != null) {
+                Point justVert = new Point(0, positionChange.Y);
+                Point justHori = new Point(positionChange.X, 0);
 
-                foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
-                    if (player.Value.Position == Position + positionChange) {
-                        monster = player.Value;
+                if (GameLoop.World.CurrentMap.IsTileWalkable(Position + positionChange) || tile is TileDoor) {
+                    Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + positionChange);
+                    Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + positionChange);
+
+                    foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
+                        if (player.Value.Position == Position + positionChange) {
+                            monster = player.Value;
+                        }
                     }
-                }
 
-                if (monster != null) {
-                    GameLoop.CommandManager.Attack(this, monster);
+                    if (monster != null) {
+                        GameLoop.CommandManager.Attack(this, monster);
+                        return false;
+                    } else if (tile is TileDoor door && !door.IsOpen) {
+                        GameLoop.CommandManager.OpenDoor(this, door, Position + positionChange);
+                        return true;
+                    }
+
+
+                    Position += positionChange;
+                    return true;
+                } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justVert) || tile is TileDoor) {
+                    Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + justVert);
+                    Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + justVert);
+
+                    foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
+                        if (player.Value.Position == Position + justVert) {
+                            monster = player.Value;
+                        }
+                    }
+
+                    if (monster != null) {
+                        GameLoop.CommandManager.Attack(this, monster);
+                        return true;
+                    } else if (tile is TileDoor door && !door.IsOpen) {
+                        GameLoop.CommandManager.OpenDoor(this, door, Position + justVert);
+                        return true;
+                    }
+
+
+                    Position += justVert;
+                    return true;
+                } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justHori) || tile is TileDoor) {
+                    Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + justHori);
+                    Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + justHori);
+
+                    foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
+                        if (player.Value.Position == Position + justHori) {
+                            monster = player.Value;
+                        }
+                    }
+
+                    if (monster != null) {
+                        GameLoop.CommandManager.Attack(this, monster);
+                        return true;
+                    } else if (tile is TileDoor door && !door.IsOpen) {
+                        GameLoop.CommandManager.OpenDoor(this, door, Position + justHori);
+                        return true;
+                    }
+
+
+                    Position += justHori;
+                    return true;
+                } else {
                     return false;
-                } else if (tile is TileDoor door && !door.IsOpen) {
-                    GameLoop.CommandManager.OpenDoor(this, door, Position + positionChange);
-                    return true;
                 }
-
-
-                Position += positionChange;
-                return true;
-            } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justVert) || tile is TileDoor) {
-                Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + justVert);
-                Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + justVert);
-
-                foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
-                    if (player.Value.Position == Position + justVert) {
-                        monster = player.Value;
-                    }
-                }
-
-                if (monster != null) {
-                    GameLoop.CommandManager.Attack(this, monster);
-                    return true;
-                } else if (tile is TileDoor door && !door.IsOpen) {
-                    GameLoop.CommandManager.OpenDoor(this, door, Position + justVert);
-                    return true;
-                }
-
-
-                Position += justVert;
-                return true;
-            } else if (GameLoop.World.CurrentMap.IsTileWalkable(Position + justHori) || tile is TileDoor) {
-                Actor monster = GameLoop.World.CurrentMap.GetEntityAt<Actor>(Position + justHori);
-                Item item = GameLoop.World.CurrentMap.GetEntityAt<Item>(Position + justHori);
-
-                foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
-                    if (player.Value.Position == Position + justHori) {
-                        monster = player.Value;
-                    }
-                }
-
-                if (monster != null) {
-                    GameLoop.CommandManager.Attack(this, monster);
-                    return true;
-                } else if (tile is TileDoor door && !door.IsOpen) {
-                    GameLoop.CommandManager.OpenDoor(this, door, Position + justHori);
-                    return true;
-                }
-
-
-                Position += justHori;
-                return true;
-            } else { 
+            } else {
                 return false;
             }
         }

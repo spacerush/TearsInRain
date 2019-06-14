@@ -30,34 +30,18 @@ namespace TearsInRain {
         public World(string Name) {
             WorldName = Name;
 
-            CreateMap();
+            CreateMap(); 
             
-            CreatePlayer(GameLoop.NetworkingManager.myUID);
-            
+            CreatePlayer(GameLoop.NetworkingManager.myUID, new Player(Color.Yellow, Color.Transparent));
+
             CreateMonsters();
-            
+
             CreateLoot();
 
             CurrentMap.PlaceTrees(200);
-
-            SeenTiles.Add(players[GameLoop.NetworkingManager.myUID].Position);
-        }
-
-        public World(TileBase[] tiles) {
-            CurrentMap = new Map(tiles.Length, 1);
-            CurrentMap.Tiles = tiles; 
-
-            CreatePlayer(GameLoop.NetworkingManager.myUID);
-            CreateMonsters();
-            CreateLoot();
-
-            CurrentMap.PlaceTrees(200);
-
-            SeenTiles.Add(players[GameLoop.NetworkingManager.myUID].Position); 
         }
 
         public World() {
-
         }
 
 
@@ -85,19 +69,23 @@ namespace TearsInRain {
             }
         }
         
-        public void CreatePlayer(long playerUID) {
+        public void CreatePlayer(long playerUID, Player player, bool overwrite = false) {
             if (!players.ContainsKey(playerUID)) {
-                Player newPlayer = new Player(Color.Yellow, Color.Transparent);
+                Player newPlayer = player;
 
-                for (int i = 0; i < CurrentMap.Tiles.Length; i++) {
-                    if (!CurrentMap.Tiles[i].IsBlockingMove) {
-                        newPlayer.Position = SadConsole.Helpers.GetPointFromIndex(i, CurrentMap.Width);
-                        break;
+
+                if (player.Position == new Point(0, 0)) {
+                    for (int i = 0; i < CurrentMap.Tiles.Length; i++) {
+                        if (!CurrentMap.Tiles[i].IsBlockingMove) {
+                            newPlayer.Position = SadConsole.Helpers.GetPointFromIndex(i, CurrentMap.Width);
+                            break;
+                        }
                     }
                 }
-
+                
                 players.Add(playerUID, newPlayer);
-                CurrentMap.Add(players[playerUID]);
+            } else if (players.ContainsKey(playerUID) && overwrite) {
+                players[playerUID] = player;
             }
         }
         
@@ -106,7 +94,7 @@ namespace TearsInRain {
             
             for (int i = 0; i < numLoot; i++) {
                 int lootPosition = GameLoop.Random.Next(0, CurrentMap.Width * CurrentMap.Height);
-                Item newLoot = new Item(Color.Green, Color.Transparent, "fancy shirt", 'L', 2);
+                Item newLoot = GameLoop.ItemLibrary["potato"].Clone();
                 
                 while (CurrentMap.Tiles[lootPosition].IsBlockingMove) {
                     lootPosition = GameLoop.Random.Next(0, CurrentMap.Width * CurrentMap.Height);
@@ -130,9 +118,21 @@ namespace TearsInRain {
 
 
         
-        public void ResetFOV() {
+        public void ResetFOV(bool keepOld = false) {
+            if (!keepOld) {
+                for (int i = SeenTiles.Count - 1; i > 0; i--) {
+                    var spot = SeenTiles[i];
+
+                    TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
+                    tile.Darken(true);
+
+                    SeenTiles.Remove(spot);
+                }
+                 
+            }
             lastFov = null;
-            
+            GameLoop.UIManager.RefreshMap();
+
             CalculateFov(new Point (0, 0));
         }
 
@@ -140,10 +140,11 @@ namespace TearsInRain {
         public void CalculateFov(Point dir) {
             // Use a GoRogue class that creates a map view so that the IsTransparent function is called whenever FOV asks for the value of a position
             var fovMap = new GoRogue.MapViews.LambdaMapView<bool>(CurrentMap.Width, CurrentMap.Height, CurrentMap.IsTransparent);
+            
+            lastFov = new FOV(fovMap);
 
-            lastFov = new GoRogue.FOV(fovMap);
+            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) { 
 
-            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
                 Point start = GameLoop.World.players[GameLoop.NetworkingManager.myUID].Position + dir;
 
                 Point playerRel = GameLoop.World.players[GameLoop.NetworkingManager.myUID].CalculatedPosition;
@@ -155,13 +156,14 @@ namespace TearsInRain {
                 degrees = (degrees > 0.0 ? degrees : (360.0 + degrees));
                 lastFov.Calculate(start, 20, Radius.CIRCLE, degrees, 114);
 
+
                 foreach (var spot in lastFov.NewlySeen) {
                     TileBase tile = CurrentMap.GetTileAt<TileBase>(spot.X, spot.Y);
                     tile.IsVisible = true;
 
                     if (tile is TileDoor door) {
                         door.UpdateGlyph();
-                    } 
+                    }
 
                     if (!SeenTiles.Contains(spot)) {
                         SeenTiles.Add(new Point(spot.X, spot.Y));
@@ -211,6 +213,7 @@ namespace TearsInRain {
                         GameLoop.UIManager.MapConsole.ClearDecorators(spot.X, spot.Y, 1);
                     }
                 }
+                
 
                 GameLoop.UIManager.MapConsole.IsDirty = true;
             }

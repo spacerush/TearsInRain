@@ -63,7 +63,30 @@ namespace TearsInRain {
         
         private void FloodFloor() {
             for (int i = 0; i < _map.Tiles.Length; i++) {
-                _map.Tiles[i] = new TileFloor(type:"grass");
+                int foliage = GameLoop.Random.Next(0, 5);
+                if (foliage != 4) {
+                    _map.Tiles[i] = GameLoop.TileLibrary["grass"].Clone();
+                } else {
+                    int flowerType = GameLoop.Random.Next(0, 5);
+
+                    switch(flowerType) {
+                        case 0:
+                            _map.Tiles[i] = GameLoop.TileLibrary["cornflower"].Clone();
+                            break;
+                        case 1:
+                            _map.Tiles[i] = GameLoop.TileLibrary["rose"].Clone();
+                            break;
+                        case 2:
+                            _map.Tiles[i] = GameLoop.TileLibrary["violet"].Clone();
+                            break;
+                        case 3:
+                            _map.Tiles[i] = GameLoop.TileLibrary["dandelion"].Clone();
+                            break;
+                        default: 
+                            _map.Tiles[i] = GameLoop.TileLibrary["tulip"].Clone();
+                            break;
+                    }
+                }
             }
         }
         
@@ -81,11 +104,11 @@ namespace TearsInRain {
         }
         
         private void CreateFloor(Point location) {
-            _map.Tiles[location.ToIndex(_map.Width)] = new TileFloor(type:"room");
+            _map.Tiles[location.ToIndex(_map.Width)] = GameLoop.TileLibrary["wood floor"].Clone();
         }
         
         private void CreateWall(Point location) {
-            _map.Tiles[location.ToIndex(_map.Width)] = new TileWall();
+            _map.Tiles[location.ToIndex(_map.Width)] = GameLoop.TileLibrary["wall"].Clone();
         }
         
         private List<Point> GetBorderCellLocations(Rectangle room) {
@@ -129,7 +152,7 @@ namespace TearsInRain {
         
         private bool IsPotentialDoor(Point location) {
             int locationIndex = location.ToIndex(_map.Width);
-            if (_map.Tiles[locationIndex] != null && _map.Tiles[locationIndex] is TileWall) {
+            if (_map.Tiles[locationIndex] != null && _map.Tiles[locationIndex].Name == "wall") {
                 return false;
             }
             

@@ -8,7 +8,8 @@ using System.Collections.Generic;
 using TearsInRain.Entities;
 using Newtonsoft.Json;
 using TearsInRain.Serializers;
-using System.IO; 
+using System.IO;
+using TearsInRain.Tiles;
 
 namespace TearsInRain {
     class GameLoop {
@@ -29,7 +30,7 @@ namespace TearsInRain {
         public static Dictionary<string, System.Media.SoundPlayer> SoundLibrary = new Dictionary<string, System.Media.SoundPlayer>();
         public static Dictionary<string, Monster> MonsterLibrary = new Dictionary<string, Monster>();
         public static Dictionary<string, Item> ItemLibrary = new Dictionary<string, Item>();
-
+        public static Dictionary<string, TileBase> TileLibrary = new Dictionary<string, TileBase>();
 
         static int oldWindowPixelWidth;
         static int oldWindowPixelHeight;
@@ -85,6 +86,8 @@ namespace TearsInRain {
             SadConsole.Themes.Library.Default.Colors.TitleText = new Color(51, 153, 255);
             SadConsole.Themes.Library.Default.Colors.Lines = new Color(51, 153, 255); 
             SadConsole.Themes.Library.Default.Colors.ControlHostBack = Color.Black;
+
+            
             //SadConsole.Themes.Library.Default.Colors.Appearance_ControlNormal = new Cell();
             //SadConsole.Themes.Library.Default.Colors.Appearance_ControlOver = new Cell(Color.Blue, Color.Black);
             //SadConsole.Themes.Library.Default.Colors.Appearance_ControlMouseDown = new Cell(Color.DarkBlue, Color.Black);
@@ -124,31 +127,10 @@ namespace TearsInRain {
         }
 
         private static void initLibraries() {
-            //Dictionary<string, string> props = new Dictionary<string, string>();
-            //props.Add("tags", "flower");
-            //Item Cornflower = new Item(Color.CornflowerBlue, Color.Transparent, "cornflower", (char)266, 0.01, 100, properties: props);
+            string tileLibJson = File.ReadAllText(@"./data/json/tiles.json");
+            TileLibrary = JsonConvert.DeserializeObject<Dictionary<string, TileBase>>(tileLibJson, new TileJsonConverter());
 
-            //ItemLibrary.Add("cornflower", Cornflower);
-            //ItemLibrary.Add("rose", new Item(Color.Red, Color.Transparent, "rose", (char)268, 0.01, 100));
-            //ItemLibrary.Add("violet", new Item(Color.Purple, Color.Transparent, "violet", (char)268, 0.01, 100));
-            //ItemLibrary.Add("dandelion", new Item(Color.Yellow, Color.Transparent, "dandelion", (char)267, 0.01, 100));
-            //ItemLibrary.Add("tulip", new Item(Color.HotPink, Color.Transparent, "tulip", (char)266, 0.01, 100));
-
-            //Dictionary<string, string> propsHoe = new Dictionary<string, string> { { "qualities", "tilling" } };
-            //Item hoe = new Item(Color.Gray, Color.Transparent, "Shoddy Hoe", '\\', 3, slot: 13, properties: propsHoe);
-
-            //ItemLibrary.Add("hoe_shoddy", hoe);
-
-            //Item book = new Item(Color.White, Color.Transparent, "Book of Incredible Tales", '$', 20, quantity: 21, plural: "Books of Incredible Tales");
-            //ItemLibrary.Add("book_incredible_tales", book);
-
-            //string json = JsonConvert.SerializeObject(ItemLibrary, Formatting.Indented, new ItemJsonConverter());
-
-            //Directory.CreateDirectory(@"./data/json/");
-            //File.WriteAllText(@"./data/json/items.json", json);
-
-            string itemLibJson = File.ReadAllText(@"./data/json/items.json");
-
+            string itemLibJson = File.ReadAllText(@"./data/json/items.json"); 
             ItemLibrary = JsonConvert.DeserializeObject<Dictionary<string, Item>>(itemLibJson, new ItemJsonConverter());
 
         }

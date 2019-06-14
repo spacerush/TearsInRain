@@ -85,8 +85,8 @@ namespace TearsInRain.Entities {
                 if (GameLoop.World.CurrentMap.GetTileAt<TileBase>(pos.X, pos.Y).Name == "grass") {
                     TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(pos.X, pos.Y);
                     
-                    GameLoop.World.CurrentMap.Tiles[pos.ToIndex(GameLoop.World.CurrentMap.Width)] = new TileFloor(false, false, "farmland");
-                    GameLoop.UIManager.MapConsole.SetSurface(GameLoop.World.CurrentMap.Tiles, GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height);
+                    GameLoop.World.CurrentMap.Tiles[pos.ToIndex(GameLoop.World.CurrentMap.Width)] = GameLoop.TileLibrary["farmland"].Clone();
+                    GameLoop.UIManager.RefreshMap();
 
                     player.CurrentStamina -= 5;
 
