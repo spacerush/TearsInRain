@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using TearsInRain.Serializers;
 using System.IO;
 using TearsInRain.Tiles;
+using TearsInRain.src;
 
 namespace TearsInRain {
     class GameLoop {
@@ -27,16 +28,23 @@ namespace TearsInRain {
         public static Point MouseLoc = new Point(0, 0);
 
 
-        public static Dictionary<string, System.Media.SoundPlayer> SoundLibrary = new Dictionary<string, System.Media.SoundPlayer>();
-        public static Dictionary<string, Monster> MonsterLibrary = new Dictionary<string, Monster>();
-        public static Dictionary<string, Item> ItemLibrary = new Dictionary<string, Item>();
-        public static Dictionary<string, TileBase> TileLibrary = new Dictionary<string, TileBase>();
+        public static Dictionary<string, System.Media.SoundPlayer> SoundLibrary = new Dictionary<string, System.Media.SoundPlayer>(); 
+        public static SortedDictionary<string, Item> ItemLibrary = new SortedDictionary<string, Item>();
+        public static SortedDictionary<string, TileBase> TileLibrary = new SortedDictionary<string, TileBase>();
+        public static SortedDictionary<string, Actor> ActorLibrary = new SortedDictionary<string, Actor>();
+        public static SortedDictionary<string, TerrainFeature> TerrainFeatureLibrary = new SortedDictionary<string, TerrainFeature>();
+
+        public static SortedDictionary<string, Skill> SkillLibrary = new SortedDictionary<string, Skill>();
+        public static SortedDictionary<string, CharacterClass> ClassLibrary = new SortedDictionary<string, CharacterClass>();
+        public static SortedDictionary<string, CharacterRace> RaceLibrary = new SortedDictionary<string, CharacterRace>();
 
         static int oldWindowPixelWidth;
         static int oldWindowPixelHeight;
 
         public static bool timeFlowing = true;
         public static int centisecondCounter = 0;
+
+        public static Color CyberBlue = new Color(51, 153, 255);
 
 
         public static GoRogue.MultiSpatialMap<Entity> ReceivedEntities;
@@ -83,8 +91,8 @@ namespace TearsInRain {
 
             
 
-            SadConsole.Themes.Library.Default.Colors.TitleText = new Color(51, 153, 255);
-            SadConsole.Themes.Library.Default.Colors.Lines = new Color(51, 153, 255); 
+            SadConsole.Themes.Library.Default.Colors.TitleText = CyberBlue;
+            SadConsole.Themes.Library.Default.Colors.Lines = CyberBlue; 
             SadConsole.Themes.Library.Default.Colors.ControlHostBack = Color.Black;
 
             
@@ -95,7 +103,7 @@ namespace TearsInRain {
 
             Utils.InitDirections();
 
-            Global.FontDefault = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
+            Global.FontDefault = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Quarter);
             Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 80, 60, 0, 0);
             Global.ResetRendering();
 
@@ -128,11 +136,17 @@ namespace TearsInRain {
 
         private static void initLibraries() {
             string tileLibJson = File.ReadAllText(@"./data/json/tiles.json");
-            TileLibrary = JsonConvert.DeserializeObject<Dictionary<string, TileBase>>(tileLibJson, new TileJsonConverter());
+            TileLibrary = JsonConvert.DeserializeObject<SortedDictionary<string, TileBase>>(tileLibJson, new TileJsonConverter());
 
             string itemLibJson = File.ReadAllText(@"./data/json/items.json"); 
-            ItemLibrary = JsonConvert.DeserializeObject<Dictionary<string, Item>>(itemLibJson, new ItemJsonConverter());
+            ItemLibrary = JsonConvert.DeserializeObject<SortedDictionary<string, Item>>(itemLibJson, new ItemJsonConverter());
 
+            string skillLibJson = File.ReadAllText(@"./data/json/skills.json");
+            SkillLibrary = JsonConvert.DeserializeObject<SortedDictionary<string, Skill>>(skillLibJson, new SkillJsonConverter());
+
+            string classLibJson = File.ReadAllText(@"./data/json/classes.json");
+            ClassLibrary = JsonConvert.DeserializeObject<SortedDictionary<string, CharacterClass>>(classLibJson, new ClassJsonConverter());
+            
         }
 
 

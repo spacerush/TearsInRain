@@ -282,7 +282,7 @@ namespace TearsInRain {
                 if (encoded != "a") {
                     GameLoop.World = JsonConvert.DeserializeObject<World>(encoded, new WorldJsonConverter());
                     GameLoop.UIManager.LoadMap(GameLoop.World.CurrentMap);
-                    GameLoop.UIManager.MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
+                    GameLoop.UIManager.MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Quarter);
                     GameLoop.UIManager.CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
                 }
             }

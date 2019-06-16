@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using RogueSharp.DiceNotation;
 using TearsInRain.Serializers;
+using TearsInRain.src;
 using TearsInRain.Tiles;
 
 namespace TearsInRain.Entities {
@@ -16,14 +17,17 @@ namespace TearsInRain.Entities {
         
         public int Strength = 10;
         public int Dexterity = 10;
+        public int Constitution = 10;
         public int Intelligence = 10;
-        public int Vitality = 10;
+        public int Wisdom = 10;
+        public int Charisma = 10;
+
+        public int Level = 1;
+        public List<CharacterClass> Classes = new List<CharacterClass>();
 
         // Secondary Attributes (Direct)
-        public int Health = 10;  // Starts equal to MaxHealth
-        public int MaxHealth = 10; // Starts equal to Strength
-        public int Will = 10; // Starts equal to Intelligence
-        public int Perception = 10; // Starts equal to Intelligence
+        public int Health = 10; 
+        public int MaxHealth = 10; 
 
 
         public int MaxStamina = 100;
@@ -41,7 +45,7 @@ namespace TearsInRain.Entities {
         public int Speed = 10;
 
         public float EncumbranceLv = 0;
-        public int BasicLift = (int) Math.Round((double)(10 * 10) / 5, 0);
+        public double BasicLift = (double)(10 * 10) / 2;
         public int HeldGold = 0;
 
         public int BaseDodge = 8;
@@ -52,17 +56,24 @@ namespace TearsInRain.Entities {
         public int StealthResult = 0;
         public int BaseStealthResult = 0;
 
+        public string ClassSkills;
+        public Dictionary<string, Skill> Skills = new Dictionary<string, Skill>();
+        public int RanksPerLvl = 2;
+        public int MiscRanksMod = 0;
+        
 
 
-        public int Gold { get; set; }
-        public List<Item> Inventory = new List<Item>();
-
+        public List<Item> Inventory = new List<Item>(); 
         public Item[] Equipped = new Item[14];
 
         public Actor(Color foreground, Color background, int glyph, int width = 1, int height = 1) : base(foreground, background, width, height, glyph) {
             Animation.CurrentFrame[0].Foreground = foreground;
             Animation.CurrentFrame[0].Background = background;
             Animation.CurrentFrame[0].Glyph = glyph;
+
+            foreach (KeyValuePair<string, Skill> skill in GameLoop.SkillLibrary) {
+                Skills.Add(skill.Key, skill.Value);
+            }
         }
 
         public bool MoveBy(Point positionChange) { 
@@ -237,11 +248,41 @@ namespace TearsInRain.Entities {
         }
 
 
+        public void UpdateRanksPerLvl() {
+            RanksPerLvl = (int) Math.Floor((double) ((Intelligence - 10) / 2));
+            if (Intelligence == 7) { RanksPerLvl = -2; }
+            if (Intelligence == 8 || Intelligence == 9) { RanksPerLvl = -1; }
+
+            for (int i = 0; i < Classes.Count; i++) {
+                RanksPerLvl += Classes[i].RanksPerLv;
+            }
+
+            RanksPerLvl += MiscRanksMod;
+        }
+
+
+        public void RecalculateHealth() {
+            MaxHealth = 0;
+            for (int i = 0; i < Classes.Count; i++) {
+                MaxHealth += Classes[i].HealthGranted;
+            }
+        }
+
+
+        public int SpentSkillPoints() {
+            int spent = 0;
+
+            foreach (KeyValuePair<string, Skill> skill in Skills) {
+                spent += skill.Value.Ranks;
+            }
+
+            return spent;
+        }
+
+
         public void CalculateEncumbrance() {
-            BasicLift = (int) Math.Round((double) (Strength * Strength) / 5, 0); // Weight you can lift above your head with one hand comfortably.
-             
-            int maxCarry = BasicLift * 10; 
-            EncumbranceLv = (float) Carrying_Weight / maxCarry;
+            BasicLift = (double)(Strength * Strength) / 5;
+            EncumbranceLv = (float) (Carrying_Weight / BasicLift);
             
             Speed = (int) Math.Floor((float) BaseSpeed * (1.0f + EncumbranceLv));
 

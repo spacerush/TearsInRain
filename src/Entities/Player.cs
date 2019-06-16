@@ -11,7 +11,6 @@ namespace TearsInRain.Entities {
         public Player(Color foreground, Color background) : base(foreground, background, 1) {
             Name = "Player";
             TimeLastActed = 0;
-            Dexterity = 13;
             Dictionary<string, string> props = new Dictionary<string, string>();
             props.Add("qualities", "tilling");
 
@@ -29,13 +28,15 @@ namespace TearsInRain.Entities {
 
             Strength = actor.Strength;
             Dexterity = actor.Dexterity;
+            Constitution = actor.Constitution;
             Intelligence = actor.Intelligence;
-            Vitality = actor.Vitality;
+            Wisdom = actor.Wisdom;
+            Charisma = actor.Charisma;
+
+            Level = actor.Level;
 
             Health = actor.Health;
             MaxHealth = actor.MaxHealth;
-            Will = actor.Will;
-            Perception = actor.Perception;
 
 
             MaxStamina = actor.MaxStamina;
@@ -63,6 +64,11 @@ namespace TearsInRain.Entities {
             BaseStealthResult = actor.BaseStealthResult;
 
             Inventory = actor.Inventory;
+
+            Skills = actor.Skills;
+            ClassSkills = actor.ClassSkills;
+            RanksPerLvl = actor.RanksPerLvl;
+            MiscRanksMod = actor.MiscRanksMod;
 
             Equipped = actor.Equipped;
 

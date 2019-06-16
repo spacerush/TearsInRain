@@ -5,6 +5,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using TearsInRain.Entities;
 using Microsoft.Xna.Framework;
+using TearsInRain.src;
 
 namespace TearsInRain.Serializers {
     public class ActorJsonConverter : JsonConverter<Actor> {
@@ -33,16 +34,20 @@ namespace TearsInRain.Serializers {
         [DataMember] public int Y;
 
         //Primary Stats
-        [DataMember] public int ST; // Strength
-        [DataMember] public int DX; // Dexterity
-        [DataMember] public int IQ; // Intelligence
-        [DataMember] public int VT; // Vitality
+        [DataMember] public int STR;
+        [DataMember] public int DEX;
+        [DataMember] public int CON;
+        [DataMember] public int INT;
+        [DataMember] public int WIS;
+        [DataMember] public int CHA;
+
+        [DataMember] public int Level;
+        [DataMember] public List<CharacterClass> Classes;
 
         // Secondary Direct
         [DataMember] public int HP; // Health
         [DataMember] public int MaxHP;
-        [DataMember] public int Will;
-        [DataMember] public int PER; // Perception
+
         [DataMember] public int STA; // Stamina
         [DataMember] public int MaxSTA;
         [DataMember] public int ENG; // Energy
@@ -52,7 +57,13 @@ namespace TearsInRain.Serializers {
         [DataMember] public int SPD; // Speed
         [DataMember] public int Dodge;
 
+        [DataMember] public string ClassSkills;
+        [DataMember] public Dictionary<string, Skill> Skills;
+        [DataMember] public int RanksPerLvl;
+        [DataMember] public int MiscRanksMod;
+
         [DataMember] public List<Item> Inventory;
+        
 
 
         public static implicit operator ActorSerialized(Actor actor) {
@@ -63,15 +74,18 @@ namespace TearsInRain.Serializers {
 
 
                 Name = actor.Name,
-                ST = actor.Strength,
-                DX = actor.Dexterity,
-                IQ = actor.Intelligence,
-                VT = actor.Vitality,
+                STR = actor.Strength,
+                DEX = actor.Dexterity,
+                CON = actor.Constitution,
+                INT = actor.Intelligence,
+                WIS = actor.Wisdom,
+                CHA = actor.Charisma,
+
+                Level = actor.Level,
+                Classes = actor.Classes,
 
                 HP = actor.Health,
                 MaxHP = actor.MaxHealth,
-                Will = actor.Will,
-                PER = actor.Perception,
                 STA = actor.CurrentStamina,
                 MaxSTA = actor.MaxStamina,
                 ENG = actor.CurrentEnergy,
@@ -81,6 +95,13 @@ namespace TearsInRain.Serializers {
                 BASE_SPD = actor.BaseSpeed,
                 Dodge = actor.Dodge,
                 Inventory = actor.Inventory,
+
+                Skills = actor.Skills,
+                ClassSkills = actor.ClassSkills,
+                RanksPerLvl = actor.RanksPerLvl,
+                MiscRanksMod = actor.MiscRanksMod,
+
+
                 X = actor.Position.X,
                 Y = actor.Position.Y,
             };
@@ -93,15 +114,15 @@ namespace TearsInRain.Serializers {
 
             entity.Name = serializedObject.Name;
 
-            entity.Strength = serializedObject.ST;
-            entity.Dexterity = serializedObject.DX;
-            entity.Intelligence = serializedObject.IQ;
-            entity.Vitality = serializedObject.VT;
+            entity.Strength = serializedObject.STR;
+            entity.Dexterity = serializedObject.DEX;
+            entity.Constitution = serializedObject.CON;
+            entity.Intelligence = serializedObject.INT;
+            entity.Wisdom = serializedObject.WIS;
+            entity.Charisma = serializedObject.CHA;
 
             entity.Health = serializedObject.HP;
             entity.MaxHealth = serializedObject.MaxHP;
-            entity.Will = serializedObject.Will;
-            entity.Perception = serializedObject.PER;
             entity.CurrentStamina = serializedObject.STA;
             entity.MaxStamina = serializedObject.MaxSTA;
             entity.CurrentEnergy = serializedObject.ENG;
@@ -113,6 +134,13 @@ namespace TearsInRain.Serializers {
             entity.Dodge = serializedObject.Dodge;
 
             entity.Inventory = serializedObject.Inventory;
+
+            entity.Skills = serializedObject.Skills;
+            entity.ClassSkills = serializedObject.ClassSkills;
+            entity.Level = serializedObject.Level;
+            entity.Classes = serializedObject.Classes;
+            entity.RanksPerLvl = serializedObject.RanksPerLvl;
+            entity.MiscRanksMod = serializedObject.MiscRanksMod;
 
             entity.Position = new Point(serializedObject.X, serializedObject.Y);
 

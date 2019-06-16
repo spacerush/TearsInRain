@@ -25,26 +25,18 @@ namespace TearsInRain {
 
         public Dictionary<long, Player> players = new Dictionary<long, Player>();
         public GoRogue.FOV lastFov;
-
-
+         
         public World(string Name) {
-            WorldName = Name;
-
-            CreateMap(); 
-            
-            CreatePlayer(GameLoop.NetworkingManager.myUID, new Player(Color.Yellow, Color.Transparent));
-
-            CreateMonsters();
-
-            CreateLoot();
-
+            WorldName = Name; 
+            CreateMap();  
+            CreatePlayer(GameLoop.NetworkingManager.myUID, new Player(Color.Yellow, Color.Transparent)); 
+            CreateMonsters(); 
+            CreateLoot(); 
             CurrentMap.PlaceTrees(200);
         }
 
-        public World() {
-        }
-
-
+        public World() { }
+        
         private void CreateMap() {
             CurrentMap = new Map(_mapWidth, _mapHeight);
             MapGenerator mapGen = new MapGenerator();

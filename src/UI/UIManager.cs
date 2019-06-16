@@ -17,6 +17,7 @@ using Utils = TearsInRain.Utils;
 using GoRogue;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
 using System.IO;
+using TearsInRain.src;
 
 namespace TearsInRain.UI {
     public class UIManager : ContainerConsole {
@@ -54,6 +55,19 @@ namespace TearsInRain.UI {
         public string selectedWorldName = "";
         public bool tryDelete = false;
 
+
+        public Window CharCreateWindow;
+        public ControlsConsole CharOptionsConsole;
+        public ControlsConsole CharCreateConsole;
+        public ControlsConsole CharInfoConsole;
+        public Player CreatingChar;
+        public string CreationSelectedOption = "";
+        public string SelectedSkill = "";
+        public string SelectedClass = "(NONE)";
+        public CharacterClass selectClass;
+        public List<string> SkillNames = new List<string>();
+        public List<string> ClassNames = new List<string>();
+
         public Point Mouse;
         public string STATE = "MENU";
         public string JOIN_CODE = "";
@@ -71,7 +85,7 @@ namespace TearsInRain.UI {
 
         public string waitingForCommand = "";
         public Point viewOffset = new Point(0, 0);
-        public Font.FontSizes hold = Font.FontSizes.One;
+        public Font.FontSizes hold = Font.FontSizes.Quarter;
 
         public UIManager() {
             IsVisible = true;
@@ -105,6 +119,8 @@ namespace TearsInRain.UI {
             joinPrompt.FocusOnMouseClick = true;
             CreateWorld();
             LoadWorldDialogue();
+
+            CharacterCreationDialogue();
         }
 
         public void CreateConsoles() {
@@ -170,7 +186,7 @@ namespace TearsInRain.UI {
 
                     ContextConsole.Print(0, 0, itemName.Align(HorizontalAlignment.Center, 18, ' '));
                     ContextConsole.Print(0, 1, ("QTY: " + item.Quantity.ToString()).Align(HorizontalAlignment.Center, 18, ' '));
-                    ContextConsole.Print(0, 2, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(new Color(51, 153, 255)));
+                    ContextConsole.Print(0, 2, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(GameLoop.CyberBlue));
 
                     ContextConsole.Print(0, 3, "Drop 01".Align(HorizontalAlignment.Center, 18, ' '));
                     ContextConsole.Print(0, 4, "Drop 05".Align(HorizontalAlignment.Center, 18, ' '));
@@ -182,7 +198,7 @@ namespace TearsInRain.UI {
                     } 
                 } else {
                     ContextConsole.Print(0, 0, "No Item Selected".Align(HorizontalAlignment.Center, 18, ' '));
-                    ContextConsole.Print(0, 2, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(new Color(51, 153, 255)));
+                    ContextConsole.Print(0, 2, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(GameLoop.CyberBlue));
                     invContextIndex = -1;
                 }
             }
@@ -256,7 +272,7 @@ namespace TearsInRain.UI {
             StatusConsole.Print(StatusConsole.Width-timeString.Count - 2, 1, timeString);
             
 
-            StatusConsole.Print(0, 3, (("" + (char) 205).Align(HorizontalAlignment.Center, 18, (char) 205)).CreateColored(new Color(51, 153, 255)));
+            StatusConsole.Print(0, 3, (("" + (char) 205).Align(HorizontalAlignment.Center, 18, (char) 205)).CreateColored(GameLoop.CyberBlue));
 
 
             if (player != null) {
@@ -266,16 +282,16 @@ namespace TearsInRain.UI {
 
                 StatusConsole.Print(0, 4, " STR: " + player.Strength.ToString());
                 StatusConsole.Print(8, 4, "   DEX: " + player.Dexterity.ToString());
-                StatusConsole.Print(0, 5, " INT: " + player.Intelligence.ToString());
-                StatusConsole.Print(8, 5, "   VIT: " + player.Vitality.ToString());
+                StatusConsole.Print(0, 5, " CON: " + player.Constitution.ToString());
+                StatusConsole.Print(8, 5, "   INT: " + player.Intelligence.ToString());
 
-                StatusConsole.Print(0, 6, "WILL: " + player.Will.ToString());
-                StatusConsole.Print(8, 6, "   PER: " + player.Perception.ToString());
-                StatusConsole.Print(0, 7, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(new Color(51, 153, 255)));
+                StatusConsole.Print(0, 6, "WIS: " + player.Wisdom.ToString());
+                StatusConsole.Print(8, 6, "   CHA: " + player.Charisma.ToString());
+                StatusConsole.Print(0, 7, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(GameLoop.CyberBlue));
 
                 ColorGradient wgtGrad = new ColorGradient(Color.Green, Color.Red);
                 player.RecalculateWeight(); 
-                Color wgtColor = wgtGrad.Lerp((float) player.Carrying_Weight / (player.BasicLift * 10));
+                Color wgtColor = wgtGrad.Lerp((float) (player.Carrying_Weight / player.BasicLift));
 
 
                 ColoredString wgt = new ColoredString((player.Carrying_Weight.ToString() + " / " + (player.BasicLift * 10).ToString() + " kg"), wgtColor, Color.Transparent);
@@ -286,7 +302,7 @@ namespace TearsInRain.UI {
                 StatusConsole.Print(StatusConsole.Width - wgt.Count - 2, 8, wgt);
                 StatusConsole.Print(0, 9, spd);
                 StatusConsole.Print(10, 9, dodge);
-                StatusConsole.Print(0, 10, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(new Color(51, 153, 255)));
+                StatusConsole.Print(0, 10, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(GameLoop.CyberBlue));
 
 
                 StatusConsole.Print(0, 11, "HEALTH: "); 
@@ -332,7 +348,7 @@ namespace TearsInRain.UI {
                 Mouse = Mouse - player.PositionOffset - new Point(1, 1) ;
                 TileBase hovered = GameLoop.World.CurrentMap.GetTileAt<TileBase>(Mouse.X, Mouse.Y);
 
-                StatusConsole.Print(0, 19, "HOVERED TILE".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(new Color(51, 153, 255)));
+                StatusConsole.Print(0, 19, "HOVERED TILE".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(GameLoop.CyberBlue));
                 if (hovered != null && hovered.Background.A == 255 && hovered.IsVisible) {
                     ColoredString hovName = new ColoredString(hovered.Name.Align(HorizontalAlignment.Center, 18, ' '), hovered.Foreground, Color.Transparent);
                     StatusConsole.Print(0, 20, hovName);
@@ -343,7 +359,7 @@ namespace TearsInRain.UI {
 
                     if (monstersAtTile.Count > 0) {
                         drawLineAt++;
-                        StatusConsole.Print(0, drawLineAt, "ENTITIES".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(new Color(51, 153, 255)));
+                        StatusConsole.Print(0, drawLineAt, "ENTITIES".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(GameLoop.CyberBlue));
                         drawLineAt++;
                     }
 
@@ -359,7 +375,7 @@ namespace TearsInRain.UI {
 
                     if (itemsAtTile.Count > 0) {
                         drawLineAt++;
-                        StatusConsole.Print(0, drawLineAt, "ITEMS".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(new Color(51, 153, 255)));
+                        StatusConsole.Print(0, drawLineAt, "ITEMS".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(GameLoop.CyberBlue));
                         drawLineAt++;
                     }
 
@@ -515,7 +531,7 @@ namespace TearsInRain.UI {
 
 
             InventoryConsole.Print(29, 0, "Item Name | QTY | WEIGHT");
-            InventoryConsole.Print(0, 1, (("" + (char)205).Align(HorizontalAlignment.Center, InventoryConsole.Width - 2, (char)205)).CreateColored(new Color(51, 153, 255)));
+            InventoryConsole.Print(0, 1, (("" + (char)205).Align(HorizontalAlignment.Center, InventoryConsole.Width - 2, (char)205)).CreateColored(GameLoop.CyberBlue));
 
             if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
                 Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
@@ -623,10 +639,7 @@ namespace TearsInRain.UI {
             }
         }
 
-        
-        
-
-        
+          
         private void hostButtonClick(object sender, SadConsole.Input.MouseEventArgs e) {
             GameLoop.NetworkingManager.changeClientTarget("0"); // HAS TO BE DISABLED ON LIVE BUILD, ONLY FOR TESTING TWO CLIENTS ON ONE COMPUTER
 
@@ -755,6 +768,11 @@ namespace TearsInRain.UI {
 
             if (STATE == "MENU") {
                 SplashAnim();
+                
+                if (CharCreateWindow.IsVisible) {
+                    UpdateCharCreation();
+                    UpdateCharOptions();
+                }
             }
         }
 
@@ -835,7 +853,7 @@ namespace TearsInRain.UI {
             if (!justInit) {
                 GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID, new Player(Color.Yellow, Color.Transparent));
                 LoadMap(GameLoop.World.CurrentMap);
-                MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
+                MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Quarter);
                 CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
             }
         }
@@ -845,7 +863,7 @@ namespace TearsInRain.UI {
                 if (raindrops < 100 && GameLoop.Random.Next(0, 10) < 7) {
                     raindrops++;
 
-                    Entity newRaindrop = new Entity(Color.Blue, Color.Transparent, '\\');
+                    Entity newRaindrop = new Entity(new Color(GameLoop.CyberBlue, GameLoop.Random.Next(170, 256)), Color.Transparent, '\\');
                     int hori = GameLoop.Random.Next(0, 4);
                     if (hori == 0 || hori == 1) {
                         newRaindrop.Position = new Point(0, GameLoop.Random.Next(0, SplashConsole.Height - 14));
@@ -931,13 +949,15 @@ namespace TearsInRain.UI {
             SplashConsole.Children.Add(MenuConsole);
 
             MenuConsole.Position = new Point(1, SplashConsole.Height - 12);
-            MenuConsole.Print(1, 1, "CREATE NEW WORLD".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
-            MenuConsole.Print(1, 2, "LOAD WORLD".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
-             
-            MenuConsole.Print(1, 5, "JOIN:    ".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
-            MenuConsole.Print(1, 7, "HOST".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
+            MenuConsole.Print(1, 1, "CREATE NEW WORLD".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
+            MenuConsole.Print(1, 2, "LOAD WORLD".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
+            MenuConsole.Print(1, 3, "CREATE CHARACTER".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
 
-            MenuConsole.Print(1, 10, "EXIT GAME".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(new Color(51, 153, 255), Color.Transparent));
+
+            MenuConsole.Print(1, 5, "JOIN:    ".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
+            MenuConsole.Print(1, 7, "HOST".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
+
+            MenuConsole.Print(1, 10, "EXIT GAME".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
 
             MenuConsole.MouseButtonClicked += menuClick; 
         }
@@ -1097,9 +1117,7 @@ namespace TearsInRain.UI {
             Directory.CreateDirectory(@"./saves");
             string[] savelist = Directory.GetDirectories(@"./saves");
 
-            if (e.MouseState.ConsoleCellPosition.Y < savelist.Length) {
-                //LoadMapFromFile(savelist[e.MouseState.ConsoleCellPosition.Y]);
-                //ChangeState("GAME");
+            if (e.MouseState.ConsoleCellPosition.Y < savelist.Length) { 
                 selectedWorldName = savelist[e.MouseState.ConsoleCellPosition.Y];
             }
 
@@ -1131,6 +1149,315 @@ namespace TearsInRain.UI {
             UpdateLoadWindow();
         }
 
+
+        public void CharacterCreationDialogue() {
+            CharCreateWindow = new Window(80, 60, Global.FontDefault);
+            CharCreateWindow.Position = new Point(0, 0);
+            CharCreateWindow.IsVisible = false;
+            CharCreateWindow.UseMouse = true;
+            CharCreateWindow.Title = "[CREATE CHARACTER]".Align(HorizontalAlignment.Center, 78, (char)205);
+
+            CharCreateConsole = new ControlsConsole(18, 60, Global.FontDefault);
+            CharCreateConsole.Position = new Point(1, 0);
+            CharCreateConsole.IsVisible = false;
+
+            CharOptionsConsole = new ControlsConsole(36, 58, Global.FontDefault);
+            CharOptionsConsole.Position = new Point(19, 1);
+            CharOptionsConsole.IsVisible = false;
+            
+            CharInfoConsole = new ControlsConsole(26, 60, Global.FontDefault);
+            CharInfoConsole.Position = new Point(53, 0);
+            CharInfoConsole.IsVisible = false;
+
+            
+            CharCreateConsole.MouseButtonClicked += charCreateClick;
+            CharOptionsConsole.MouseButtonClicked += charOptionsClick;
+
+            
+            CharCreateWindow.Children.Add(CharCreateConsole);
+            CharCreateWindow.Children.Add(CharOptionsConsole);
+            CharCreateWindow.Children.Add(CharInfoConsole);
+            Children.Add(CharCreateWindow);
+
+
+            CreatingChar = new Player(Color.Yellow, Color.Transparent);
+
+            foreach (KeyValuePair<string, Skill> skill in GameLoop.SkillLibrary) {
+                SkillNames.Add(skill.Key);
+            }
+
+            foreach (KeyValuePair<string, CharacterClass> charClass in GameLoop.ClassLibrary) {
+                ClassNames.Add(charClass.Key);
+            }
+        }
+
+
+        public void UpdateCharCreation() {
+            CharCreateConsole.Clear();
+
+            if (SelectedClass != "(NONE)") {
+                selectClass = GameLoop.ClassLibrary[SelectedClass];
+            }
+
+            CharCreateConsole.DrawLine(new Point(17, 1), new Point(17, 58), GameLoop.CyberBlue, Color.Transparent, (char)186);
+            CharCreateConsole.DrawLine(new Point(0, 0), new Point(16, 0), GameLoop.CyberBlue, Color.Transparent, (char)205);
+            CharCreateConsole.DrawLine(new Point(0, 59), new Point(16, 59), GameLoop.CyberBlue, Color.Transparent, (char)205);
+            CharCreateConsole.Print(17, 0, new ColoredGlyph((char)203, GameLoop.CyberBlue, Color.Transparent));
+            CharCreateConsole.Print(17, 59, new ColoredGlyph((char)202, GameLoop.CyberBlue, Color.Transparent));
+
+            CharCreateConsole.Print(0, 1, " CHARACTER SHEET ".CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 2, (((char)205).ToString().Align(HorizontalAlignment.Center, 17, (char)205)).CreateColored(GameLoop.CyberBlue));
+
+            string str = CreatingChar.Strength.ToString().Align(HorizontalAlignment.Right, 2, '0'); 
+            CharCreateConsole.Print(0, 3, "   STR  - " + str + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            string dex = CreatingChar.Dexterity.ToString().Align(HorizontalAlignment.Right, 2, '0');
+            CharCreateConsole.Print(0, 4, "   DEX  - " + dex + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            string con = CreatingChar.Constitution.ToString().Align(HorizontalAlignment.Right, 2, '0');
+            CharCreateConsole.Print(0, 5, "   CON  - " + con + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            string intelligence = CreatingChar.Intelligence.ToString().Align(HorizontalAlignment.Right, 2, '0');
+            CharCreateConsole.Print(0, 6, "   INT  - " + intelligence + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            string wis = CreatingChar.Wisdom.ToString().Align(HorizontalAlignment.Right, 2, '0');
+            CharCreateConsole.Print(0, 7, "   WIS  - " + wis + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            string cha = CreatingChar.Charisma.ToString().Align(HorizontalAlignment.Right, 2, '0');
+            CharCreateConsole.Print(0, 8, "   CHA  - " + cha + " +   ".CreateColored(GameLoop.CyberBlue));
+
+
+            List<int> pointCosts = new List<int> { -4, -2, -1, 0, 1, 2, 3, 5, 7, 10, 13, 17 };
+            int modified = (pointCosts[CreatingChar.Strength - 7]) + (pointCosts[CreatingChar.Dexterity - 7]) + (pointCosts[CreatingChar.Constitution - 7]) + (pointCosts[CreatingChar.Intelligence - 7]) + (pointCosts[CreatingChar.Wisdom - 7]) + (pointCosts[CreatingChar.Charisma - 7]);
+            string pts = (25 - modified).ToString().Align(HorizontalAlignment.Right, 2, '0');
+
+
+            CharCreateConsole.Print(0, 10, ("Points Left: " + pts).Align(HorizontalAlignment.Center, 17, ' ').CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 11, (((char)205).ToString().Align(HorizontalAlignment.Center, 17, (char)205)).CreateColored(GameLoop.CyberBlue));
+
+
+            CreatingChar.BasicLift = (int)Math.Floor(((double) CreatingChar.Strength * CreatingChar.Strength) / 2);
+            string maxCarry = "Max Carry: " + CreatingChar.BasicLift.ToString().Align(HorizontalAlignment.Right, 3, ' ') + " kg";
+            CharCreateConsole.Print(0, 12, maxCarry.CreateColored(GameLoop.CyberBlue));
+
+            CreatingChar.UpdateRanksPerLvl();
+            string spentSkills = CreatingChar.SpentSkillPoints().ToString().Align(HorizontalAlignment.Right, 2, '0');
+            string maxRanks;
+
+            if (SelectedClass != "(NONE)") {
+                maxRanks = ((CreatingChar.Level * CreatingChar.RanksPerLvl) + selectClass.RanksPerLv).ToString().Align(HorizontalAlignment.Right, 2, '0');
+            } else {
+                maxRanks = (CreatingChar.Level * CreatingChar.RanksPerLvl).ToString().Align(HorizontalAlignment.Right, 2, '0');
+            }
+
+            Color spentAllSkills;
+
+            if (spentSkills == maxRanks) {
+                spentAllSkills = Color.Lime;
+            } else if (Convert.ToInt32(spentSkills) > Convert.ToInt32(maxRanks)) {
+                spentAllSkills = Color.Red;
+            } else {
+                spentAllSkills = GameLoop.CyberBlue;
+            }
+
+            CharCreateConsole.Print(0, 13, ("Skills/Lv (" + spentSkills + "/" + maxRanks + ")").CreateColored(spentAllSkills));
+
+            Color selectedAClass;
+            if (SelectedClass != "(NONE)") {
+                selectedAClass = Color.Lime;
+            } else {
+                selectedAClass = Color.Red;
+            }
+
+            CharCreateConsole.Print(0, 20, ("Class: " + SelectedClass).CreateColored(selectedAClass));
+
+
+
+
+            CharInfoConsole.DrawLine(new Point(0, 1), new Point(0, 58), GameLoop.CyberBlue, Color.Transparent, (char)186);
+            CharInfoConsole.DrawLine(new Point(0, 0), new Point(25, 0), GameLoop.CyberBlue, Color.Transparent, (char)205);
+            CharInfoConsole.DrawLine(new Point(0, 59), new Point(25, 59), GameLoop.CyberBlue, Color.Transparent, (char)205);
+            CharInfoConsole.Print(0, 0, new ColoredGlyph((char)203, GameLoop.CyberBlue, Color.Transparent));
+            CharInfoConsole.Print(0, 59, new ColoredGlyph((char)202, GameLoop.CyberBlue, Color.Transparent));
+
+            CharInfoConsole.Print(1, 1, "EXTRA DETAILS".Align(HorizontalAlignment.Center, 25, ' ').CreateColored(GameLoop.CyberBlue));
+            CharInfoConsole.Print(1, 2, (((char)205).ToString().Align(HorizontalAlignment.Center, 25, (char)205)).CreateColored(GameLoop.CyberBlue));
+            
+            
+        }
+
+        public void UpdateCharOptions() {
+            CharOptionsConsole.Clear();
+            if (CreationSelectedOption == "") {
+                CharOptionsConsole.Print(7, 29, "Click an option on the left".CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(10, 30, "panel to get started!".CreateColored(GameLoop.CyberBlue));
+            }
+
+            if (CreationSelectedOption == "Skills") {
+                CharOptionsConsole.Print(0, 0, "SKILL NAME".Align(HorizontalAlignment.Center, 20, ' ').CreateColored(GameLoop.CyberBlue)); 
+                CharOptionsConsole.Print(20, 0, (((char)186).ToString() + " STAT " + ((char)186).ToString() +  " RANK ").CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(0, 1, (((char)205).ToString().Align(HorizontalAlignment.Center, 34, (char)205)).CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(20, 1, ((char)206).ToString().CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(27, 1, ((char)206).ToString().CreateColored(GameLoop.CyberBlue));
+
+                int printLine = 2;
+                foreach (KeyValuePair<string, Skill> skill in GameLoop.SkillLibrary) {
+                    Color skillNameColor;
+
+                    if (skill.Key == SelectedSkill) {
+                        skillNameColor = Color.Lime;
+                    } else {
+                        skillNameColor = GameLoop.CyberBlue;
+                    }
+
+                    CharOptionsConsole.Print(0, printLine, skill.Value.Name.Align(HorizontalAlignment.Center, 20, ' ').CreateColored(skillNameColor));
+
+                    string ranks = CreatingChar.Skills[skill.Key].Ranks.ToString().Align(HorizontalAlignment.Right, 2, '0');
+
+                    CharOptionsConsole.Print(20, printLine, (((char)186).ToString() + " " + skill.Value.ControllingAttribute + "  " + ((char)186).ToString() + " -" + ranks + "+ ").CreateColored(skillNameColor));
+
+                    printLine++;
+                } 
+            }
+
+            if (CreationSelectedOption == "Classes") {
+                CharOptionsConsole.Print(0, 0, "CLASS NAME".Align(HorizontalAlignment.Center, 19, ' ').CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(19, 0, (((char)186).ToString() + "  HD  " + ((char)186).ToString() + " SKILL ").CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(0, 1, (((char)205).ToString().Align(HorizontalAlignment.Center, 60, (char)205)).CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(19, 1, ((char)206).ToString().CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(26, 1, ((char)206).ToString().CreateColored(GameLoop.CyberBlue));
+
+                int printLine = 2;
+                foreach (KeyValuePair<string, CharacterClass> charClass in GameLoop.ClassLibrary) {
+                    Color nameColor;
+
+                    if (charClass.Key == SelectedClass) {
+                        nameColor = Color.Lime;
+                    } else {
+                        nameColor = GameLoop.CyberBlue;
+                    }
+
+                    CharOptionsConsole.Print(0, printLine, charClass.Value.ClassName.Align(HorizontalAlignment.Center, 19, ' ').CreateColored(nameColor));
+
+                    string hitdie = charClass.Value.HitDie.Align(HorizontalAlignment.Right, 3, ' ');
+                    CharOptionsConsole.Print(19, printLine, (((char)186).ToString() + " " + hitdie + "  " + ((char)186).ToString() + " " + charClass.Value.RanksPerLv + "+INT ").CreateColored(nameColor));
+
+
+
+
+                    printLine++;
+                }
+                
+
+                if (SelectedClass != "(NONE)") {
+                    selectClass = GameLoop.ClassLibrary[SelectedClass];
+
+                    CharInfoConsole.Clear(new Rectangle(new Point(1, 3), new Point(25, 56)));
+
+
+                    CharInfoConsole.Print(1, 3, ("Class Name: " + SelectedClass).CreateColored(GameLoop.CyberBlue));
+
+                    string fortSave = selectClass.FRW_InitialSaves[0].ToString().Align(HorizontalAlignment.Right, 2, '+') + " (+" + selectClass.FortSave.ToString().Align(HorizontalAlignment.Left, 4, '0') + "/lv)";
+                    string reflexSave = selectClass.FRW_InitialSaves[1].ToString().Align(HorizontalAlignment.Right, 2, '+') + " (+" + selectClass.ReflexSave.ToString().Align(HorizontalAlignment.Left, 4, '0') + "/lv)";
+                    string willSave = selectClass.FRW_InitialSaves[2].ToString().Align(HorizontalAlignment.Right, 2, '+') + " (+" + selectClass.WillSave.ToString().Align(HorizontalAlignment.Left, 4, '0') + "/lv)";
+
+                    CharInfoConsole.Print(1, 5, ("Fortitude:  " + fortSave).CreateColored(GameLoop.CyberBlue));
+                    CharInfoConsole.Print(1, 6, ("Reflex:     " + reflexSave).CreateColored(GameLoop.CyberBlue));
+                    CharInfoConsole.Print(1, 7, ("Will:       " + willSave).CreateColored(GameLoop.CyberBlue));
+
+                    string atkPerLv = selectClass.ClassAttackBonus.ToString();
+                    if (!atkPerLv.Contains(".")) { atkPerLv += "."; }
+
+                    string attackBonus = "+" + selectClass.ClassAttackBonus.ToString()[0].ToString() + " (+" + atkPerLv.Align(HorizontalAlignment.Left, 4, '0') + "/lv)";
+                    CharInfoConsole.Print(1, 9, ("Atk Bonus:  " + attackBonus).CreateColored(GameLoop.CyberBlue));
+
+
+
+                    string[] classSkills = selectClass.ClassSkills.Split(',');
+
+                    string skillLine = "";
+                    int skillPrint = 14;
+
+                    CharInfoConsole.Print(1, 11, ((char)205).ToString().Align(HorizontalAlignment.Center, 25, (char)205).CreateColored(GameLoop.CyberBlue));
+                    CharInfoConsole.Print(1, 12, "Class Skills".Align(HorizontalAlignment.Center, 25, ' ').CreateColored(GameLoop.CyberBlue));
+                    CharInfoConsole.Print(1, 13, ((char) 205).ToString().Align(HorizontalAlignment.Center, 25, (char) 205).CreateColored(GameLoop.CyberBlue));
+                    for (int i = 0; i < classSkills.Length; i++) {
+                        if (classSkills[i][0] == ' ') {
+                            classSkills[i] = classSkills[i].Substring(1);
+                        }
+
+                        if (skillLine.Length + classSkills[i].Length + 2 >= 25) {
+                            CharInfoConsole.Print(1, skillPrint, skillLine.CreateColored(GameLoop.CyberBlue));
+                            skillPrint++;
+                            skillLine = "";
+                        }
+
+                        skillLine += classSkills[i];
+
+                        if (i+1 != classSkills.Length) {
+                            skillLine += ", ";
+                        }
+
+                        if (i+1 == classSkills.Length) {
+                            CharInfoConsole.Print(1, skillPrint, skillLine.CreateColored(GameLoop.CyberBlue));
+                        }
+                    }
+                }
+            }
+
+        }
+
+
+        private void charOptionsClick(object sender, MouseEventArgs e) {
+            if (CreationSelectedOption == "Skills") {
+                if (SkillNames.Count > e.MouseState.ConsoleCellPosition.Y - 2 && e.MouseState.ConsoleCellPosition.Y - 2 >= 0) {
+                    SelectedSkill = SkillNames[e.MouseState.ConsoleCellPosition.Y - 2];
+                }
+
+                if (e.MouseState.ConsoleCellPosition.X == 29) {
+                    if (SelectedSkill != "") {
+                        if (CreatingChar.Skills[SelectedSkill].Ranks > 0) {
+                            CreatingChar.Skills[SelectedSkill].Ranks--;
+                        }
+                    }
+                }
+
+                if (e.MouseState.ConsoleCellPosition.X == 32) {
+                    if (SelectedSkill != "") {
+                        if (CreatingChar.Skills[SelectedSkill].Ranks < CreatingChar.Level) {
+                            CreatingChar.Skills[SelectedSkill].Ranks++;
+                        }
+                    }
+                }
+            }
+
+
+
+            if (CreationSelectedOption == "Classes") {
+                if (ClassNames.Count > e.MouseState.ConsoleCellPosition.Y - 2 && e.MouseState.ConsoleCellPosition.Y - 2 >= 0) {
+                    SelectedClass = ClassNames[e.MouseState.ConsoleCellPosition.Y - 2];
+                }
+            }
+        }
+
+        private void charCreateClick(object sender, MouseEventArgs e) {
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 3) && CreatingChar.Strength > 7) { CreatingChar.Strength--; } 
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 3) && CreatingChar.Strength < 18) { CreatingChar.Strength++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 4) && CreatingChar.Dexterity > 7) { CreatingChar.Dexterity--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 4) && CreatingChar.Dexterity < 18) { CreatingChar.Dexterity++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 5) && CreatingChar.Constitution > 7) { CreatingChar.Constitution--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 5) && CreatingChar.Constitution < 18) { CreatingChar.Constitution++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 6) && CreatingChar.Intelligence > 7) { CreatingChar.Intelligence--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 6) && CreatingChar.Intelligence < 18) { CreatingChar.Intelligence++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 7) && CreatingChar.Wisdom > 7) { CreatingChar.Wisdom--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 7) && CreatingChar.Wisdom < 18) { CreatingChar.Wisdom++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 8) && CreatingChar.Charisma > 7) { CreatingChar.Charisma--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 8) && CreatingChar.Charisma < 18) { CreatingChar.Charisma++; }
+
+            if (e.MouseState.ConsoleCellPosition.Y == 13) { CreationSelectedOption = "Skills"; }
+            if (e.MouseState.ConsoleCellPosition.Y == 20) { CreationSelectedOption = "Classes"; }
+        }
+
         private void menuClick(object sender, MouseEventArgs e) {
             if (e.MouseState.ConsoleCellPosition.Y == 1) { // Should open world creation dialogue
                 WorldCreateWindow.IsVisible = true;
@@ -1142,6 +1469,13 @@ namespace TearsInRain.UI {
                 LoadConsole.IsVisible = true;
 
                 UpdateLoadWindow();
+            }
+
+            else if (e.MouseState.ConsoleCellPosition.Y == 3) {
+                CharCreateWindow.IsVisible = true;
+                CharCreateConsole.IsVisible = true;
+                CharOptionsConsole.IsVisible = true;
+                CharInfoConsole.IsVisible = true;
             }
 
             else if (e.MouseState.ConsoleCellPosition.Y == 5) { // This one is probably fine like this, but should be switched so it doesn't make its own world before joining.

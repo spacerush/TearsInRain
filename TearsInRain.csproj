@@ -83,6 +83,8 @@
     <Compile Include="Discord\Core.cs" />
     <Compile Include="Discord\ImageManager.cs" />
     <Compile Include="Discord\LobbyManager.cs" />
+    <Compile Include="src\CharacterRace.cs" />
+    <Compile Include="src\CharacterClass.cs" />
     <Compile Include="src\Entities\Actor.cs" />
     <Compile Include="src\Commands\CommandManager.cs" />
     <Compile Include="src\Entities\Entity.cs" />
@@ -96,6 +98,9 @@
     <Compile Include="src\Interfaces\IContainer.cs" />
     <Compile Include="src\Interfaces\ILockable.cs" />
     <Compile Include="src\NetworkingManager.cs" />
+    <Compile Include="src\Serializers\CharacterRace.cs" />
+    <Compile Include="src\Serializers\CharacterClass.cs" />
+    <Compile Include="src\Serializers\Skill.cs" />
     <Compile Include="src\Serializers\TerrainFeature.cs" />
     <Compile Include="src\Serializers\Entity.cs" />
     <Compile Include="src\Serializers\Map.cs" />
@@ -103,6 +108,7 @@
     <Compile Include="src\Serializers\TileBase.cs" />
     <Compile Include="src\Serializers\Item.cs" />
     <Compile Include="src\Serializers\Actor.cs" />
+    <Compile Include="src\Skill.cs" />
     <Compile Include="src\TimeManager.cs" />
     <Compile Include="src\UI\Map.cs" />
     <Compile Include="src\UI\MapGenerator.cs" />
@@ -201,7 +207,16 @@
     </None>
     <None Include="app.config" />
     <None Include="app.manifest" />
+    <None Include="data\json\classes.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="data\json\items.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="data\json\skills.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="data\json\tiles.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="data\splash.xp">

@@ -1,0 +1,109 @@
+{
+    "Acrobatics": {
+        "Name": "Acrobatics",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Appraise": {
+        "Name": "Appraise",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Brawling": {
+        "Name": "Brawling",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Construction": {
+        "Name": "Construction",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Cooking": {
+        "Name": "Cooking",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Diagnosis": {
+        "Name": "Diagnosis",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Disable Device": {
+        "Name": "Disable Device",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "First Aid": {
+        "Name": "First Aid",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Maces/Axes": {
+        "Name": "Maces/Axes",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Perception": {
+        "Name": "Perception",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Polearms": {
+        "Name": "Polearms",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Stealth": {
+        "Name": "Stealth",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Surgery": {
+        "Name": "Surgery",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Survival": {
+        "Name": "Survival",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Swords": {
+        "Name": "Swords",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Tailoring": {
+        "Name": "Tailoring",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Tracking": {
+        "Name": "Tracking",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Trapmaking": {
+        "Name": "Trapmaking",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    }
+}
