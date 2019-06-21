@@ -16,8 +16,8 @@ namespace TearsInRain {
     class GameLoop {
         public static UInt64 GameTime = 0; // Deciseconds since game launch (Decisecond = tenth of a second)
 
-        public const int GameWidth = 80;
-        public const int GameHeight = 60;
+        public static int GameWidth = 80;
+        public static int GameHeight = 60;
 
         public static UIManager UIManager;
         public static World World;
@@ -46,6 +46,14 @@ namespace TearsInRain {
 
         public static Color CyberBlue = new Color(51, 153, 255);
 
+
+        public static Font RegularSize;
+        public static Font DoubleSize;
+        public static Font QuadrupleSize;
+
+        public static Font MapQuarter;
+        public static Font MapHalf;
+        public static Font MapOne;
 
         public static GoRogue.MultiSpatialMap<Entity> ReceivedEntities;
 
@@ -89,7 +97,24 @@ namespace TearsInRain {
             windowTheme.BorderLineStyle = CellSurface.ConnectedLineThick;
             SadConsole.Themes.Library.Default.WindowTheme = windowTheme;
 
+            string[] allFiles = Directory.GetFiles(@"./fonts/");
+
+            for (int i = 0; i < allFiles.Length; i++) {
+                if (allFiles[i].Contains(".font")) {
+                    Global.LoadFont(allFiles[i]);
+                }
+            }
+
+            RegularSize = Global.Fonts["Cheepicus48"].GetFont(Font.FontSizes.Quarter);
+            DoubleSize = Global.Fonts["Cheepicus48"].GetFont(Font.FontSizes.Half);
+            QuadrupleSize = Global.Fonts["Cheepicus48"].GetFont(Font.FontSizes.One);
+
+            MapQuarter = Global.Fonts["Cheepicus48"].GetFont(Font.FontSizes.Quarter);
+            MapHalf = Global.Fonts["Cheepicus48"].GetFont(Font.FontSizes.Half);
+            MapOne = Global.Fonts["Cheepicus48"].GetFont(Font.FontSizes.One);
+             
             
+
 
             SadConsole.Themes.Library.Default.Colors.TitleText = CyberBlue;
             SadConsole.Themes.Library.Default.Colors.Lines = CyberBlue; 
@@ -103,9 +128,11 @@ namespace TearsInRain {
 
             Utils.InitDirections();
 
-            Global.FontDefault = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Quarter);
+            Global.FontDefault = RegularSize;
             Global.FontDefault.ResizeGraphicsDeviceManager(SadConsole.Global.GraphicsDeviceManager, 80, 60, 0, 0);
             Global.ResetRendering();
+
+            
 
             Global.KeyboardState.InitialRepeatDelay = 0.5f;
 
@@ -126,6 +153,18 @@ namespace TearsInRain {
             SadConsole.Game.Instance.Window.ClientSizeChanged += Window_ClientSizeChanged;
 
             SadConsole.Game.OnUpdate += postUpdate;
+
+
+
+
+
+
+            SimplexNoise.Noise.Seed = 2;
+            List<float> points = new List<float>();
+
+            for (int i = 0; i < 200; i++) {
+                points.Add(SimplexNoise.Noise.CalcPixel2D(i-10, 0, 0.5f));
+            }
         }
 
         private static void postUpdate(GameTime time) {
@@ -146,7 +185,9 @@ namespace TearsInRain {
 
             string classLibJson = File.ReadAllText(@"./data/json/classes.json");
             ClassLibrary = JsonConvert.DeserializeObject<SortedDictionary<string, CharacterClass>>(classLibJson, new ClassJsonConverter());
-            
+
+
+            RaceLibrary.Add("Human", new CharacterRace("Human", new int[] { 0, 0, 0, 0, 0, 0 }, Color.Yellow));
         }
 
 
@@ -187,6 +228,8 @@ namespace TearsInRain {
             int totalCellsX = fontPixelsWidth / SadConsole.Global.FontDefault.Size.X;
             int totalCellsY = fontPixelsHeight / SadConsole.Global.FontDefault.Size.Y;
 
+            GameHeight = totalCellsY;
+            GameWidth = totalCellsX;
             
             UIManager.checkResize(totalCellsX, totalCellsY);
         }

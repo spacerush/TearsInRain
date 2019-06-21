@@ -12,9 +12,10 @@ namespace TearsInRain.Entities {
     [JsonConverter(typeof(ActorJsonConverter))]
     public class Actor : Entity { 
         public UInt64 TimeLastActed { get; set; }
-
-        // Primary Attributes
+        public Dictionary<string, SadConsole.CellDecorator> decorators = new Dictionary<string, SadConsole.CellDecorator>();
         
+        // Primary Attributes
+
         public int Strength = 10;
         public int Dexterity = 10;
         public int Constitution = 10;
@@ -97,10 +98,12 @@ namespace TearsInRain.Entities {
                     if (monster != null) {
                         GameLoop.CommandManager.Attack(this, monster);
                         return false;
-                    } else if (tile is TileDoor door && !door.IsOpen) {
-                        GameLoop.CommandManager.OpenDoor(this, door, Position + positionChange);
-                        return true;
-                    }
+                    } 
+                    
+                    //else if (tile.Name.ToLower().Contains("door") && !tile.IsOpen) {
+                    //    GameLoop.CommandManager.OpenDoor(this, door, Position + positionChange);
+                    //    return true;
+                    //}
 
 
                     Position += positionChange;
@@ -281,7 +284,7 @@ namespace TearsInRain.Entities {
 
 
         public void CalculateEncumbrance() {
-            BasicLift = (double)(Strength * Strength) / 5;
+            BasicLift = (double)(Strength * Strength) / 2;
             EncumbranceLv = (float) (Carrying_Weight / BasicLift);
             
             Speed = (int) Math.Floor((float) BaseSpeed * (1.0f + EncumbranceLv));
@@ -431,7 +434,7 @@ namespace TearsInRain.Entities {
 
             if (num == 0 || num >= Inventory[index].Quantity) {
                 Item dropped = Inventory[index].Clone();
-                dropped.Font = SadConsole.Global.LoadFont("fonts/Cheepicus12.font").GetFont(GameLoop.UIManager.hold);
+                dropped.Font = GameLoop.UIManager.hold;
                 dropped.Position = Position;
 
                 bool foundSame = false;
@@ -458,7 +461,7 @@ namespace TearsInRain.Entities {
                 GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(secondMsg));
             } else {
                 Item dropped = Inventory[index].Clone();
-                dropped.Font = SadConsole.Global.LoadFont("fonts/Cheepicus12.font").GetFont(GameLoop.UIManager.hold);
+                dropped.Font = GameLoop.UIManager.hold;
                 dropped.Position = Position;
                 dropped.Quantity = num;
 

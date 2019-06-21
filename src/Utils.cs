@@ -22,75 +22,20 @@ namespace TearsInRain {
             Directions.Add("DL", new Point(-1, 1)); // Num1
         }
 
-        public static string SimpleMapString(TileBase[] tiles) {
-            var simpleMap = tiles.Length.ToString() + "|";
+        
+       public static bool PointInArea(Point start, Point end, Point Target) {
+            int smallX = Math.Min(start.X, end.X);
+            int smallY = Math.Min(start.Y, end.Y);
+            int largeX = Math.Max(start.X, end.X);
+            int largeY = Math.Max(start.Y, end.Y);
 
+            int width = largeX - smallX;
+            int height = largeY - smallY;
 
-            for (int i = 0; i < tiles.Length; i++) {
-                if (tiles[i].Name == "wood floor") { simpleMap += "F"; }
-                if (tiles[i].Name == "floor") { simpleMap += "f"; }
-                else if (tiles[i].Name == "grass") { simpleMap += "G"; }
-                else if (tiles[i].Name == "cornflower") { simpleMap += "1"; }
-                else if (tiles[i].Name == "rose") { simpleMap += "2"; } 
-                else if (tiles[i].Name == "violet") { simpleMap += "3"; } 
-                else if (tiles[i].Name == "dandelion") { simpleMap += "4"; } 
-                else if (tiles[i].Name == "tulip") { simpleMap += "5"; } 
-                else if (tiles[i].Name == "farmland") { simpleMap += "p"; }
-                else if (tiles[i] is TileDoor door && door.IsOpen && !door.IsLocked) { simpleMap += "d"; }
-                else if (tiles[i] is TileDoor door1 && !door1.IsOpen && !door1.IsLocked) { simpleMap += "D"; } 
-                else if (tiles[i] is TileDoor door2 && door2.IsOpen && door2.IsLocked) { simpleMap += "l"; } 
-                else if (tiles[i] is TileDoor door3 && !door3.IsOpen && door3.IsLocked) { simpleMap += "L"; } 
-                else if (tiles[i].Name == "wall") { simpleMap += "W"; }
-            }
+            if (width == 0) { width = 1; }
+            if (height == 0) { height = 1; } 
 
-            return simpleMap;
-        }
-
-        public static TileBase[] GetMapFromString(string tileString) {
-            TileBase[] tiles = new TileBase[0];
-
-            for (int i = 0; i < tileString.Length; i++) {
-                if (tileString[i].ToString() == "|") {
-                    tiles = new TileBase[System.Convert.ToInt32(tileString.Substring(0, i))];
-                    tileString = tileString.Substring(i + 1);
-                    break;
-                }
-            }
-
-            for (int j = 0; j < tileString.Length; j++) {
-
-                if (tileString[j].ToString() == "F") {
-                    tiles[j] = GameLoop.TileLibrary["wood floor"].Clone();
-                } else if (tileString[j].ToString() == "f") {
-                    tiles[j] = GameLoop.TileLibrary["base floor"].Clone();
-                } else if (tileString[j].ToString() == "G") {
-                    tiles[j] = GameLoop.TileLibrary["grass"].Clone();
-                } else if (tileString[j].ToString() == "1") {
-                    tiles[j] = GameLoop.TileLibrary["cornflower"].Clone();
-                } else if (tileString[j].ToString() == "2") {
-                    tiles[j] = GameLoop.TileLibrary["rose"].Clone();
-                } else if (tileString[j].ToString() == "3") {
-                    tiles[j] = GameLoop.TileLibrary["violet"].Clone();
-                } else if (tileString[j].ToString() == "4") {
-                    tiles[j] = GameLoop.TileLibrary["dandelion"].Clone();
-                } else if (tileString[j].ToString() == "5") {
-                    tiles[j] = GameLoop.TileLibrary["tulip"].Clone();
-                } else if (tileString[j].ToString() == "p") {
-                    tiles[j] = GameLoop.TileLibrary["farmland"].Clone();
-                } else if (tileString[j].ToString() == "d") {
-                    tiles[j] = new TileDoor(false, true);
-                } else if (tileString[j].ToString() == "D") {
-                    tiles[j] = new TileDoor(false, false);
-                } else if (tileString[j].ToString() == "l") {
-                    tiles[j] = new TileDoor(true, true);
-                } else if (tileString[j].ToString() == "L") {
-                    tiles[j] = new TileDoor(true, false);
-                } else if (tileString[j].ToString() == "W") {
-                    tiles[j] = GameLoop.TileLibrary["wall"].Clone();
-                }
-            }
-
-            return tiles; 
+            return new Rectangle(smallX, smallY, width, height).Contains(Target);
         }
 
 
@@ -102,5 +47,6 @@ namespace TearsInRain {
 
             return char.ToUpper(s[0]) + s.Substring(1);
         }
+        
     }
 }

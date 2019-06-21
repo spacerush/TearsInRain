@@ -84,15 +84,16 @@ namespace TearsInRain.Entities {
             if ((player.Equipped[0] != null && player.Equipped[0].Properties["qualities"].Contains("tilling")) || (player.Equipped[13] != null && player.Equipped[13].Properties["qualities"].Contains("tilling"))) {
                 if (GameLoop.World.CurrentMap.GetTileAt<TileBase>(pos.X, pos.Y).Name == "grass") {
                     TileBase tile = GameLoop.World.CurrentMap.GetTileAt<TileBase>(pos.X, pos.Y);
-                    
-                    GameLoop.World.CurrentMap.Tiles[pos.ToIndex(GameLoop.World.CurrentMap.Width)] = GameLoop.TileLibrary["farmland"].Clone();
-                    GameLoop.UIManager.RefreshMap();
 
-                    player.CurrentStamina -= 5;
+                    if (GameLoop.World.CurrentMap.GetTileAt<TileBase>(pos) != null) {
+                        GameLoop.World.CurrentMap.NewTiles[pos] = GameLoop.TileLibrary["farmland"].Clone();
+                        GameLoop.UIManager.RefreshMap(player.Position);
 
-                    string tileUpdate = "t_data|farmland|" + pos.X + "|" + pos.Y;
-                    GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(tileUpdate));
-                    
+                        player.CurrentStamina -= 5;
+
+                        string tileUpdate = "t_data|farmland|" + pos.X + "|" + pos.Y;
+                        GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(tileUpdate));
+                    }
                 }
             }
         }

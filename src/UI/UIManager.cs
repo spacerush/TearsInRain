@@ -31,7 +31,8 @@ namespace TearsInRain.UI {
         
         public Window MapWindow;
         public MessageLogWindow MessageLog;
-        public ChatLogWindow ChatLog;
+        public Window EscapeMenuWindow;
+        public Console EscapeMenuConsole;
         public Window StatusWindow;
         public Window InventoryWindow;
         public Window EquipmentWindow;
@@ -56,26 +57,38 @@ namespace TearsInRain.UI {
         public bool tryDelete = false;
 
 
+        public Window CharLoadWindow;
+        public Console CharLoadConsole;
+        public List<Player> currPlayerChars;
+
+        public bool NoWorldChar = false;
         public Window CharCreateWindow;
-        public ControlsConsole CharOptionsConsole;
+        public ScrollingConsole CharOptionsConsole;
         public ControlsConsole CharCreateConsole;
         public ControlsConsole CharInfoConsole;
         public Player CreatingChar;
         public string CreationSelectedOption = "";
         public string SelectedSkill = "";
         public string SelectedClass = "(NONE)";
+        public string SelectedRace = "(NONE)";
         public CharacterClass selectClass;
         public List<string> SkillNames = new List<string>();
         public List<string> ClassNames = new List<string>();
+        public List<string> RaceNames = new List<string>();
+        public Color[] skinColors;
+        public int skinIndex;
+        public Color[] hairColors;
+        public int hairIndex;
+        public int hairStyleIndex;
+        public TextBox PlayerNameBox;
+        public Player characterToLoad;
+        
 
         public Point Mouse;
         public string STATE = "MENU";
         public string JOIN_CODE = "";
 
-
-        public int currentZoomLV = 1; // Half, One, Two, Three, Four
-
-
+       
         public bool chat = false;
         public long tempUID = 0;
         public int invContextIndex = -1;
@@ -85,7 +98,8 @@ namespace TearsInRain.UI {
 
         public string waitingForCommand = "";
         public Point viewOffset = new Point(0, 0);
-        public Font.FontSizes hold = Font.FontSizes.Quarter;
+        public Font hold = GameLoop.MapQuarter;
+        public int zoom = 1;
 
         public UIManager() {
             IsVisible = true;
@@ -96,12 +110,35 @@ namespace TearsInRain.UI {
 
         public void checkResize(int newX, int newY) {
             this.Resize(newX, newY, false);
+
+            if (MapConsole != null) {
+                ResizeMap();
+
+                MapConsole.IsDirty = true;
+                MapWindow.IsDirty = true;
+                CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+
+                int windowPixelsWidth = SadConsole.Game.Instance.Window.ClientBounds.Width - (240);
+                int windowPixelsHeight = SadConsole.Game.Instance.Window.ClientBounds.Height - (240);
+
+                int newW = (windowPixelsWidth / 12);
+                int newH = (windowPixelsHeight / 12);
+
+                MapWindow.Resize(newW, newH, false, new Rectangle(0, 0, newW, newH));
+                MapWindow.Title = "[GAME MAP]".Align(HorizontalAlignment.Center, GameLoop.GameWidth - 22, (char)205);
+
+                StatusWindow.Position = new Point(MapWindow.Width, 0);
+                MessageLog.Position = new Point(0, MapWindow.Height);
+
+                SyncMapEntities();
+            }
         }
         
         public void Init() {
             UseMouse = true;
             LoadSplash();
 
+            IsFocused = true;
 
             joinPrompt = new ControlsConsole(8, 1, Global.FontDefault);
             joinPrompt.IsVisible = true;
@@ -121,6 +158,70 @@ namespace TearsInRain.UI {
             LoadWorldDialogue();
 
             CharacterCreationDialogue();
+
+            CharLoadWindow = new Window(40, 20, Global.FontDefault);
+            CharLoadWindow.Position = new Point(GameLoop.GameWidth / 2 - 20, GameLoop.GameHeight / 2 - 10);
+            CharLoadWindow.CanDrag = true;
+            CharLoadWindow.IsVisible = false;
+            CharLoadWindow.UseMouse = true;
+            CharLoadWindow.Title = "[CHOOSE CHARACTER]".Align(HorizontalAlignment.Center, 38, (char)205);
+
+            CharLoadConsole = new Console(38, 18, Global.FontDefault);
+            CharLoadConsole.Position = new Point(1, 1);
+            CharLoadConsole.IsVisible = false;
+
+            CharLoadConsole.MouseButtonClicked += loadCharClick;
+            
+            CharLoadWindow.Children.Add(CharLoadConsole);
+            Children.Add(CharLoadWindow);
+
+
+
+            EscapeMenuWindow = new Window(20, 20, Global.FontDefault);
+            EscapeMenuWindow.Position = new Point(GameLoop.GameWidth / 2 - 10, GameLoop.GameHeight / 2 - 10);
+            EscapeMenuWindow.CanDrag = true;
+            EscapeMenuWindow.IsVisible = false;
+            EscapeMenuWindow.UseMouse = true;
+            EscapeMenuWindow.Title = "[MENU]".Align(HorizontalAlignment.Center, 38, (char)205);
+
+            EscapeMenuConsole = new Console(38, 18, Global.FontDefault);
+            EscapeMenuConsole.Position = new Point(1, 1);
+            EscapeMenuConsole.IsVisible = false;
+
+            EscapeMenuWindow.Children.Add(EscapeMenuConsole);
+            Children.Add(EscapeMenuWindow);
+        }
+
+        public override void Update(TimeSpan timeElapsed) {
+            CheckKeyboard();
+
+            base.Update(timeElapsed);
+            if (STATE == "GAME") {
+        //        GameLoop.World.CalculateFov(GameLoop.CommandManager.lastPeek);
+
+                System.Console.WriteLine(GameLoop.World.players[GameLoop.NetworkingManager.myUID].Position);
+
+                if (StatusWindow.IsVisible) { UpdateStatusWindow(); }
+                if (ContextWindow.IsVisible) { UpdateContextWindow(); }
+                if (EquipmentWindow.IsVisible) { UpdateEquipment(); }
+                if (InventoryWindow.IsVisible) { UpdateInventory(); }
+
+            }
+
+            if (STATE == "MENU") {
+                SplashAnim();
+
+                if (CharCreateWindow.IsVisible) {
+                    UpdateCharCreation();
+                    UpdateCharOptions();
+                }
+
+                if (CharLoadWindow.IsVisible) {
+                    UpdateLoadCharWindow();
+                }
+            }
+
+
         }
 
         public void CreateConsoles() {
@@ -276,17 +377,17 @@ namespace TearsInRain.UI {
 
 
             if (player != null) {
-                ColoredString heldTIR = new ColoredString(player.HeldGold.ToString() + " TIR", Color.Yellow, Color.Transparent);
+                ColoredString heldTIR = new ColoredString(player.HeldGold.ToString() + " " + (char) 1, Color.Yellow, Color.Transparent);
                 StatusConsole.Print(StatusConsole.Width - heldTIR.Count - 2, 2, heldTIR);
 
 
                 StatusConsole.Print(0, 4, " STR: " + player.Strength.ToString());
-                StatusConsole.Print(8, 4, "   DEX: " + player.Dexterity.ToString());
+                StatusConsole.Print(8, 4, "  DEX: " + player.Dexterity.ToString());
                 StatusConsole.Print(0, 5, " CON: " + player.Constitution.ToString());
-                StatusConsole.Print(8, 5, "   INT: " + player.Intelligence.ToString());
+                StatusConsole.Print(8, 5, "  INT: " + player.Intelligence.ToString());
 
-                StatusConsole.Print(0, 6, "WIS: " + player.Wisdom.ToString());
-                StatusConsole.Print(8, 6, "   CHA: " + player.Charisma.ToString());
+                StatusConsole.Print(0, 6, " WIS: " + player.Wisdom.ToString());
+                StatusConsole.Print(8, 6, "  CHA: " + player.Charisma.ToString());
                 StatusConsole.Print(0, 7, (("" + (char)205).Align(HorizontalAlignment.Center, 18, (char)205)).CreateColored(GameLoop.CyberBlue));
 
                 ColorGradient wgtGrad = new ColorGradient(Color.Green, Color.Red);
@@ -294,7 +395,7 @@ namespace TearsInRain.UI {
                 Color wgtColor = wgtGrad.Lerp((float) (player.Carrying_Weight / player.BasicLift));
 
 
-                ColoredString wgt = new ColoredString((player.Carrying_Weight.ToString() + " / " + (player.BasicLift * 10).ToString() + " kg"), wgtColor, Color.Transparent);
+                ColoredString wgt = new ColoredString((player.Carrying_Weight.ToString() + " / " + (player.BasicLift).ToString() + " kg"), wgtColor, Color.Transparent);
                 ColoredString spd = new ColoredString("SPD: " + player.Speed, wgtColor, Color.Transparent);
                 ColoredString dodge = new ColoredString("DODGE: " + player.Dodge, wgtColor, Color.Transparent);
 
@@ -348,12 +449,27 @@ namespace TearsInRain.UI {
                 Mouse = Mouse - player.PositionOffset - new Point(1, 1) ;
                 TileBase hovered = GameLoop.World.CurrentMap.GetTileAt<TileBase>(Mouse.X, Mouse.Y);
 
-                StatusConsole.Print(0, 19, "HOVERED TILE".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(GameLoop.CyberBlue));
+                StatusConsole.Print(0, 19, "GROUND".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(GameLoop.CyberBlue));
                 if (hovered != null && hovered.Background.A == 255 && hovered.IsVisible) {
                     ColoredString hovName = new ColoredString(hovered.Name.Align(HorizontalAlignment.Center, 18, ' '), hovered.Foreground, Color.Transparent);
                     StatusConsole.Print(0, 20, hovName);
+                    
 
                     int drawLineAt = 21;
+
+                    List<TerrainFeature> tfsAtMouse = GameLoop.World.CurrentMap.GetEntitiesAt<TerrainFeature>(Mouse);
+                    if (tfsAtMouse.Count > 0) {
+                        drawLineAt++;
+                        StatusConsole.Print(0, drawLineAt, "FEATURES".Align(HorizontalAlignment.Center, 18, (char)205).CreateColored(GameLoop.CyberBlue));
+                        drawLineAt++;
+                    }
+
+                    for (int i = 0; i < tfsAtMouse.Count; i++) {
+                        ColoredString tfCol = new ColoredString(tfsAtMouse[i].Name.Align(HorizontalAlignment.Center, 18, ' '), tfsAtMouse[i].Animation.CurrentFrame[0].Foreground, Color.Transparent);
+                        StatusConsole.Print(0, drawLineAt, tfCol);
+                        drawLineAt++;
+                    }
+
 
                     List<Actor> monstersAtTile = GameLoop.World.CurrentMap.GetEntitiesAt<Actor>(Mouse);
 
@@ -561,11 +677,31 @@ namespace TearsInRain.UI {
             InventoryConsole.IsDirty = true;
         }
 
-        public void CreateMapWindow(int width, int height, string title) {
+
+        public void ResizeMap() {
+            int cellX = 12 * zoom;
+            int cellY = 12 * zoom;
+
+            int windowPixelsWidth = SadConsole.Game.Instance.Window.ClientBounds.Width - (264);
+            int windowPixelsHeight = SadConsole.Game.Instance.Window.ClientBounds.Height - (264);
+
+            int newW = (windowPixelsWidth / cellX);
+            int newH = (windowPixelsHeight / cellY);
+
+            //MapConsole.Resize(newW, newH, false);
+            MapConsole.ViewPort = new Rectangle(0, 0, newW, newH);
+
+            CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+            
+            MapConsole.IsDirty = true;
+        }
+
+        public void CreateMapWindow(int width, int height, string title, bool reset = false) {
             MapWindow = new Window(width, height);
 
             int mapConsoleWidth = width - 2;
             int mapConsoleHeight = height - 2;
+
 
             MapConsole.ViewPort = new Rectangle(0, 0, mapConsoleWidth, mapConsoleHeight);
             MapConsole.Position = new Point(1, 1);
@@ -574,7 +710,6 @@ namespace TearsInRain.UI {
             MapWindow.Title = title.Align(HorizontalAlignment.Center, mapConsoleWidth, (char) 205);
             MapWindow.Children.Add(MapConsole);
             
-
             Children.Add(MapWindow);
             
             MapConsole.MouseButtonClicked += mapClick;
@@ -616,7 +751,9 @@ namespace TearsInRain.UI {
                             flower.Position = modifiedClick;
                             GameLoop.World.CurrentMap.Add(flower);
 
-                            GameLoop.World.CurrentMap.Tiles[modifiedClick.ToIndex(GameLoop.World.CurrentMap.Width)] = GameLoop.TileLibrary["grass"].Clone();
+                            if (GameLoop.World.CurrentMap.GetTileAt<TileBase>(modifiedClick) != null) {
+                                GameLoop.World.CurrentMap.NewTiles[modifiedClick] = GameLoop.TileLibrary["grass"].Clone();
+                            }
 
                             string serialFlower = JsonConvert.SerializeObject(flower, Formatting.Indented, new ItemJsonConverter());
 
@@ -627,7 +764,7 @@ namespace TearsInRain.UI {
                             GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes(tileUpdate));
                                     
                             player.PickupItem(flower); 
-                            RefreshMap();
+                            RefreshMap(player.Position);
                         }
 
                         if (player.Equipped[13] != null) {
@@ -670,10 +807,9 @@ namespace TearsInRain.UI {
                     lobbyManager.OnMemberConnect += onPlayerConnected;
                     lobbyManager.OnMemberDisconnect += onPlayerDisconnected;
                     
-                    ChatLog.IsVisible = true;
                     JOIN_CODE = code;
 
-                    ChatLog.Title = ("[CHAT: " + code + "]").Align(HorizontalAlignment.Center, ChatLog.Width, (char) 205);
+                    EscapeMenuWindow.Title = ("[MENU: " + code + "]").Align(HorizontalAlignment.Center, EscapeMenuWindow.Width, (char) 205);
                 } else {
                     MessageLog.Add("Error: " + result);
                 }
@@ -684,7 +820,7 @@ namespace TearsInRain.UI {
             var userManager = GameLoop.NetworkingManager.discord.GetUserManager();
             userManager.GetUser(userId, (Result result, ref User user) => {
                 if (result == Discord.Result.Ok) {
-                    ChatLog.Add("User disconnected: " + user.Username);
+                    MessageLog.Add("User disconnected: " + user.Username);
                     GameLoop.World.CurrentMap.Remove(GameLoop.World.players[user.Id]);
                     GameLoop.World.players.Remove(user.Id);
                 }
@@ -695,7 +831,7 @@ namespace TearsInRain.UI {
             var userManager = GameLoop.NetworkingManager.discord.GetUserManager();
             userManager.GetUser(userId, (Result result, ref User user) => {
                 if (result == Discord.Result.Ok) {
-                    ChatLog.Add("User connected: " + user.Username);
+                    MessageLog.Add("User connected: " + user.Username);
                     kickstartNet();
 
                     GameLoop.World.CreatePlayer(userId, new Player(Color.Yellow, Color.Transparent));
@@ -752,34 +888,14 @@ namespace TearsInRain.UI {
 
         public void CenterOnActor(Actor actor) {
             MapConsole.CenterViewPortOnPoint(actor.Position);
+            RefreshMap(actor.Position);
         }
 
-        public override void Update(TimeSpan timeElapsed) {
-            base.Update(timeElapsed); 
-            CheckKeyboard();
-            if (STATE == "GAME") { 
-                GameLoop.World.CalculateFov(GameLoop.CommandManager.lastPeek);
-                UpdateStatusWindow();
-                UpdateContextWindow();
-                UpdateEquipment();
-                UpdateInventory();
-                
-            }
+        public void RefreshMap(Point pos) {
+            MapConsole.SetSurface(GameLoop.World.CurrentMap.GetTileRegion(pos), 101, 101);
+            MapConsole.IsDirty = true;
 
-            if (STATE == "MENU") {
-                SplashAnim();
-                
-                if (CharCreateWindow.IsVisible) {
-                    UpdateCharCreation();
-                    UpdateCharOptions();
-                }
-            }
-        }
-
-
-        public void RefreshMap() {
-            MapConsole.SetSurface(GameLoop.World.CurrentMap.Tiles, GameLoop.World.CurrentMap.Width, GameLoop.World.CurrentMap.Height);
-            MapConsole.IsDirty = true; 
+            MapConsole.ViewPort = MapConsole.ViewPort;
         }
 
         public void SyncMapEntities(bool keepOldView = false) {
@@ -810,11 +926,20 @@ namespace TearsInRain.UI {
         public void LoadMap(Map map) {
             GameLoop.World.CurrentMap = map;
 
+            Point center = new Point(0, 0);
+
+            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                center = GameLoop.World.players[GameLoop.NetworkingManager.myUID].Position;
+            }
+
+
+
             MapConsole.Clear();
             MapConsole.Children.Clear();
-            
 
-            MapConsole = new ScrollingConsole(map.Width, map.Height, Global.FontDefault, new Rectangle(0, 0, MapWindow.Width - 2, MapWindow.Height - 2), GameLoop.World.CurrentMap.Tiles);
+
+            //MapConsole = new ScrollingConsole(map.Width, map.Height, Global.FontDefault, new Rectangle(0, 0, MapWindow.Width - 2, MapWindow.Height - 2), GameLoop.World.CurrentMap.Tiles);
+            MapConsole = new ScrollingConsole(101, 101, Global.FontDefault, new Rectangle(0, 0, MapWindow.Width - 2, MapWindow.Height - 2), GameLoop.World.CurrentMap.GetTileRegion(center));
             MapConsole.Parent = MapWindow;
             MapConsole.Position = new Point(1, 1);
             MapConsole.MouseButtonClicked += mapClick;
@@ -828,23 +953,23 @@ namespace TearsInRain.UI {
 
             CreateConsoles();
 
-            MessageLog = new MessageLogWindow(60, (GameLoop.GameHeight / 3), "[MESSAGE LOG]");
+            MessageLog = new MessageLogWindow(60, 20, "[MESSAGE LOG]");
             MessageLog.Title.Align(HorizontalAlignment.Center, MessageLog.Title.Length);
             Children.Add(MessageLog);
-            MessageLog.IsVisible = true;
-            MessageLog.Position = new Point(0, (GameLoop.GameHeight / 3) * 2);
-
-            ChatLog = new ChatLogWindow(60, GameLoop.GameHeight / 3, "[CHAT LOG]");
-            Children.Add(MessageLog);
-            ChatLog.Show();
-            ChatLog.IsVisible = false;
-            ChatLog.Position = new Point((GameLoop.GameWidth / 2) - (ChatLog.Width / 2), (GameLoop.GameHeight / 2) - (ChatLog.Height / 2)); 
-
+            MessageLog.IsVisible = false;
+            MessageLog.Position = new Point(0, (GameLoop.GameHeight / 3) * 2); 
             
-            CreateMapWindow(60, (GameLoop.GameHeight / 3) * 2, "[GAME MAP]");
+            CreateMapWindow(GameLoop.GameWidth - 20, GameLoop.GameHeight - 20, "[GAME MAP]");
             CreateStatusWindow(20, (GameLoop.GameHeight / 3) * 2, "[PLAYER INFO]"); 
             CreateContextWindow(20, GameLoop.GameHeight / 3, "[ITEM MENU]"); 
             ContextConsole.MouseButtonClicked += contextClick;
+
+
+            MapWindow.IsVisible = false;
+            MapConsole.IsVisible = false;
+            StatusWindow.IsVisible = false;
+            StatusConsole.IsVisible = false;
+
 
             CreateInventoryWindow(59, 28, "[INVENTORY]");
             CreateEquipmentWindow(30, 16, "[EQUIPMENT]");
@@ -853,7 +978,7 @@ namespace TearsInRain.UI {
             if (!justInit) {
                 GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID, new Player(Color.Yellow, Color.Transparent));
                 LoadMap(GameLoop.World.CurrentMap);
-                MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Quarter);
+                MapConsole.Font = GameLoop.RegularSize;
                 CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
             }
         }
@@ -863,7 +988,8 @@ namespace TearsInRain.UI {
                 if (raindrops < 100 && GameLoop.Random.Next(0, 10) < 7) {
                     raindrops++;
 
-                    Entity newRaindrop = new Entity(new Color(GameLoop.CyberBlue, GameLoop.Random.Next(170, 256)), Color.Transparent, '\\');
+                    Entity newRaindrop = new Entity(new Color(GameLoop.CyberBlue, GameLoop.Random.Next(170, 256)), Color.Transparent, '\\', 2, 2);
+                    newRaindrop.Font = GameLoop.RegularSize;
                     int hori = GameLoop.Random.Next(0, 4);
                     if (hori == 0 || hori == 1) {
                         newRaindrop.Position = new Point(0, GameLoop.Random.Next(0, SplashConsole.Height - 14));
@@ -924,7 +1050,7 @@ namespace TearsInRain.UI {
                 splashCells[i] = new Cell(fore, back, temp.Character);
             }
 
-            SplashConsole = new Console(splashScreen.Width, splashScreen.Height, Global.FontDefault, splashCells);
+            SplashConsole = new Console(splashScreen.Width, splashScreen.Height, GameLoop.RegularSize, splashCells);
             SplashConsole.IsVisible = true;
             Children.Add(SplashConsole);
 
@@ -945,7 +1071,7 @@ namespace TearsInRain.UI {
                 menu[i] = new Cell(Color.White, Color.Transparent, ' ');
             }
 
-            MenuConsole = new Console(SplashConsole.Width - 2, 12, Global.FontDefault, menu);
+            MenuConsole = new Console(SplashConsole.Width - 2, 12, GameLoop.RegularSize, menu);
             SplashConsole.Children.Add(MenuConsole);
 
             MenuConsole.Position = new Point(1, SplashConsole.Height - 12);
@@ -953,9 +1079,7 @@ namespace TearsInRain.UI {
             MenuConsole.Print(1, 2, "LOAD WORLD".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
             MenuConsole.Print(1, 3, "CREATE CHARACTER".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
 
-
             MenuConsole.Print(1, 5, "JOIN:    ".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
-            MenuConsole.Print(1, 7, "HOST".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
 
             MenuConsole.Print(1, 10, "EXIT GAME".Align(HorizontalAlignment.Center, 76, ' ').CreateColored(GameLoop.CyberBlue, Color.Transparent));
 
@@ -1004,20 +1128,32 @@ namespace TearsInRain.UI {
 
 
                 InitNewMap(WorldNameBox.Text);
-                ChangeState("GAME");
+                SaveEverything();
 
-                hostButtonClick(null, null);
+                LoadWindow.IsVisible = true;
+                LoadConsole.IsVisible = true;
+
+                UpdateLoadWindow();
             }
         }
 
-        private void SaveEverything() {
-            Directory.CreateDirectory(@"./saves/" + GameLoop.World.WorldName);
+        private void SaveEverything(bool alsoSavePlayers = false) {
+            Directory.CreateDirectory(@"./saves/worlds/" + GameLoop.World.WorldName);
 
             // string map = Utils.SimpleMapString(GameLoop.World.CurrentMap.Tiles);
 
             string map = JsonConvert.SerializeObject(GameLoop.World, Formatting.Indented, new WorldJsonConverter());
 
-            File.WriteAllText(@"./saves/" + GameLoop.World.WorldName + "/map.json", map);
+            File.WriteAllText(@"./saves/worlds/" + GameLoop.World.WorldName + "/map.json", map);
+
+            if (alsoSavePlayers) {
+                Directory.CreateDirectory(@"./saves/players");
+
+                foreach (KeyValuePair<long, Player> player in GameLoop.World.players) {
+                    string playerJson = JsonConvert.SerializeObject(player.Value, Formatting.Indented, new ActorJsonConverter());
+                    File.WriteAllText(@"./saves/players/" + player.Value.Name + "+" + player.Key + ".json", playerJson);
+                }
+            }
         }
 
         private void LoadMapFromFile(string path) {
@@ -1026,7 +1162,7 @@ namespace TearsInRain.UI {
             
             GameLoop.World = JsonConvert.DeserializeObject<World>(map, new WorldJsonConverter());
             
-            LoadMap(GameLoop.World.CurrentMap);
+            //LoadMap(GameLoop.World.CurrentMap);
         }
 
 
@@ -1056,8 +1192,6 @@ namespace TearsInRain.UI {
 
                 Color selected;
 
-                System.Console.WriteLine(selectedWorldName);
-                System.Console.WriteLine(dir);
 
                 if (dir == selectedWorldName) {
                     selected = Color.Lime;
@@ -1077,14 +1211,15 @@ namespace TearsInRain.UI {
         private void UpdateLoadWindow() {
             LoadConsole.Clear();
 
-            Directory.CreateDirectory(@"./saves");
-            string[] savelist = Directory.GetDirectories(@"./saves");
+            Directory.CreateDirectory(@"./saves/worlds");
+            string[] savelist = Directory.GetDirectories(@"./saves/worlds");
 
             int saveCount = 0;
 
             string selectedName = "";
 
             foreach (string dir in savelist) {
+                
                 string[] split = dir.Split('\\');
 
                 Color selected;
@@ -1114,8 +1249,8 @@ namespace TearsInRain.UI {
         }
 
         private void loadWorldClick(object sender, MouseEventArgs e) {
-            Directory.CreateDirectory(@"./saves");
-            string[] savelist = Directory.GetDirectories(@"./saves");
+            Directory.CreateDirectory(@"./saves/worlds");
+            string[] savelist = Directory.GetDirectories(@"./saves/worlds");
 
             if (e.MouseState.ConsoleCellPosition.Y < savelist.Length) { 
                 selectedWorldName = savelist[e.MouseState.ConsoleCellPosition.Y];
@@ -1124,7 +1259,28 @@ namespace TearsInRain.UI {
 
             if (e.MouseState.ConsoleCellPosition.Y == 14) {
                 LoadMapFromFile(selectedWorldName);
-                ChangeState("GAME");
+
+                LoadConsole.IsVisible = false;
+                LoadWindow.IsVisible = false;
+
+                List<Player> allSaved = new List<Player>();
+
+                Directory.CreateDirectory(@"./saves/players");
+                string[] allPlayers = Directory.GetFiles(@"./saves/players");
+                
+                for (int i = 0; i < allPlayers.Length; i++) {
+                    if (allPlayers[i].Contains(GameLoop.NetworkingManager.myUID.ToString())) {
+                        Actor actor = JsonConvert.DeserializeObject<Actor>(File.ReadAllText(allPlayers[i]), new ActorJsonConverter());
+                        allSaved.Add(new Player(actor, actor.Position));
+                    }
+                }
+
+
+                NoWorldChar = false;
+
+                //ChangeState("GAME");
+
+                CharLoadInit(allSaved);
             }
 
             if (e.MouseState.ConsoleCellPosition.Y == 15) {
@@ -1150,6 +1306,92 @@ namespace TearsInRain.UI {
         }
 
 
+        public void CharLoadInit(List<Player> players) {
+            CharLoadWindow.IsVisible = true;
+            CharLoadConsole.IsVisible = true;
+            currPlayerChars = players;
+        }
+
+
+        private void loadCharClick(object sender, MouseEventArgs e) {
+            if (e.MouseState.ConsoleCellPosition.Y == 0) {
+                CharLoadConsole.IsVisible = false;
+                CharLoadWindow.IsVisible = false;
+
+                CharCreateWindow.IsVisible = true;
+                CharCreateConsole.IsVisible = true;
+                CharOptionsConsole.IsVisible = true;
+                CharInfoConsole.IsVisible = true;
+            }
+
+
+            if (e.MouseState.ConsoleCellPosition.Y-2 < currPlayerChars.Count && e.MouseState.ConsoleCellPosition.Y-2 >= 0) {
+                characterToLoad = currPlayerChars[e.MouseState.ConsoleCellPosition.Y-2];
+            }
+
+
+            if (e.MouseState.ConsoleCellPosition.Y == 14) {
+                LoadMap(GameLoop.World.CurrentMap);
+                ChangeState("GAME");
+                hostButtonClick(null, null);
+
+                GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID, characterToLoad);
+
+                SyncMapEntities();
+                
+            }
+
+            if (e.MouseState.ConsoleCellPosition.Y == 15) {
+                if (!tryDelete) {
+                    tryDelete = true;
+                }
+            }
+
+            if (e.MouseState.ConsoleCellPosition.Y == 17) {
+                CharLoadWindow.IsVisible = false;
+                CharLoadConsole.IsVisible = false;
+                tryDelete = false;
+            }
+
+
+            if (e.MouseState.ConsoleCellPosition.Y != 15 && e.MouseState.ConsoleCellPosition.Y != 16) {
+                tryDelete = false;
+            }
+
+            UpdateLoadCharWindow();
+        }
+
+
+        private void UpdateLoadCharWindow() {
+            CharLoadConsole.Clear();
+
+            CharLoadConsole.Print(0, 0, ("[NEW CHARACTER]").Align(HorizontalAlignment.Center, 38, ' ').CreateColored(GameLoop.CyberBlue));
+
+            for (int i = 0; i < currPlayerChars.Count; i++) {
+
+                Color selected = Color.DarkSlateGray;
+                if (characterToLoad != null && currPlayerChars[i].Name == characterToLoad.Name) {
+                    selected = Color.Lime;
+                }
+
+
+                CharLoadConsole.Print(0, i+2, currPlayerChars[i].Name.Align(HorizontalAlignment.Center, 38, ' ').CreateColored(selected));
+            }
+
+            if (characterToLoad != null) {
+                CharLoadConsole.Print(0, 14, ("Load " + characterToLoad.Name).Align(HorizontalAlignment.Center, 38, ' '));
+                CharLoadConsole.Print(0, 15, (("Delete " + characterToLoad.Name).Align(HorizontalAlignment.Center, 38, ' ')).CreateColored(Color.DarkRed));
+
+                if (tryDelete) {
+                    CharLoadConsole.Print(0, 16, (("Hold SHIFT and press Y to Confirm").Align(HorizontalAlignment.Center, 38, ' ')).CreateColored(Color.Red));
+                }
+            }
+
+            CharLoadConsole.Print(0, 17, "BACK TO MENU".Align(HorizontalAlignment.Center, 38, ' '));
+        }
+
+
+
         public void CharacterCreationDialogue() {
             CharCreateWindow = new Window(80, 60, Global.FontDefault);
             CharCreateWindow.Position = new Point(0, 0);
@@ -1161,7 +1403,7 @@ namespace TearsInRain.UI {
             CharCreateConsole.Position = new Point(1, 0);
             CharCreateConsole.IsVisible = false;
 
-            CharOptionsConsole = new ControlsConsole(36, 58, Global.FontDefault);
+            CharOptionsConsole = new ScrollingConsole(36, 60, Global.FontDefault, new Rectangle(0, 0, 36, 58));
             CharOptionsConsole.Position = new Point(19, 1);
             CharOptionsConsole.IsVisible = false;
             
@@ -1182,6 +1424,22 @@ namespace TearsInRain.UI {
 
             CreatingChar = new Player(Color.Yellow, Color.Transparent);
 
+            CharCreateConsole.Children.Add(CreatingChar);
+            CreatingChar.Position = new Point(1, 8);
+            CreatingChar.UpdateFontSize(Font.FontSizes.Four);
+
+            skinColors = new Color[] { new Color(255, 219, 172), new Color(241, 194, 125), new Color(224, 172, 105), new Color(198, 134, 66), new Color(141, 85, 36), new Color(63, 32, 0) };
+            hairColors = new Color[] { Color.PaleGoldenrod, Color.OrangeRed, Color.HotPink, Color.Indigo, Color.SandyBrown, Color.Silver, Color.Snow };
+            skinIndex = 0;
+            hairIndex = 0;
+            hairStyleIndex = 4;
+
+            PlayerNameBox = new TextBox(10);
+            PlayerNameBox.Position = new Point(6, 3);
+            PlayerNameBox.FocusOnClick = true;
+            CharCreateConsole.FocusOnMouseClick = true;
+            CharCreateConsole.Add(PlayerNameBox);
+
             foreach (KeyValuePair<string, Skill> skill in GameLoop.SkillLibrary) {
                 SkillNames.Add(skill.Key);
             }
@@ -1189,14 +1447,23 @@ namespace TearsInRain.UI {
             foreach (KeyValuePair<string, CharacterClass> charClass in GameLoop.ClassLibrary) {
                 ClassNames.Add(charClass.Key);
             }
+
+            foreach (KeyValuePair<string, CharacterRace> charRace in GameLoop.RaceLibrary) {
+                RaceNames.Add(charRace.Key);
+            }
         }
 
 
         public void UpdateCharCreation() {
             CharCreateConsole.Clear();
+            
 
             if (SelectedClass != "(NONE)") {
                 selectClass = GameLoop.ClassLibrary[SelectedClass];
+            }
+
+            if (RaceNames.Count == 1) {
+                SelectedRace = "Human";
             }
 
             CharCreateConsole.DrawLine(new Point(17, 1), new Point(17, 58), GameLoop.CyberBlue, Color.Transparent, (char)186);
@@ -1208,18 +1475,27 @@ namespace TearsInRain.UI {
             CharCreateConsole.Print(0, 1, " CHARACTER SHEET ".CreateColored(GameLoop.CyberBlue));
             CharCreateConsole.Print(0, 2, (((char)205).ToString().Align(HorizontalAlignment.Center, 17, (char)205)).CreateColored(GameLoop.CyberBlue));
 
+
+            CharCreateConsole.Print(0, 3, "Name: ".CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 4, " < Skin  Color >".CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 5, " <  Eye  Color >".CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 6, " < Hair  Style >".CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 7, " < Hair  Color >".CreateColored(GameLoop.CyberBlue));
+            
+
+            CharCreateConsole.Print(0, 25, (((char)205).ToString().Align(HorizontalAlignment.Center, 17, (char)205)).CreateColored(GameLoop.CyberBlue));
             string str = CreatingChar.Strength.ToString().Align(HorizontalAlignment.Right, 2, '0'); 
-            CharCreateConsole.Print(0, 3, "   STR  - " + str + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            CharCreateConsole.Print(0, 26, "   STR  - " + str + " +   ".CreateColored(GameLoop.CyberBlue)); 
             string dex = CreatingChar.Dexterity.ToString().Align(HorizontalAlignment.Right, 2, '0');
-            CharCreateConsole.Print(0, 4, "   DEX  - " + dex + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            CharCreateConsole.Print(0, 27, "   DEX  - " + dex + " +   ".CreateColored(GameLoop.CyberBlue)); 
             string con = CreatingChar.Constitution.ToString().Align(HorizontalAlignment.Right, 2, '0');
-            CharCreateConsole.Print(0, 5, "   CON  - " + con + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            CharCreateConsole.Print(0, 28, "   CON  - " + con + " +   ".CreateColored(GameLoop.CyberBlue)); 
             string intelligence = CreatingChar.Intelligence.ToString().Align(HorizontalAlignment.Right, 2, '0');
-            CharCreateConsole.Print(0, 6, "   INT  - " + intelligence + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            CharCreateConsole.Print(0, 29, "   INT  - " + intelligence + " +   ".CreateColored(GameLoop.CyberBlue)); 
             string wis = CreatingChar.Wisdom.ToString().Align(HorizontalAlignment.Right, 2, '0');
-            CharCreateConsole.Print(0, 7, "   WIS  - " + wis + " +   ".CreateColored(GameLoop.CyberBlue)); 
+            CharCreateConsole.Print(0, 30, "   WIS  - " + wis + " +   ".CreateColored(GameLoop.CyberBlue)); 
             string cha = CreatingChar.Charisma.ToString().Align(HorizontalAlignment.Right, 2, '0');
-            CharCreateConsole.Print(0, 8, "   CHA  - " + cha + " +   ".CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 31, "   CHA  - " + cha + " +   ".CreateColored(GameLoop.CyberBlue));
 
 
             List<int> pointCosts = new List<int> { -4, -2, -1, 0, 1, 2, 3, 5, 7, 10, 13, 17 };
@@ -1227,13 +1503,13 @@ namespace TearsInRain.UI {
             string pts = (25 - modified).ToString().Align(HorizontalAlignment.Right, 2, '0');
 
 
-            CharCreateConsole.Print(0, 10, ("Points Left: " + pts).Align(HorizontalAlignment.Center, 17, ' ').CreateColored(GameLoop.CyberBlue));
-            CharCreateConsole.Print(0, 11, (((char)205).ToString().Align(HorizontalAlignment.Center, 17, (char)205)).CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 33, ("Points Left: " + pts).Align(HorizontalAlignment.Center, 17, ' ').CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 34, (((char)205).ToString().Align(HorizontalAlignment.Center, 17, (char)205)).CreateColored(GameLoop.CyberBlue));
 
 
             CreatingChar.BasicLift = (int)Math.Floor(((double) CreatingChar.Strength * CreatingChar.Strength) / 2);
             string maxCarry = "Max Carry: " + CreatingChar.BasicLift.ToString().Align(HorizontalAlignment.Right, 3, ' ') + " kg";
-            CharCreateConsole.Print(0, 12, maxCarry.CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 36, maxCarry.CreateColored(GameLoop.CyberBlue));
 
             CreatingChar.UpdateRanksPerLvl();
             string spentSkills = CreatingChar.SpentSkillPoints().ToString().Align(HorizontalAlignment.Right, 2, '0');
@@ -1245,6 +1521,29 @@ namespace TearsInRain.UI {
                 maxRanks = (CreatingChar.Level * CreatingChar.RanksPerLvl).ToString().Align(HorizontalAlignment.Right, 2, '0');
             }
 
+
+
+            Color SelectRace;
+            if (SelectedRace != "(NONE)") {
+                SelectRace = Color.Lime;
+            } else {
+                SelectRace = Color.Red;
+            }
+
+            CharCreateConsole.Print(0, 39, ("Race: " + SelectedRace).CreateColored(SelectRace));
+
+
+            Color selectedAClass;
+            if (SelectedClass != "(NONE)") {
+                selectedAClass = Color.Lime;
+            } else {
+                selectedAClass = Color.Red;
+            }
+
+            CharCreateConsole.Print(0, 40, ("Class: " + SelectedClass).CreateColored(selectedAClass));
+
+
+
             Color spentAllSkills;
 
             if (spentSkills == maxRanks) {
@@ -1255,18 +1554,21 @@ namespace TearsInRain.UI {
                 spentAllSkills = GameLoop.CyberBlue;
             }
 
-            CharCreateConsole.Print(0, 13, ("Skills/Lv (" + spentSkills + "/" + maxRanks + ")").CreateColored(spentAllSkills));
+            CharCreateConsole.Print(0, 41, ("Skills/Lv (" + spentSkills + "/" + maxRanks + ")").CreateColored(spentAllSkills));
 
-            Color selectedAClass;
-            if (SelectedClass != "(NONE)") {
-                selectedAClass = Color.Lime;
-            } else {
-                selectedAClass = Color.Red;
-            }
-
-            CharCreateConsole.Print(0, 20, ("Class: " + SelectedClass).CreateColored(selectedAClass));
+            
 
 
+            CharCreateConsole.Print(0, 42, "Advantages".CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 43, "Disadvantages".CreateColored(GameLoop.CyberBlue));
+            CharCreateConsole.Print(0, 44, "Traits".CreateColored(GameLoop.CyberBlue));
+
+            CharCreateConsole.Print(0, 55, "DONE".Align(HorizontalAlignment.Center, 15, ' ').CreateColored(GameLoop.CyberBlue));
+
+
+
+
+            CharCreateConsole.Print(0, 57, " RETURN TO MENU".CreateColored(GameLoop.CyberBlue));
 
 
             CharInfoConsole.DrawLine(new Point(0, 1), new Point(0, 58), GameLoop.CyberBlue, Color.Transparent, (char)186);
@@ -1289,8 +1591,8 @@ namespace TearsInRain.UI {
             }
 
             if (CreationSelectedOption == "Skills") {
-                CharOptionsConsole.Print(0, 0, "SKILL NAME".Align(HorizontalAlignment.Center, 20, ' ').CreateColored(GameLoop.CyberBlue)); 
-                CharOptionsConsole.Print(20, 0, (((char)186).ToString() + " STAT " + ((char)186).ToString() +  " RANK ").CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(0, 0, "SKILL NAME".Align(HorizontalAlignment.Center, 20, ' ').CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(20, 0, (((char)186).ToString() + " STAT " + ((char)186).ToString() + " RANK ").CreateColored(GameLoop.CyberBlue));
                 CharOptionsConsole.Print(0, 1, (((char)205).ToString().Align(HorizontalAlignment.Center, 34, (char)205)).CreateColored(GameLoop.CyberBlue));
                 CharOptionsConsole.Print(20, 1, ((char)206).ToString().CreateColored(GameLoop.CyberBlue));
                 CharOptionsConsole.Print(27, 1, ((char)206).ToString().CreateColored(GameLoop.CyberBlue));
@@ -1312,7 +1614,7 @@ namespace TearsInRain.UI {
                     CharOptionsConsole.Print(20, printLine, (((char)186).ToString() + " " + skill.Value.ControllingAttribute + "  " + ((char)186).ToString() + " -" + ranks + "+ ").CreateColored(skillNameColor));
 
                     printLine++;
-                } 
+                }
             }
 
             if (CreationSelectedOption == "Classes") {
@@ -1342,7 +1644,7 @@ namespace TearsInRain.UI {
 
                     printLine++;
                 }
-                
+
 
                 if (SelectedClass != "(NONE)") {
                     selectClass = GameLoop.ClassLibrary[SelectedClass];
@@ -1375,7 +1677,7 @@ namespace TearsInRain.UI {
 
                     CharInfoConsole.Print(1, 11, ((char)205).ToString().Align(HorizontalAlignment.Center, 25, (char)205).CreateColored(GameLoop.CyberBlue));
                     CharInfoConsole.Print(1, 12, "Class Skills".Align(HorizontalAlignment.Center, 25, ' ').CreateColored(GameLoop.CyberBlue));
-                    CharInfoConsole.Print(1, 13, ((char) 205).ToString().Align(HorizontalAlignment.Center, 25, (char) 205).CreateColored(GameLoop.CyberBlue));
+                    CharInfoConsole.Print(1, 13, ((char)205).ToString().Align(HorizontalAlignment.Center, 25, (char)205).CreateColored(GameLoop.CyberBlue));
                     for (int i = 0; i < classSkills.Length; i++) {
                         if (classSkills[i][0] == ' ') {
                             classSkills[i] = classSkills[i].Substring(1);
@@ -1389,17 +1691,40 @@ namespace TearsInRain.UI {
 
                         skillLine += classSkills[i];
 
-                        if (i+1 != classSkills.Length) {
+                        if (i + 1 != classSkills.Length) {
                             skillLine += ", ";
                         }
 
-                        if (i+1 == classSkills.Length) {
+                        if (i + 1 == classSkills.Length) {
                             CharInfoConsole.Print(1, skillPrint, skillLine.CreateColored(GameLoop.CyberBlue));
                         }
                     }
                 }
             }
 
+
+            if (CreationSelectedOption == "Races") {
+                CharOptionsConsole.Print(0, 0, "RACE NAME".Align(HorizontalAlignment.Center, 12, ' ').CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(12, 0, (((char)186).ToString() + "ABILITY MODS").CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(0, 1, (((char)205).ToString().Align(HorizontalAlignment.Center, 35, (char)205)).CreateColored(GameLoop.CyberBlue));
+                CharOptionsConsole.Print(12, 1, ((char)206).ToString().CreateColored(GameLoop.CyberBlue));
+
+                int printLine = 2;
+                foreach (KeyValuePair<string, CharacterRace> charRace in GameLoop.RaceLibrary) {
+                    Color raceColor;
+
+                    if (charRace.Key == SelectedClass) {
+                        raceColor = Color.Lime;
+                    } else {
+                        raceColor = GameLoop.CyberBlue;
+                    }
+
+
+                    CharOptionsConsole.Print(0, printLine, charRace.Value.RaceName.Align(HorizontalAlignment.Center, 12, ' ').CreateColored(raceColor));
+                    CharOptionsConsole.Print(12, printLine, (((char)186).ToString()).CreateColored(GameLoop.CyberBlue));
+                    printLine++;
+                }
+            }
         }
 
 
@@ -1433,63 +1758,176 @@ namespace TearsInRain.UI {
                     SelectedClass = ClassNames[e.MouseState.ConsoleCellPosition.Y - 2];
                 }
             }
+
+
+            if (CreationSelectedOption == "Races") {
+                if (RaceNames.Count > e.MouseState.ConsoleCellPosition.Y - 2 && e.MouseState.ConsoleCellPosition.Y - 2 >= 0) {
+                    SelectedRace = RaceNames[e.MouseState.ConsoleCellPosition.Y - 2];
+                }
+            }
         }
 
         private void charCreateClick(object sender, MouseEventArgs e) {
-            if (e.MouseState.ConsoleCellPosition == new Point(8, 3) && CreatingChar.Strength > 7) { CreatingChar.Strength--; } 
-            if (e.MouseState.ConsoleCellPosition == new Point(13, 3) && CreatingChar.Strength < 18) { CreatingChar.Strength++; }
+            if (e.MouseState.ConsoleCellPosition == new Point(1, 4)) {
+                if (skinIndex - 1 == -1) { skinIndex = skinColors.Length - 1; }
+                else { skinIndex--; }
 
-            if (e.MouseState.ConsoleCellPosition == new Point(8, 4) && CreatingChar.Dexterity > 7) { CreatingChar.Dexterity--; }
-            if (e.MouseState.ConsoleCellPosition == new Point(13, 4) && CreatingChar.Dexterity < 18) { CreatingChar.Dexterity++; }
+                CreatingChar.Animation[0].Foreground = skinColors[skinIndex];
+                CreatingChar.Animation.IsDirty = true;
+            }
 
-            if (e.MouseState.ConsoleCellPosition == new Point(8, 5) && CreatingChar.Constitution > 7) { CreatingChar.Constitution--; }
-            if (e.MouseState.ConsoleCellPosition == new Point(13, 5) && CreatingChar.Constitution < 18) { CreatingChar.Constitution++; }
+            if (e.MouseState.ConsoleCellPosition == new Point(15, 4)) {
+                if (skinIndex + 1 == skinColors.Length) { skinIndex = 0; } else { skinIndex++; }
 
-            if (e.MouseState.ConsoleCellPosition == new Point(8, 6) && CreatingChar.Intelligence > 7) { CreatingChar.Intelligence--; }
-            if (e.MouseState.ConsoleCellPosition == new Point(13, 6) && CreatingChar.Intelligence < 18) { CreatingChar.Intelligence++; }
+                CreatingChar.Animation[0].Foreground = skinColors[skinIndex];
+                CreatingChar.Animation.IsDirty = true;
+            }
 
-            if (e.MouseState.ConsoleCellPosition == new Point(8, 7) && CreatingChar.Wisdom > 7) { CreatingChar.Wisdom--; }
-            if (e.MouseState.ConsoleCellPosition == new Point(13, 7) && CreatingChar.Wisdom < 18) { CreatingChar.Wisdom++; }
+            if (e.MouseState.ConsoleCellPosition == new Point(1, 7)) {
+                if (hairIndex - 1 == -1) { hairIndex = hairColors.Length - 1; } else { hairIndex--; }
 
-            if (e.MouseState.ConsoleCellPosition == new Point(8, 8) && CreatingChar.Charisma > 7) { CreatingChar.Charisma--; }
-            if (e.MouseState.ConsoleCellPosition == new Point(13, 8) && CreatingChar.Charisma < 18) { CreatingChar.Charisma++; }
+                CreatingChar.decorators["hair"] = new CellDecorator(hairColors[hairIndex], CreatingChar.decorators["hair"].Glyph, Microsoft.Xna.Framework.Graphics.SpriteEffects.None);
+                CreatingChar.RefreshDecorators();
+                CreatingChar.Animation.IsDirty = true;
+            }
 
-            if (e.MouseState.ConsoleCellPosition.Y == 13) { CreationSelectedOption = "Skills"; }
-            if (e.MouseState.ConsoleCellPosition.Y == 20) { CreationSelectedOption = "Classes"; }
+            if (e.MouseState.ConsoleCellPosition == new Point(15, 7)) {
+                if (hairIndex + 1 == hairColors.Length) { hairIndex = 0; } else { hairIndex++; }
+
+                CreatingChar.decorators["hair"] = new CellDecorator(hairColors[hairIndex], CreatingChar.decorators["hair"].Glyph, Microsoft.Xna.Framework.Graphics.SpriteEffects.None);
+                CreatingChar.RefreshDecorators();
+                CreatingChar.Animation.IsDirty = true;
+            }
+
+
+
+
+            if (e.MouseState.ConsoleCellPosition == new Point(1, 6)) {
+                if (hairStyleIndex - 1 == 4) { hairStyleIndex = 9; } else { hairStyleIndex--; }
+
+                CreatingChar.decorators["hair"] = new CellDecorator(hairColors[hairIndex], (char) hairStyleIndex, Microsoft.Xna.Framework.Graphics.SpriteEffects.None);
+                CreatingChar.RefreshDecorators();
+                CreatingChar.Animation.IsDirty = true;
+            }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(15, 6)) {
+                if (hairStyleIndex + 1 == 10) { hairStyleIndex = 4; } else { hairStyleIndex++; }
+
+                CreatingChar.decorators["hair"] = new CellDecorator(hairColors[hairIndex], (char)hairStyleIndex, Microsoft.Xna.Framework.Graphics.SpriteEffects.None);
+                CreatingChar.RefreshDecorators();
+                CreatingChar.Animation.IsDirty = true;
+            }
+
+
+
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 26) && CreatingChar.Strength > 7) { CreatingChar.Strength--; } 
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 26) && CreatingChar.Strength < 18) { CreatingChar.Strength++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 27) && CreatingChar.Dexterity > 7) { CreatingChar.Dexterity--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 27) && CreatingChar.Dexterity < 18) { CreatingChar.Dexterity++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 28) && CreatingChar.Constitution > 7) { CreatingChar.Constitution--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 28) && CreatingChar.Constitution < 18) { CreatingChar.Constitution++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 29) && CreatingChar.Intelligence > 7) { CreatingChar.Intelligence--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 29) && CreatingChar.Intelligence < 18) { CreatingChar.Intelligence++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 30) && CreatingChar.Wisdom > 7) { CreatingChar.Wisdom--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 30) && CreatingChar.Wisdom < 18) { CreatingChar.Wisdom++; }
+
+            if (e.MouseState.ConsoleCellPosition == new Point(8, 31) && CreatingChar.Charisma > 7) { CreatingChar.Charisma--; }
+            if (e.MouseState.ConsoleCellPosition == new Point(13, 31) && CreatingChar.Charisma < 18) { CreatingChar.Charisma++; }
+
+            if (e.MouseState.ConsoleCellPosition.Y == 39) { CreationSelectedOption = "Races"; }
+            if (e.MouseState.ConsoleCellPosition.Y == 40) { CreationSelectedOption = "Classes"; }
+            if (e.MouseState.ConsoleCellPosition.Y == 41) { CreationSelectedOption = "Skills"; }
+            if (e.MouseState.ConsoleCellPosition.Y == 42) { CreationSelectedOption = "Advantages"; }
+            if (e.MouseState.ConsoleCellPosition.Y == 43) { CreationSelectedOption = "Disadvantages"; }
+            if (e.MouseState.ConsoleCellPosition.Y == 44) { CreationSelectedOption = "Traits"; }
+
+            if (e.MouseState.ConsoleCellPosition.Y == 55) {
+                if (selectClass != null && selectClass.CheckEligibility(CreatingChar)) {
+                    selectClass.LevelClass(CreatingChar);
+                    PlayerNameBox.Text = PlayerNameBox.EditingText;
+                    CreatingChar.Name = PlayerNameBox.Text;
+
+                    if (!NoWorldChar) {
+                        LoadMap(GameLoop.World.CurrentMap);
+                        ChangeState("GAME");
+                        hostButtonClick(null, null);
+
+                        if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                            if (MapConsole.Children.Contains(GameLoop.World.players[GameLoop.NetworkingManager.myUID]))
+                                MapConsole.Children.Remove(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+                            GameLoop.World.players.Remove(GameLoop.NetworkingManager.myUID);
+                        }
+
+                        CharCreateConsole.Children.Remove(CreatingChar);
+
+
+                        CreatingChar.Position = new Point(0, 0);
+                        CreatingChar.UpdateFontSize(hold.SizeMultiple);
+                        GameLoop.World.CreatePlayer(GameLoop.NetworkingManager.myUID, CreatingChar);
+
+                        SyncMapEntities();
+                    }
+
+                    CharCreateWindow.IsVisible = false;
+                    CharCreateConsole.IsVisible = false;
+                    CharInfoConsole.IsVisible = false;
+                    CharOptionsConsole.IsVisible = false;
+
+
+                    Directory.CreateDirectory(@"./saves/players");
+                    
+                    string playerJson = JsonConvert.SerializeObject(CreatingChar, Formatting.Indented, new ActorJsonConverter()); 
+                    File.WriteAllText(@"./saves/players/" + CreatingChar.Name + "+" + GameLoop.NetworkingManager.myUID + ".json", playerJson);
+                }
+            }
+
+            if (e.MouseState.ConsoleCellPosition.Y == 57) {
+                CharCreateWindow.IsVisible = false;
+                CharCreateConsole.IsVisible = false;
+                CharOptionsConsole.IsVisible = false;
+                CharInfoConsole.IsVisible = false;
+            }
         }
 
         private void menuClick(object sender, MouseEventArgs e) {
-            if (e.MouseState.ConsoleCellPosition.Y == 1) { // Should open world creation dialogue
+
+            if (Utils.PointInArea(new Point(31, 1), new Point(47, 1), e.MouseState.ConsoleCellPosition)) { // Should open world creation dialogue 
                 WorldCreateWindow.IsVisible = true;
                 WorldCreateConsole.IsVisible = true;
             }
 
-            else if (e.MouseState.ConsoleCellPosition.Y == 2) { // Should open world loading dialogue
+            else if (Utils.PointInArea(new Point(34, 2), new Point(44, 2), e.MouseState.ConsoleCellPosition)) { // Should open world loading dialogue
                 LoadWindow.IsVisible = true;
                 LoadConsole.IsVisible = true;
 
                 UpdateLoadWindow();
             }
 
-            else if (e.MouseState.ConsoleCellPosition.Y == 3) {
+            else if (Utils.PointInArea(new Point(31, 3), new Point(47, 3), e.MouseState.ConsoleCellPosition)) {
+                CharacterCreationDialogue();
+
                 CharCreateWindow.IsVisible = true;
                 CharCreateConsole.IsVisible = true;
-                CharOptionsConsole.IsVisible = true;
                 CharInfoConsole.IsVisible = true;
+                CharOptionsConsole.IsVisible = true;
+
+                NoWorldChar = true;
             }
 
-            else if (e.MouseState.ConsoleCellPosition.Y == 5) { // This one is probably fine like this, but should be switched so it doesn't make its own world before joining.
+            else if (Utils.PointInArea(new Point(35, 5), new Point(39, 5), e.MouseState.ConsoleCellPosition)) { // This one is probably fine like this, but should be switched so it doesn't make its own world before joining.
                 InitNewMap("", true);
                 ChangeState("GAME");
 
                 joinButtonClick(null, null);
             }
-
-            else if (e.MouseState.ConsoleCellPosition.Y == 7) { // Should open a dialogue that lets the player specify whether to use a new world or load an existing world
-                InitNewMap();
-                ChangeState("GAME");
-
-                hostButtonClick(null, null);
+            
+            else if (Utils.PointInArea(new Point(35, 10), new Point(43, 10), e.MouseState.ConsoleCellPosition)) { // Should open a dialogue that lets the player specify whether to use a new world or load an existing world
+                SadConsole.Game.Instance.Exit();
             }
         }
 
@@ -1516,354 +1954,369 @@ namespace TearsInRain.UI {
 
                 SplashConsole.IsVisible = true;
                 SplashRain.IsVisible = true;
+                joinBox.IsVisible = true;
+                joinPrompt.IsVisible = true;
             }
 
             if (STATE == "GAME") {
                 MapConsole.IsVisible = true;
                 MapWindow.IsVisible = true;
+                MessageLog.IsVisible = true;
                 
                 StatusConsole.IsVisible = true;
                 StatusWindow.IsVisible = true;
                 
                 SplashConsole.IsVisible = false;
                 SplashRain.IsVisible = false;
+                joinBox.IsVisible = false;
+                joinPrompt.IsVisible = false;
 
                 LoadWindow.IsVisible = false;
                 LoadConsole.IsVisible = false;
+
+                CharLoadWindow.IsVisible = false;
+                CharLoadConsole.IsVisible = false;
+                
+                CharCreateWindow.IsVisible = false;
+                CharCreateConsole.IsVisible = false;
+                CharOptionsConsole.IsVisible = false;
+                CharInfoConsole.IsVisible = false;
             }
         }
 
 
         private void CheckKeyboard() {
             if (STATE == "MENU") {
-                if (Global.KeyboardState.IsKeyDown(Keys.LeftShift) && Global.KeyboardState.IsKeyReleased(Keys.Y) && tryDelete) {
+                if (Global.KeyboardState.IsKeyDown(Keys.LeftShift) && Global.KeyboardState.IsKeyReleased(Keys.Y) && tryDelete && LoadWindow.IsVisible) {
                     Directory.Delete(selectedWorldName, true);
                     selectedWorldName = "";
                     UpdateLoadWindow();
                 }
+
+                if (Global.KeyboardState.IsKeyDown(Keys.LeftShift) && Global.KeyboardState.IsKeyReleased(Keys.Y) && tryDelete && CharLoadWindow.IsVisible) {
+                    File.Delete(selectedWorldName + "/players/" + characterToLoad.Name + "+" + GameLoop.NetworkingManager.myUID + ".json");
+                    characterToLoad = null;
+                    
+                } 
             }
 
-            if (STATE == "GAME") { 
-                if (Global.KeyboardState.IsKeyReleased(Keys.Tab)) {
-                    if (ChatLog.IsVisible)
-                        ChatLog.IsVisible = false;
-                    else {
-                        ChatLog.Position = new Point((GameLoop.GameWidth / 2) - (ChatLog.Width / 2), (GameLoop.GameHeight / 2) - (ChatLog.Height / 2));
-                        ChatLog.IsVisible = true;
+            if (STATE == "GAME") {
+                
+                if (Global.KeyboardState.IsKeyReleased(Keys.F5)) { Settings.ToggleFullScreen(); }
+
+                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                    Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
+                    if (Global.KeyboardState.IsKeyPressed(Keys.G)) {
+                        waitingForCommand = "g";
                     }
-                }
 
-                if (!ChatLog.TextBoxFocused()) {
-                    if (Global.KeyboardState.IsKeyReleased(Keys.F5)) { Settings.ToggleFullScreen(); }
-
-                    if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
-                        Player player = GameLoop.World.players[GameLoop.NetworkingManager.myUID];
-                        if (Global.KeyboardState.IsKeyPressed(Keys.G)) {
-                            waitingForCommand = "g";
+                    if (Global.KeyboardState.IsKeyPressed(Keys.X)) {
+                        if (GameLoop.CommandManager.lastPeek == new Point(0, 0)) {
+                            waitingForCommand = "x";
+                        } else {
+                            ClearWait(player);
                         }
+                    }
 
-                        if (Global.KeyboardState.IsKeyPressed(Keys.X)) {
-                            if (GameLoop.CommandManager.lastPeek == new Point(0, 0)) {
-                                waitingForCommand = "x";
-                            } else {
-                                ClearWait(player);
-                            }
+                    if (Global.KeyboardState.IsKeyPressed(Keys.C)) {
+                        waitingForCommand = "c";
+                    }
+
+                    if (Global.KeyboardState.IsKeyReleased(Keys.OemTilde)) {
+                        SaveEverything(true);
+                    }
+
+                    if (Global.KeyboardState.IsKeyPressed(Keys.E)) {
+                        if (EquipmentWindow.IsVisible) {
+                            EquipmentWindow.IsVisible = false;
+                            EquipmentConsole.IsVisible = false;
+                        } else {
+                            EquipmentWindow.IsVisible = true;
+                            EquipmentConsole.IsVisible = true;
                         }
+                    }
 
-                        if (Global.KeyboardState.IsKeyPressed(Keys.C)) {
-                            waitingForCommand = "c";
-                        }
-
-                        if (Global.KeyboardState.IsKeyReleased(Keys.OemTilde)) {
-                            SaveEverything();
-                        }
-                        
-
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.P)) {
-                            System.Console.WriteLine(player.Position);
-                        }
-
-                        
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.E)) {
-                            if (EquipmentWindow.IsVisible) {
-                                EquipmentWindow.IsVisible = false;
-                                EquipmentConsole.IsVisible = false;
-                            } else {
-                                EquipmentWindow.IsVisible = true;
-                                EquipmentConsole.IsVisible = true;
-                            }
-                        }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.I)) {
-                            if (InventoryWindow.IsVisible) {
-                                InventoryWindow.IsVisible = false;
-                                InventoryConsole.IsVisible = false;
-                                ContextWindow.IsVisible = false;
-                                ContextConsole.IsVisible = false;
-                                invContextIndex = -1;
-                            } else {
-                                InventoryWindow.IsVisible = true;
-                                InventoryConsole.IsVisible = true;
-                                ContextWindow.IsVisible = true;
-                                ContextConsole.IsVisible = true;
-                                invContextIndex = -1;
-                            }
-                        }
-
-                        if (Global.KeyboardState.IsKeyPressed(Keys.S) && Global.KeyboardState.IsKeyDown(Keys.LeftShift)) {
-                            if (!player.IsStealthing) {
-                                int skillCheck = Dice.Roll("3d6");
-                                player.Stealth(skillCheck, true);
-                                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|yes|" + GameLoop.NetworkingManager.myUID + "|" + skillCheck));
-                            } else {
-                                player.Unstealth();
-                                GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|no|" + GameLoop.NetworkingManager.myUID + "|0"));
-                            }
-                        }
-
-                        if (Global.KeyboardState.IsKeyReleased(Keys.H)) {
-                            player.Health--;
-                        }
-
-                        if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) {
-                            if (waitingForCommand != "")
-                                ClearWait(player);
+                    if (Global.KeyboardState.IsKeyPressed(Keys.I)) {
+                        if (InventoryWindow.IsVisible) {
+                            InventoryWindow.IsVisible = false;
+                            InventoryConsole.IsVisible = false;
                             ContextWindow.IsVisible = false;
-                        }
-
-                        if (Global.KeyboardState.IsKeyReleased(Keys.OemPlus)) {
-                            if (hold != Font.FontSizes.Four) {
-                                switch (MapConsole.Font.SizeMultiple) {
-                                    case Font.FontSizes.One:
-                                        MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Two);
-                                        hold = Font.FontSizes.Two;
-                                        MapConsole.ViewPort = new Rectangle(0, 0, 29, 19);
-                                        break;
-                                    case Font.FontSizes.Two:
-                                        MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Four);
-                                        hold = Font.FontSizes.Four;
-                                        MapConsole.ViewPort = new Rectangle(0, 0, 15, 9);
-                                        break;
-                                }
-
-                                foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
-                                    entity.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(hold);
-                                    entity.Position = entity.Position;
-                                    entity.IsDirty = true;
-                                }
-
-                                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
-                                    CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
-                                }
-
-                                MapConsole.IsDirty = true;
-                            }
-                        }
-
-                        if (Global.KeyboardState.IsKeyReleased(Keys.OemMinus)) {
-                            if (hold != Font.FontSizes.One) {
-                                switch (MapConsole.Font.SizeMultiple) {
-                                    case Font.FontSizes.Two:
-                                        MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.One);
-                                        hold = Font.FontSizes.One;
-                                        MapConsole.ViewPort = new Rectangle(0, 0, 58, 38);
-                                        break;
-                                    case Font.FontSizes.Four:
-                                        MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Two);
-                                        hold = Font.FontSizes.Two;
-                                        MapConsole.ViewPort = new Rectangle(0, 0, 29, 19);
-                                        break;
-                                }
-
-                                foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
-                                    entity.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(hold);
-                                    entity.Position = entity.Position;
-                                    entity.IsDirty = true;
-                                }
-
-
-                                if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
-                                    CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
-                                }
-
-                                MapConsole.IsDirty = true;
-
-                            }
-                        }
-
-
-
-                        if (player.TimeLastActed + (UInt64)player.Speed <= GameLoop.GameTime) {
-                            if (Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
-                                Point thisDir = Utils.Directions["UR"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-
-                            } else if (Global.KeyboardState.IsKeyPressed(Keys.W) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) {
-                                Point thisDir = Utils.Directions["U"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-
-                            } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad7)) {
-                                Point thisDir = Utils.Directions["UL"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-
-                            } else if (Global.KeyboardState.IsKeyPressed(Keys.D) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) {
-                                Point thisDir = Utils.Directions["R"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-                            } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad5)) {
-                                Point thisDir = Utils.Directions["C"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-                            } else if (Global.KeyboardState.IsKeyPressed(Keys.A) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) {
-                                Point thisDir = Utils.Directions["L"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-                            } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad3)) {
-                                Point thisDir = Utils.Directions["DR"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-                            } else if ((Global.KeyboardState.IsKeyPressed(Keys.S) && !Global.KeyboardState.IsKeyDown(Keys.LeftShift)) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) {
-                                Point thisDir = Utils.Directions["D"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-                            } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad1)) {
-                                Point thisDir = Utils.Directions["DL"];
-                                if (waitingForCommand == "") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.MoveActorBy(player, thisDir);
-                                    CenterOnActor(player);
-                                } else if (waitingForCommand == "c") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.CloseDoor(player, thisDir);
-                                } else if (waitingForCommand == "g") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Pickup(player, thisDir);
-                                } else if (waitingForCommand == "x") {
-                                    ClearWait(player);
-                                    GameLoop.CommandManager.Peek(player, thisDir);
-                                }
-                            }
-
+                            ContextConsole.IsVisible = false;
+                            invContextIndex = -1;
+                        } else {
+                            InventoryWindow.IsVisible = true;
+                            InventoryConsole.IsVisible = true;
+                            ContextWindow.IsVisible = true;
+                            ContextConsole.IsVisible = true;
+                            invContextIndex = -1;
                         }
                     }
-                } else {
+
+                    if (Global.KeyboardState.IsKeyPressed(Keys.S) && Global.KeyboardState.IsKeyDown(Keys.LeftShift)) {
+                        if (!player.IsStealthing) {
+                            int skillCheck = Dice.Roll("3d6");
+                            player.Stealth(skillCheck, true);
+                            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|yes|" + GameLoop.NetworkingManager.myUID + "|" + skillCheck));
+                        } else {
+                            player.Unstealth();
+                            GameLoop.NetworkingManager.SendNetMessage(0, System.Text.Encoding.UTF8.GetBytes("stealth|no|" + GameLoop.NetworkingManager.myUID + "|0"));
+                        }
+                    }
+
+                    if (Global.KeyboardState.IsKeyReleased(Keys.H)) {
+                        player.Health--;
+                    }
 
                     if (Global.KeyboardState.IsKeyReleased(Keys.Escape)) {
-                        ChatLog.Unfocus();
-                    }
-                    if (Global.KeyboardState.IsKeyReleased(Keys.Enter) && GameLoop.NetworkingManager.discord.GetLobbyManager() != null) {
-                        if (ChatLog.GetText() != "") {
-                            var assembled = GameLoop.NetworkingManager.userManager.GetCurrentUser().Username + ": " + ChatLog.GetText();
-
-                            GameLoop.NetworkingManager.SendNetMessage(1, System.Text.Encoding.UTF8.GetBytes(assembled));
-
-                            ChatLog.Add(assembled);
-                            ChatLog.ClearText();
-                            ChatLog.Refocus();
+                        if (EscapeMenuWindow.IsVisible) {
+                            EscapeMenuWindow.IsVisible = false;
+                            EscapeMenuConsole.IsVisible = false;
                         } else {
-                            ChatLog.Refocus();
+                            EscapeMenuWindow.IsVisible = true;
+                            EscapeMenuConsole.IsVisible = true;
                         }
+                    }
+
+                    if (Global.KeyboardState.IsKeyReleased(Keys.OemPlus)) {
+                        if (zoom != 8) {
+                            switch (zoom) {
+                                case 1:
+                                    MapConsole.Font = GameLoop.MapHalf;
+                                    hold = GameLoop.MapHalf;
+                                    zoom = 2;
+                                    ResizeMap();
+                                    break;
+                                case 2:
+                                    MapConsole.Font = GameLoop.MapOne;
+                                    hold = GameLoop.MapOne;
+                                    zoom = 4;
+                                    ResizeMap();
+                                    break;
+                                case 4:
+                                    MapConsole.Font = Global.Fonts["Cheepicus48"].GetFont(Font.FontSizes.Two);
+                                    hold = Global.Fonts["Cheepicus48"].GetFont(Font.FontSizes.Two);
+                                    zoom = 8;
+                                    ResizeMap();
+                                    break;
+                            }
+
+                            foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
+                                entity.UpdateFontSize(hold.SizeMultiple);
+                                entity.Position = entity.Position;
+                                entity.IsDirty = true;
+                            }
+
+                            foreach (KeyValuePair<long, Player> entity in GameLoop.World.players) {
+                                entity.Value.UpdateFontSize(hold.SizeMultiple);
+                                entity.Value.Position = entity.Value.Position;
+                                entity.Value.IsDirty = true;
+                            }
+
+                            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                                CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+                            }
+
+                            MapConsole.IsDirty = true;
+                        }
+                    }
+
+                    if (Global.KeyboardState.IsKeyReleased(Keys.OemMinus)) {
+                        if (zoom != 1) {
+                            switch (zoom) {
+                                case 8:
+                                    MapConsole.Font = GameLoop.MapOne;
+                                    hold = GameLoop.MapOne;
+                                    zoom = 4;
+                                    ResizeMap();
+                                    break;
+                                case 4: 
+                                    MapConsole.Font = GameLoop.MapHalf;
+                                    hold = GameLoop.MapHalf;
+                                    zoom = 2;
+                                    ResizeMap();
+                                    break;
+                                case 2:
+                                    MapConsole.Font = GameLoop.MapQuarter;
+                                    hold = GameLoop.MapQuarter;
+                                    zoom = 1;
+                                    ResizeMap();
+                                    break;
+                            }
+
+                            foreach (Entity entity in GameLoop.World.CurrentMap.Entities.Items) {
+                                entity.UpdateFontSize(hold.SizeMultiple);
+                                entity.Position = entity.Position;
+                                entity.IsDirty = true;
+                            }
+
+                            foreach (KeyValuePair<long, Player> entity in GameLoop.World.players) {
+                                entity.Value.UpdateFontSize(hold.SizeMultiple);
+                                entity.Value.Position = entity.Value.Position;
+                                entity.Value.IsDirty = true;
+                            }
+
+
+                            if (GameLoop.World.players.ContainsKey(GameLoop.NetworkingManager.myUID)) {
+                                CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
+                            }
+
+                            MapConsole.IsDirty = true;
+
+                        }
+                    }
+
+
+
+                    if (player.TimeLastActed + (UInt64)player.Speed <= GameLoop.GameTime) {
+                        if (Global.KeyboardState.IsKeyPressed(Keys.NumPad9)) {
+                            Point thisDir = Utils.Directions["UR"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.W) || Global.KeyboardState.IsKeyPressed(Keys.NumPad8)) {
+                            Point thisDir = Utils.Directions["U"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad7)) {
+                            Point thisDir = Utils.Directions["UL"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.D) || Global.KeyboardState.IsKeyPressed(Keys.NumPad6)) {
+                            Point thisDir = Utils.Directions["R"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad5)) {
+                            Point thisDir = Utils.Directions["C"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.A) || Global.KeyboardState.IsKeyPressed(Keys.NumPad4)) {
+                            Point thisDir = Utils.Directions["L"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad3)) {
+                            Point thisDir = Utils.Directions["DR"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if ((Global.KeyboardState.IsKeyPressed(Keys.S) && !Global.KeyboardState.IsKeyDown(Keys.LeftShift)) || Global.KeyboardState.IsKeyPressed(Keys.NumPad2)) {
+                            Point thisDir = Utils.Directions["D"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        } else if (Global.KeyboardState.IsKeyPressed(Keys.NumPad1)) {
+                            Point thisDir = Utils.Directions["DL"];
+                            if (waitingForCommand == "") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.MoveActorBy(player, thisDir);
+                                CenterOnActor(player);
+                            } else if (waitingForCommand == "c") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.CloseDoor(player, thisDir);
+                            } else if (waitingForCommand == "g") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Pickup(player, thisDir);
+                            } else if (waitingForCommand == "x") {
+                                ClearWait(player);
+                                GameLoop.CommandManager.Peek(player, thisDir);
+                            }
+                        }
+
                     }
                 }
             } 

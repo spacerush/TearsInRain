@@ -28,6 +28,7 @@ namespace TearsInRain.Serializers {
         [DataMember] public uint FG; // Foreground
         [DataMember] public uint BG; // Background
         [DataMember] public int G; // Glyph
+        [DataMember] public string tilesheetName;
 
         [DataMember] public string Name;
         [DataMember] public int X;
@@ -63,7 +64,7 @@ namespace TearsInRain.Serializers {
         [DataMember] public int MiscRanksMod;
 
         [DataMember] public List<Item> Inventory;
-        
+        [DataMember] public Dictionary<string, SadConsole.CellDecorator> decorators;
 
 
         public static implicit operator ActorSerialized(Actor actor) {
@@ -71,6 +72,7 @@ namespace TearsInRain.Serializers {
                 FG = actor.Animation.CurrentFrame[0].Foreground.PackedValue,
                 BG = actor.Animation.CurrentFrame[0].Background.PackedValue,
                 G = actor.Animation.CurrentFrame[0].Glyph,
+                tilesheetName = actor.tilesheetName,
 
 
                 Name = actor.Name,
@@ -104,6 +106,8 @@ namespace TearsInRain.Serializers {
 
                 X = actor.Position.X,
                 Y = actor.Position.Y,
+
+                decorators = actor.decorators,
             };
 
             return serializedObject;
@@ -111,6 +115,7 @@ namespace TearsInRain.Serializers {
 
         public static implicit operator Actor(ActorSerialized serializedObject) {
             var entity = new Actor(new Color(serializedObject.FG), new Color(serializedObject.BG), serializedObject.G);
+            entity.tilesheetName = serializedObject.tilesheetName;
 
             entity.Name = serializedObject.Name;
 
@@ -141,6 +146,7 @@ namespace TearsInRain.Serializers {
             entity.Classes = serializedObject.Classes;
             entity.RanksPerLvl = serializedObject.RanksPerLvl;
             entity.MiscRanksMod = serializedObject.MiscRanksMod;
+            entity.decorators = serializedObject.decorators;
 
             entity.Position = new Point(serializedObject.X, serializedObject.Y);
 

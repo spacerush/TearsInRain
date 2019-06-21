@@ -270,19 +270,13 @@ namespace TearsInRain {
                 }
             }
 
-            if (channelId == 1) { // Chat Processing 
-                GameLoop.UIManager.ChatLog.Add(System.Text.Encoding.UTF8.GetString(data));
-
-               // if (myUID == hostUID) { SendNetMessage(channelId, data, userId); }
-            }
-
             if (channelId == 2) { // World Data Processing
                 var encoded = System.Text.Encoding.UTF8.GetString(data);
 
                 if (encoded != "a") {
                     GameLoop.World = JsonConvert.DeserializeObject<World>(encoded, new WorldJsonConverter());
                     GameLoop.UIManager.LoadMap(GameLoop.World.CurrentMap);
-                    GameLoop.UIManager.MapConsole.Font = Global.LoadFont("fonts/Cheepicus12.font").GetFont(Font.FontSizes.Quarter);
+                    GameLoop.UIManager.MapConsole.Font = GameLoop.RegularSize;
                     GameLoop.UIManager.CenterOnActor(GameLoop.World.players[GameLoop.NetworkingManager.myUID]);
                 }
             }

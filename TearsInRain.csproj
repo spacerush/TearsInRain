@@ -143,6 +143,9 @@
     <Reference Include="SadRex, Version=1.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\SadRex.1.0.2\lib\portable-net45+win+wpa81+wp80+MonoAndroid10+xamarinios10+MonoTouch10\SadRex.dll</HintPath>
     </Reference>
+    <Reference Include="SimplexNoise, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\SimplexNoise.2.0.0\lib\net45\SimplexNoise.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL" />
@@ -222,10 +225,10 @@
     <None Include="data\splash.xp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="fonts\Cheepicus12.font">
+    <None Include="fonts\Cheepicus48.font">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="fonts\SirHenry32.font">
+    <None Include="fonts\player.font">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
@@ -234,10 +237,10 @@
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="fonts\Cheepicus_12x12.png">
+    <Content Include="fonts\Cheepicus_48x48.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="fonts\SirHenry32.png">
+    <Content Include="fonts\player.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="res\door_close.wav">

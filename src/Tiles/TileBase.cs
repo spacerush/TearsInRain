@@ -18,7 +18,7 @@ namespace TearsInRain.Tiles {
             IsBlockingMove = blockingMove;
             IsBlockingLOS = blockingLOS;
             Name = name;
-            IsVisible = false; 
+            IsVisible = true; 
         }
 
 

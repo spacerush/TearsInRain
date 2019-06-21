@@ -25,20 +25,13 @@ namespace TearsInRain.Serializers {
     public class WorldSerialized { 
         [DataMember] public Map map;
         [DataMember] public string name;
-        [DataMember] public Dictionary<long, Actor> players = new Dictionary<long, Actor>();
 
 
 
         public static implicit operator WorldSerialized(World world) {
-            Dictionary<long, Actor> tempP = new Dictionary<long, Actor>();
-            foreach(KeyValuePair<long, Player> player in world.players) {
-                tempP.Add(player.Key, (Actor) player.Value);
-            }
-
             var sObj = new WorldSerialized() {
                 map = world.CurrentMap,
                 name = world.WorldName,
-                players = tempP,
             };
 
             return sObj;
@@ -50,9 +43,6 @@ namespace TearsInRain.Serializers {
             world.CurrentMap = sObj.map;
             world.WorldName = sObj.name;
             
-            foreach (KeyValuePair<long, Actor> player in sObj.players) {
-                world.CreatePlayer(player.Key, new Player(player.Value, player.Value.Position), true);
-            }
             return world;
         }
     }

@@ -42,7 +42,7 @@ namespace TearsInRain.Commands {
 
 
         public void Attack(Actor attacker, Actor defender, int preAttack = -1, int preDodge = -1, int preDamage = -1, bool received = false) {
-            if (attacker != null && defender != null) {
+            if (attacker != null && defender != null && attacker != defender) {
                 int attackChance = Dice.Roll("3d6");
                 int dodgeChance = Dice.Roll("3d6");
                 int damage = Dice.Roll(attacker.GetMeleeDamage("swing"));
@@ -101,7 +101,7 @@ namespace TearsInRain.Commands {
 
             if (defender.Inventory.Count > 0) { 
                 foreach (Item item in defender.Inventory) {
-                    item.Font = SadConsole.Global.LoadFont("fonts/Cheepicus12.font").GetFont(GameLoop.UIManager.hold);
+                    item.Font = GameLoop.UIManager.hold;
                     item.Position = defender.Position;
                     
                     GameLoop.World.CurrentMap.Add(item);

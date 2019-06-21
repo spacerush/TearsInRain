@@ -68,5 +68,55 @@ namespace TearsInRain.src {
                 actor.RecalculateHealth();
             }
         }
+
+
+
+        public bool CheckEligibility(Actor actor) { 
+            if (PreReqs.ContainsKey("SkillRanks")) {
+                string[] allReqs = PreReqs["SkillRanks"].Split('|');
+
+                for (int i = 0; i < allReqs.Length; i++) {
+                    string[] splitReq = allReqs[i].Split(',');
+
+                    if (actor.Skills.ContainsKey(splitReq[0]) && actor.Skills[splitReq[0]].Ranks < Convert.ToInt32(splitReq[1])) { return false; }
+                }
+
+            }
+
+            if (PreReqs.ContainsKey("AbilityScore")) {
+                string[] allReqs = PreReqs["AbilityScore"].Split('|');
+
+                for (int i = 0; i < allReqs.Length; i++) {
+                    string[] splitReq = allReqs[i].Split(',');
+
+                    if (splitReq[0] == "STR" && actor.Strength < Convert.ToInt32(splitReq[1])) { return false; }
+                    if (splitReq[0] == "DEX" && actor.Dexterity < Convert.ToInt32(splitReq[1])) { return false; }
+                    if (splitReq[0] == "CON" && actor.Constitution < Convert.ToInt32(splitReq[1])) { return false; }
+                    if (splitReq[0] == "INT" && actor.Intelligence < Convert.ToInt32(splitReq[1])) { return false; }
+                    if (splitReq[0] == "WIS" && actor.Wisdom < Convert.ToInt32(splitReq[1])) { return false; }
+                    if (splitReq[0] == "CHA" && actor.Charisma < Convert.ToInt32(splitReq[1])) { return false; }
+                }
+            }
+
+            if (PreReqs.ContainsKey("ClassLevels")) {
+                string[] allReqs = PreReqs["ClassLevels"].Split('|');
+
+                for (int i = 0; i < allReqs.Length; i++) {
+                    string[] splitReq = allReqs[i].Split(',');
+
+                    if (GameLoop.ClassLibrary.ContainsKey(splitReq[0])) {
+                        foreach (CharacterClass charClass in actor.Classes) {
+                            if (charClass.ClassName == splitReq[0] && charClass.LevelsInClass < Convert.ToInt32(splitReq[1])) { return false; }
+                        }
+                    }
+                }
+            }
+
+            if (PreReqs.ContainsKey("TotalLevels") && actor.Level < Convert.ToInt32(PreReqs["TotalLevels"])) { return false; }
+            
+            // TODO: Advantage, Disadvantage, Perks, and Race
+
+            return true;
+        }
     }
 }

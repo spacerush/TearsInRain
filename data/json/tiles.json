@@ -18,7 +18,7 @@
   "farmland": {
     "FG": 4281043409,
     "BG": 4280642723,
-    "Glyph": 35,
+    "Glyph": 263,
     "Name": "farmland",
     "blocksLOS": false,
     "blocksMove": false
@@ -74,7 +74,7 @@
   "wall": {
     "FG": 4283387695,
     "BG": 4287660144,
-    "Glyph": 35,
+    "Glyph": 264,
     "Name": "wall",
     "blocksLOS": true,
     "blocksMove": true

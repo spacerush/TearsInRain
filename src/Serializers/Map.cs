@@ -30,7 +30,7 @@ namespace TearsInRain.Serializers {
     /// </summary>
     [DataContract]
     public class MapSerialized {
-        [DataMember] public TileBase[] tiles;
+        [DataMember] public Dictionary<string, TileBase> tiles;
         [DataMember] public int mapW;
         [DataMember] public int mapH;
         [DataMember] public List<Actor> entities;
@@ -43,6 +43,7 @@ namespace TearsInRain.Serializers {
             List<Actor> ents = new List<Actor>();
             List<Item> items = new List<Item>();
             List<TerrainFeature> TFs = new List<TerrainFeature>();
+            Dictionary<string, TileBase> stringTiles = new Dictionary<string, TileBase>();
 
             foreach (Entity entity in map.Entities.Items) {
                 if (entity is Item item) {
@@ -55,10 +56,15 @@ namespace TearsInRain.Serializers {
             }
 
 
+            foreach (KeyValuePair<Point, TileBase> tile in map.NewTiles) {
+                string simplePos = tile.Key.X + "," + tile.Key.Y;
+                stringTiles.Add(simplePos, tile.Value);
+            }
+
 
 
             var sObj = new MapSerialized() {
-                tiles = map.Tiles,
+                tiles = stringTiles,
                 entities = ents,
                 items = items,
                 terrain = TFs,
@@ -70,7 +76,19 @@ namespace TearsInRain.Serializers {
         }
 
         public static implicit operator Map(MapSerialized sObj) {
-            Map map = new Map(sObj.tiles, sObj.mapW, sObj.mapH);
+            Dictionary<Point, TileBase> rebuiltTiles = new Dictionary<Point, TileBase>();
+
+            foreach (KeyValuePair<string, TileBase> tile in sObj.tiles) {
+                string[] posString = tile.Key.Split(',');
+                Point newPos = new Point(Convert.ToInt32(posString[0]), Convert.ToInt32(posString[1]));
+
+                rebuiltTiles.Add(newPos, tile.Value);
+            }
+
+
+
+
+            Map map = new Map(rebuiltTiles, sObj.mapW, sObj.mapH);
 
             map.Entities = new GoRogue.MultiSpatialMap<Entity>();
 
