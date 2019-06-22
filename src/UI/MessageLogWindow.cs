@@ -18,7 +18,7 @@ namespace TearsInRain.UI {
 
             _lines = new Queue<string>();
             CanDrag = true;
-            Title = title.Align(HorizontalAlignment.Center, Width, '-');
+            Title = title.Align(HorizontalAlignment.Center, Width, (char) 205);
 
             _messageConsole = new SadConsole.ScrollingConsole(width - _windowBorderThickness, _maxLines);
             _messageConsole.Position = new Point(1, 1);
@@ -62,15 +62,42 @@ namespace TearsInRain.UI {
             }
         }
 
-        public void Add(string message) {
-            _lines.Enqueue(message);
+        public void Add(string message, Color? fgColor = null, Color? bgColor = null) {
+            string[] splitMsg = new string[(int) Math.Ceiling((double) message.Length / 60)];
 
-            if (_lines.Count > _maxLines) {
-                _lines.Dequeue();
+            if (splitMsg.Length > 1) {
+                for(int i = 0; i < splitMsg.Length; i++) {
+                    if (i == splitMsg.Length-1) {
+                        splitMsg[i] = message.Substring(i * 10);
+                    } else {
+                        splitMsg[i] = message.Substring(i * 10, 60);
+                    }
+                }
+            } else {
+                splitMsg[0] = message;
             }
 
-            _messageConsole.Cursor.Position = new Point(1, _lines.Count);
-            _messageConsole.Cursor.Print(message + "\n");
-        }
+            for (int i = 0; i < splitMsg.Length; i++) {
+                _lines.Enqueue(splitMsg[i]);
+
+                if (_lines.Count > _maxLines) {
+                    _lines.Dequeue();
+                }
+
+                _messageConsole.Cursor.Position = new Point(1, _lines.Count);
+
+                if (fgColor == null && bgColor == null) {
+                    _messageConsole.Cursor.Print(message + "\n");
+                } else {
+
+                    if (fgColor == null) { fgColor = (Color) Color.White; }
+                    if (bgColor == null) { bgColor = (Color) Color.TransparentBlack; }
+
+                    ColoredString msg = new ColoredString(message + "\n", new Cell((Color) fgColor, (Color) bgColor));
+
+                    _messageConsole.Cursor.Print(msg);
+                }
+            }
+        } 
     }
 }

@@ -1,0 +1,149 @@
+{
+  "cornflower": {
+    "ID": "cornflower",
+    "Name": "cornflower",
+    "NamePlural": "cornflowers",
+    "FG": 4293760356,
+    "BG": 0,
+    "Glyph": 266,
+    "Weight": 0.01,
+    "Condition": 100,
+    "Slot": -1,
+    "Quantity": 1,
+    "Properties": {
+      "tags": "flower"
+    }
+  },
+  "rose": {
+    "ID": "rose",
+    "Name": "rose",
+    "NamePlural": "roses",
+    "FG": 4278190335,
+    "BG": 0,
+    "Glyph": 268,
+    "Weight": 0.01,
+    "Condition": 100,
+    "Slot": -1,
+    "Quantity": 1,
+    "Properties": {
+      "tags": "flower"
+    }
+  },
+  "violet": {
+    "ID": "violet",
+    "Name": "violet",
+    "NamePlural": "violets",
+    "FG": 4286578816,
+    "BG": 0,
+    "Glyph": 268,
+    "Weight": 0.01,
+    "Condition": 100,
+    "Slot": -1,
+    "Quantity": 1,
+    "Properties": {
+      "tags": "flower"
+    }
+  },
+  "dandelion": {
+    "ID": "dandelion",
+    "Name": "dandelion",
+    "NamePlural": "dandelions",
+    "FG": 4278255615,
+    "BG": 0,
+    "Glyph": 267,
+    "Weight": 0.01,
+    "Condition": 100,
+    "Slot": -1,
+    "Quantity": 1,
+    "Properties": {
+      "tags": "flower"
+    }
+  },
+  "tulip": {
+    "ID": "tulip",
+    "Name": "tulip",
+    "NamePlural": "tulips",
+    "FG": 4290013695,
+    "BG": 0,
+    "Glyph": 266,
+    "Weight": 0.01,
+    "Condition": 100,
+    "Slot": -1,
+    "Quantity": 1,
+    "Properties": {
+      "tags": "flower"
+    }
+  },
+  "hoe_shoddy": {
+    "ID": "hoe_shoddy",
+    "Name": "shoddy hoe",
+    "NamePlural": "shoddy hoes",
+    "FG": 4286611584,
+    "BG": 0,
+    "Glyph": 92,
+    "Weight": 3.0,
+    "Condition": 100,
+    "Slot": 13,
+    "Quantity": 1,
+    "Properties": {
+      "qualities": "tilling"
+    }
+  },
+  "book_incredible_tales": {
+    "ID": "book_incredible_tales",
+    "Name": "book of incredible tales",
+    "NamePlural": "books of incredible tales",
+    "FG": 4294967295,
+    "BG": 0,
+    "Glyph": 36,
+    "Weight": 1.0,
+    "Condition": 100,
+    "Slot": -1,
+    "Quantity": 1,
+    "Properties": {
+      "tags": "book"
+    }
+  }, 
+  "seed_potato": {
+    "ID": "seed_potato",
+    "Name": "potato seed",
+    "NamePlural": "potato seeds",
+    "FG": 4279041792,
+    "BG": 0,
+    "Glyph": 269,
+    "Weight": 0.01,
+    "Condition": 100,
+    "Slot": -1,
+    "Quantity": 1,
+    "Properties": {
+	  "tags": "seed",
+      "qualities": "plantable",
+	  "growth-times": "1,1,1,2,1",
+	  "grown": "potato",
+	  "harvest-yield": "3,5",
+	  "current-stage-time": "0,0",
+	  "growing-seasons": "Spring"
+    }
+  }, 
+  "potato": {
+    "ID": "potato",
+    "Name": "potato",
+    "NamePlural": "potatoes",
+    "FG": 4278403673,
+    "BG": 0,
+    "Glyph": 59,
+    "Weight": 0.1,
+    "Condition": 100,
+    "Slot": -1,
+    "Quantity": 1,
+    "Properties": {
+	  "tags": "vegetable",
+      "qualities": "plantable",
+	  "growth-times": "1,1,1,2,1",
+	  "grown": "potato",
+	  "harvest-yield": "3,5",
+	  "current-stage-time": "0,0",
+	  "growing-seasons": "Spring"
+    }
+  }
+}

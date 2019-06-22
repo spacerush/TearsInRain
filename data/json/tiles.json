@@ -1,0 +1,82 @@
+{
+  "wood floor": {
+    "FG": 4278201430,
+    "BG": 4278199367,
+    "Glyph": 265,
+    "Name": "wood floor",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "base floor": {
+    "FG": 4289309097,
+    "BG": 0,
+    "Glyph": 262,
+    "Name": "base floor",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "farmland": {
+    "FG": 4281043409,
+    "BG": 4280642723,
+    "Glyph": 263,
+    "Name": "farmland",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "grass": {
+    "FG": 4278294805,
+    "BG": 4278283535,
+    "Glyph": 262,
+    "Name": "grass",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "cornflower": {
+    "FG": 4293760356,
+    "BG": 4278283535,
+    "Glyph": 266,
+    "Name": "cornflower",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "rose": {
+    "FG": 4278190335,
+    "BG": 4278283535,
+    "Glyph": 268,
+    "Name": "rose",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "violet": {
+    "FG": 4286578816,
+    "BG": 4278283535,
+    "Glyph": 268,
+    "Name": "violet",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "dandelion": {
+    "FG": 4278255615,
+    "BG": 4278283535,
+    "Glyph": 267,
+    "Name": "dandelion",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "tulip": {
+    "FG": 4290013695,
+    "BG": 4278283535,
+    "Glyph": 266,
+    "Name": "tulip",
+    "blocksLOS": false,
+    "blocksMove": false
+  },
+  "wall": {
+    "FG": 4283387695,
+    "BG": 4287660144,
+    "Glyph": 264,
+    "Name": "wall",
+    "blocksLOS": true,
+    "blocksMove": true
+  }
+}

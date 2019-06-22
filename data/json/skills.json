@@ -1,0 +1,205 @@
+{
+    "Acrobatics": {
+        "Name": "Acrobatics",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Appraise": {
+        "Name": "Appraise",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Brawling": {
+        "Name": "Brawling",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Construction": {
+        "Name": "Construction",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Cooking": {
+        "Name": "Cooking",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Carpentry": {
+        "Name": "Carpentry",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Armorsmithing": {
+        "Name": "Armorsmithing",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Bookbinding": {
+        "Name": "Bookbinding",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Glassblowing": {
+        "Name": "Glassblowing",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Weaponsmith": {
+        "Name": "Weaponsmith",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Painting": {
+        "Name": "Painting",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Metalworking": {
+        "Name": "Metalworking",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Masonry": {
+        "Name": "Masonry",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Weaving": {
+        "Name": "Weaving",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Diagnosis": {
+        "Name": "Diagnosis",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Disable Device": {
+        "Name": "Disable Device",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "First Aid": {
+        "Name": "First Aid",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Locksmithing": {
+        "Name": "Locksmithing",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Maces/Axes": {
+        "Name": "Maces/Axes",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Perception": {
+        "Name": "Perception",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Polearms": {
+        "Name": "Polearms",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Stealth": {
+        "Name": "Stealth",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Surgery": {
+        "Name": "Surgery",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Survival": {
+        "Name": "Survival",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Swimming": {
+        "Name": "Swimming",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Swords": {
+        "Name": "Swords",
+        "ControllingAttribute": "DEX",
+        "Ranks": 0
+    },
+
+    "Tailoring": {
+        "Name": "Tailoring",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Tracking": {
+        "Name": "Tracking",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Trapmaking": {
+        "Name": "Trapmaking",
+        "ControllingAttribute": "INT",
+        "Ranks": 0
+    },
+
+    "Diplomacy": {
+        "Name": "Diplomacy",
+        "ControllingAttribute": "CHA",
+        "Ranks": 0
+    },
+
+    "Butchering": {
+        "Name": "Butchering",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    },
+
+    "Bluff": {
+        "Name": "Bluff",
+        "ControllingAttribute": "CHA",
+        "Ranks": 0
+    },
+
+    "Intimidate": {
+        "Name": "Intimidate",
+        "ControllingAttribute": "CHA",
+        "Ranks": 0
+    },
+
+    "Sense Motive": {
+        "Name": "Sense Motive",
+        "ControllingAttribute": "WIS",
+        "Ranks": 0
+    }
+}

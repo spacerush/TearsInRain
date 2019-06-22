@@ -1,0 +1,145 @@
+﻿{
+    "Artisan": {
+        "ClassName": "Artisan",
+        "RanksPerLv": 8,
+        "ClassSkills": "Appraise, Bookbinding, Glassblowing, Metalworking, Painting, Perception, Tailoring, Weaving",
+        "HitDie": "d6",
+        "LevelsInClass": 0,
+        "FRW_InitialSaves": [
+            0,
+            0,
+            0
+        ],
+        "WillSave": 0.34,
+        "FortSave": 0.34,
+        "ReflexSave": 0.34,
+        "ClassAttackBonus": 0.5,
+        "PreReqs": {}
+    },
+
+    "Tactician": {
+        "ClassName": "Tactician",
+        "RanksPerLv": 4,
+        "ClassSkills": "Bluff, Brawling, Diplomacy, Intimidate, Perception, Sense Motive, Tracking",
+        "HitDie": "d6",
+        "LevelsInClass": 0,
+        "FRW_InitialSaves": [
+            0,
+            0,
+            2
+        ],
+        "WillSave": 0.34,
+        "FortSave": 0.34,
+        "ReflexSave": 0.34,
+        "ClassAttackBonus": 0.5,
+        "PreReqs": {}
+    },
+
+    "Saboteur": {
+        "ClassName": "Saboteur",
+        "RanksPerLv": 4,
+        "ClassSkills": "Bluff, Brawling, Stealth, Intimidate, Perception, Sense Motive, Tracking",
+        "HitDie": "d6",
+        "LevelsInClass": 0,
+        "FRW_InitialSaves": [
+            0,
+            0,
+            2
+        ],
+        "WillSave": 0.5,
+        "FortSave": 0.34,
+        "ReflexSave": 0.34,
+        "ClassAttackBonus": 0.5,
+        "PreReqs": {}
+    },
+
+    "Guardian": {
+        "ClassName": "Guardian",
+        "RanksPerLv": 2,
+        "ClassSkills": "Brawling, Intimidate, Perception, Polearms",
+        "HitDie": "d12",
+        "LevelsInClass": 0,
+        "FRW_InitialSaves": [
+            2,
+            2,
+            2
+        ],
+        "WillSave": 0.5,
+        "FortSave": 0.5,
+        "ReflexSave": 0.5,
+        "ClassAttackBonus": 0.75,
+        "PreReqs": {}
+    },
+
+    "Thief": {
+        "ClassName": "Thief",
+        "RanksPerLv": 8,
+        "ClassSkills": "Acrobatics, Appraise, Bluff, Disable Device, Locksmithing, Perception, Stealth, Swords",
+        "HitDie": "d8",
+        "LevelsInClass": 0,
+        "FRW_InitialSaves": [
+            0,
+            2,
+            0
+        ],
+        "WillSave": 0.34,
+        "FortSave": 0.34,
+        "ReflexSave": 0.5,
+        "ClassAttackBonus": 0.75,
+        "PreReqs": {}
+    },
+
+    "Ranger": {
+        "ClassName": "Ranger",
+        "RanksPerLv": 6,
+        "ClassSkills": "Acrobatics, Butchering, Perception, Stealth, Survival, Swords, Tracking, Trapmaking",
+        "HitDie": "d8",
+        "LevelsInClass": 0,
+        "FRW_InitialSaves": [
+            0,
+            2,
+            0
+        ],
+        "WillSave": 0.34,
+        "FortSave": 0.34,
+        "ReflexSave": 0.5,
+        "ClassAttackBonus": 0.5,
+        "PreReqs": {}
+    },
+
+    "Brawler": {
+        "ClassName": "Brawler",
+        "RanksPerLv": 2,
+        "ClassSkills": "Acrobatics, Brawling, Perception, Survival",
+        "HitDie": "d10",
+        "LevelsInClass": 0,
+        "FRW_InitialSaves": [
+            2,
+            0,
+            0
+        ],
+        "WillSave": 0.34,
+        "FortSave": 0.5,
+        "ReflexSave": 0.34,
+        "ClassAttackBonus": 1.0,
+        "PreReqs": {}
+    },
+
+    "Medic": {
+        "ClassName": "Medic",
+        "RanksPerLv": 4,
+        "ClassSkills": "Diagnosis, First Aid, Perception, Surgery, Tailoring",
+        "HitDie": "d8",
+        "LevelsInClass": 0,
+        "FRW_InitialSaves": [
+            2,
+            0,
+            2
+        ],
+        "WillSave": 0.5,
+        "FortSave": 0.5,
+        "ReflexSave": 0.34,
+        "ClassAttackBonus": 0.75,
+        "PreReqs": {}
+    }
+}
